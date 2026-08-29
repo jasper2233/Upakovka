@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="Namuna komplekt - 5 modul" project.uuid="0005c0de-7777-8888-9999">
+  <!-- MATERIALLAR: yaxlit list. t = qalinlik (kasr bo'lishi mumkin) -->
+  <good id="S1" typeId="sheet" name="LDSP 16 mm oq" l="2750" w="1830" t="16" count="22"/>
+  <good id="S2" typeId="sheet" name="XDF 3 mm orqa" l="2800" w="2070" t="3" count="5"/>
+  <!-- MAHSULOTLAR: har <good typeId="product"> ichida o'z detallari -->
+  <good id="G1" typeId="product" name="Komplekt" code="990500">
+    <part id="s1" code="01_001" name="01_001 GOLI" l="250" w="292" count="2"/>
+    <part id="s2" code="01_002" name="01_002 BOK" l="2100" w="350" count="2" elt="1" eltMat="ABS 2mm oq"/>
+    <part id="s3" code="01_003" name="01_003 TEPA" l="1980" w="420" count="1" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm oq"/>
+    <part id="s4" code="01_004" name="01_004 POL GOLI" l="1900" w="300" count="1" elt="1" eltMat="ABS 0.8mm oq"/>
+    <part id="s5" code="01_005" name="01_005 OYOQ" l="180" w="120" count="4"/>
+    <part id="s6" code="02_001" name="02_001 BOK" l="480" w="382" count="2" elt="1" eltMat="ABS 2mm oq"/>
+    <part id="s7" code="02_002" name="02_002 TOM" l="420" w="382" count="1" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm oq"/>
+    <part id="s8" code="02_003" name="02_003 POL" l="420" w="382" count="1" elt="1" eltMat="ABS 0.8mm oq"/>
+    <part id="s9" code="02_004" name="02_004 FASAD" l="430" w="200" count="2" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm oq"/>
+    <part id="s10" code="02_005" name="02_005 SOKOL" l="420" w="80" count="1" elt="1" eltMat="ABS 0.8mm oq"/>
+    <part id="s11" code="02_006" name="02_006 XDF ORT" l="470" w="372" count="1"/>
+    <part id="s12" code="03_001" name="03_001 BOK" l="480" w="382" count="2" elt="1" eltMat="ABS 2mm oq"/>
+    <part id="s13" code="03_002" name="03_002 TOM" l="420" w="382" count="1" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm oq"/>
+    <part id="s14" code="03_003" name="03_003 POL" l="420" w="382" count="1" elt="1" eltMat="ABS 0.8mm oq"/>
+    <part id="s15" code="03_004" name="03_004 FASAD" l="430" w="200" count="2" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm oq"/>
+    <part id="s16" code="03_005" name="03_005 SOKOL" l="420" w="80" count="1" elt="1" eltMat="ABS 0.8mm oq"/>
+    <part id="s17" code="03_006" name="03_006 XDF ORT" l="470" w="372" count="1"/>
+    <part id="s18" code="04_001" name="04_001 BOK" l="2084" w="560" count="3" elt="1" eltMat="ABS 2mm oq"/>
+    <part id="s19" code="04_002" name="04_002 TOM" l="1499" w="560" count="1" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm oq"/>
+    <part id="s20" code="04_003" name="04_003 POL" l="1499" w="560" count="1" elt="1" eltMat="ABS 0.8mm oq"/>
+    <part id="s21" code="04_004" name="04_004 POLKA" l="730" w="540" count="4" elt="1" eltMat="ABS 0.8mm oq"/>
+    <part id="s22" code="04_005" name="04_005 QOSH" l="1499" w="120" count="1" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm oq"/>
+    <part id="s23" code="04_006" name="04_006 SOKOL" l="1499" w="100" count="1" elt="1" eltMat="ABS 0.8mm oq"/>
+    <part id="s24" code="04_007" name="04_007 XDF ORT" l="2074" w="1489" count="1"/>
+    <part id="s25" code="05_001" name="05_001 TOM" l="1000" w="450" count="1" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm oq"/>
+    <part id="s26" code="05_002" name="05_002 BOK" l="979" w="450" count="3" elt="1" eltMat="ABS 2mm oq"/>
+    <part id="s27" code="05_003" name="05_003 POL" l="940" w="450" count="1" elt="1" eltMat="ABS 0.8mm oq"/>
+    <part id="s28" code="05_004" name="05_004 RAMKA" l="900" w="90" count="2" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm oq"/>
+    <part id="s29" code="05_005" name="05_005 FASAD" l="470" w="430" count="2" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm oq"/>
+    <part id="s30" code="05_006" name="05_006 SOKOL" l="940" w="80" count="1" elt="1" eltMat="ABS 0.8mm oq"/>
+    <part id="s31" code="05_007" name="05_007 XDF ORT" l="990" w="940" count="1"/>
+  </good>
+  <!-- RASKROY (CS): detal qaysi materialdan kesilishi. Parser materialni SHU YERDAN oladi -->
+  <operation typeId="CS">
+    <material id="S1"/>
+    <part id="s1"/>
+    <part id="s2"/>
+    <part id="s3"/>
+    <part id="s4"/>
+    <part id="s5"/>
+    <part id="s6"/>
+    <part id="s7"/>
+    <part id="s8"/>
+    <part id="s9"/>
+    <part id="s10"/>
+    <part id="s12"/>
+    <part id="s13"/>
+    <part id="s14"/>
+    <part id="s15"/>
+    <part id="s16"/>
+    <part id="s18"/>
+    <part id="s19"/>
+    <part id="s20"/>
+    <part id="s21"/>
+    <part id="s22"/>
+    <part id="s23"/>
+    <part id="s25"/>
+    <part id="s26"/>
+    <part id="s27"/>
+    <part id="s28"/>
+    <part id="s29"/>
+    <part id="s30"/>
+  </operation>
+  <operation typeId="CS">
+    <material id="S2"/>
+    <part id="s11"/>
+    <part id="s17"/>
+    <part id="s24"/>
+    <part id="s31"/>
+  </operation>
+</project>

@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="Konveyr partiya - 12 ta parta" project.uuid="0012c0de-4444-5555-6666">
+  <!-- MATERIALLAR: yaxlit list. t = qalinlik (kasr bo'lishi mumkin) -->
+  <good id="K1" typeId="sheet" name="LDSP 16 mm buk" l="2750" w="1830" t="16" count="40"/>
+  <good id="K2" typeId="sheet" name="HDF 3 mm orqa" l="2800" w="2070" t="3" count="8"/>
+  <!-- MAHSULOTLAR: har <good typeId="product"> ichida o'z detallari -->
+  <good id="G1" typeId="product" name="Parta PS-120" code="990120">
+    <part id="k1" code="99020101" name="STOL USTI" l="1200" w="600" count="1" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm buk"/>
+    <part id="k2" code="99020102" name="YON PANEL CHAP" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k3" code="99020103" name="YON PANEL O'NG" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k4" code="99020104" name="ORQA TAYANCH" l="1140" w="180" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k5" code="99020105" name="POLKA" l="1100" w="300" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k6" code="99020106" name="ORQA DEVOR" l="1140" w="680" count="1"/>
+    <part id="k7" code="99020201" name="STOL USTI" l="1200" w="600" count="1" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm buk"/>
+    <part id="k8" code="99020202" name="YON PANEL CHAP" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k9" code="99020203" name="YON PANEL O'NG" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k10" code="99020204" name="ORQA TAYANCH" l="1140" w="180" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k11" code="99020205" name="POLKA" l="1100" w="300" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k12" code="99020206" name="ORQA DEVOR" l="1140" w="680" count="1"/>
+    <part id="k13" code="99020301" name="STOL USTI" l="1200" w="600" count="1" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm buk"/>
+    <part id="k14" code="99020302" name="YON PANEL CHAP" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k15" code="99020303" name="YON PANEL O'NG" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k16" code="99020304" name="ORQA TAYANCH" l="1140" w="180" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k17" code="99020305" name="POLKA" l="1100" w="300" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k18" code="99020306" name="ORQA DEVOR" l="1140" w="680" count="1"/>
+    <part id="k19" code="99020401" name="STOL USTI" l="1200" w="600" count="1" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm buk"/>
+    <part id="k20" code="99020402" name="YON PANEL CHAP" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k21" code="99020403" name="YON PANEL O'NG" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k22" code="99020404" name="ORQA TAYANCH" l="1140" w="180" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k23" code="99020405" name="POLKA" l="1100" w="300" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k24" code="99020406" name="ORQA DEVOR" l="1140" w="680" count="1"/>
+    <part id="k25" code="99020501" name="STOL USTI" l="1200" w="600" count="1" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm buk"/>
+    <part id="k26" code="99020502" name="YON PANEL CHAP" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k27" code="99020503" name="YON PANEL O'NG" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k28" code="99020504" name="ORQA TAYANCH" l="1140" w="180" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k29" code="99020505" name="POLKA" l="1100" w="300" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k30" code="99020506" name="ORQA DEVOR" l="1140" w="680" count="1"/>
+    <part id="k31" code="99020601" name="STOL USTI" l="1200" w="600" count="1" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm buk"/>
+    <part id="k32" code="99020602" name="YON PANEL CHAP" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k33" code="99020603" name="YON PANEL O'NG" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k34" code="99020604" name="ORQA TAYANCH" l="1140" w="180" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k35" code="99020605" name="POLKA" l="1100" w="300" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k36" code="99020606" name="ORQA DEVOR" l="1140" w="680" count="1"/>
+    <part id="k37" code="99020701" name="STOL USTI" l="1200" w="600" count="1" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm buk"/>
+    <part id="k38" code="99020702" name="YON PANEL CHAP" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k39" code="99020703" name="YON PANEL O'NG" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k40" code="99020704" name="ORQA TAYANCH" l="1140" w="180" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k41" code="99020705" name="POLKA" l="1100" w="300" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k42" code="99020706" name="ORQA DEVOR" l="1140" w="680" count="1"/>
+    <part id="k43" code="99020801" name="STOL USTI" l="1200" w="600" count="1" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm buk"/>
+    <part id="k44" code="99020802" name="YON PANEL CHAP" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k45" code="99020803" name="YON PANEL O'NG" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k46" code="99020804" name="ORQA TAYANCH" l="1140" w="180" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k47" code="99020805" name="POLKA" l="1100" w="300" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k48" code="99020806" name="ORQA DEVOR" l="1140" w="680" count="1"/>
+    <part id="k49" code="99020901" name="STOL USTI" l="1200" w="600" count="1" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm buk"/>
+    <part id="k50" code="99020902" name="YON PANEL CHAP" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k51" code="99020903" name="YON PANEL O'NG" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k52" code="99020904" name="ORQA TAYANCH" l="1140" w="180" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k53" code="99020905" name="POLKA" l="1100" w="300" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k54" code="99020906" name="ORQA DEVOR" l="1140" w="680" count="1"/>
+    <part id="k55" code="99021001" name="STOL USTI" l="1200" w="600" count="1" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm buk"/>
+    <part id="k56" code="99021002" name="YON PANEL CHAP" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k57" code="99021003" name="YON PANEL O'NG" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k58" code="99021004" name="ORQA TAYANCH" l="1140" w="180" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k59" code="99021005" name="POLKA" l="1100" w="300" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k60" code="99021006" name="ORQA DEVOR" l="1140" w="680" count="1"/>
+    <part id="k61" code="99021101" name="STOL USTI" l="1200" w="600" count="1" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm buk"/>
+    <part id="k62" code="99021102" name="YON PANEL CHAP" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k63" code="99021103" name="YON PANEL O'NG" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k64" code="99021104" name="ORQA TAYANCH" l="1140" w="180" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k65" code="99021105" name="POLKA" l="1100" w="300" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k66" code="99021106" name="ORQA DEVOR" l="1140" w="680" count="1"/>
+    <part id="k67" code="99021201" name="STOL USTI" l="1200" w="600" count="1" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm buk"/>
+    <part id="k68" code="99021202" name="YON PANEL CHAP" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k69" code="99021203" name="YON PANEL O'NG" l="720" w="550" count="1" elt="1" ell="1" eltMat="ABS 2mm buk"/>
+    <part id="k70" code="99021204" name="ORQA TAYANCH" l="1140" w="180" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k71" code="99021205" name="POLKA" l="1100" w="300" count="1" elt="1" eltMat="ABS 0.8mm buk"/>
+    <part id="k72" code="99021206" name="ORQA DEVOR" l="1140" w="680" count="1"/>
+  </good>
+  <!-- RASKROY (CS): detal qaysi materialdan kesilishi. Parser materialni SHU YERDAN oladi -->
+  <operation typeId="CS">
+    <material id="K1"/>
+    <part id="k1"/>
+    <part id="k2"/>
+    <part id="k3"/>
+    <part id="k4"/>
+    <part id="k5"/>
+    <part id="k7"/>
+    <part id="k8"/>
+    <part id="k9"/>
+    <part id="k10"/>
+    <part id="k11"/>
+    <part id="k13"/>
+    <part id="k14"/>
+    <part id="k15"/>
+    <part id="k16"/>
+    <part id="k17"/>
+    <part id="k19"/>
+    <part id="k20"/>
+    <part id="k21"/>
+    <part id="k22"/>
+    <part id="k23"/>
+    <part id="k25"/>
+    <part id="k26"/>
+    <part id="k27"/>
+    <part id="k28"/>
+    <part id="k29"/>
+    <part id="k31"/>
+    <part id="k32"/>
+    <part id="k33"/>
+    <part id="k34"/>
+    <part id="k35"/>
+    <part id="k37"/>
+    <part id="k38"/>
+    <part id="k39"/>
+    <part id="k40"/>
+    <part id="k41"/>
+    <part id="k43"/>
+    <part id="k44"/>
+    <part id="k45"/>
+    <part id="k46"/>
+    <part id="k47"/>
+    <part id="k49"/>
+    <part id="k50"/>
+    <part id="k51"/>
+    <part id="k52"/>
+    <part id="k53"/>
+    <part id="k55"/>
+    <part id="k56"/>
+    <part id="k57"/>
+    <part id="k58"/>
+    <part id="k59"/>
+    <part id="k61"/>
+    <part id="k62"/>
+    <part id="k63"/>
+    <part id="k64"/>
+    <part id="k65"/>
+    <part id="k67"/>
+    <part id="k68"/>
+    <part id="k69"/>
+    <part id="k70"/>
+    <part id="k71"/>
+  </operation>
+  <operation typeId="CS">
+    <material id="K2"/>
+    <part id="k6"/>
+    <part id="k12"/>
+    <part id="k18"/>
+    <part id="k24"/>
+    <part id="k30"/>
+    <part id="k36"/>
+    <part id="k42"/>
+    <part id="k48"/>
+    <part id="k54"/>
+    <part id="k60"/>
+    <part id="k66"/>
+    <part id="k72"/>
+  </operation>
+</project>

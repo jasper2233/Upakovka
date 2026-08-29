@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Upakofka tizimi</title>
+<!-- TASHQI HAVOLA YO'Q. Ilgari bu yerda Google Fonts <link> i turardi: u renderni
+     bloklamasa ham, sexda internet yo'q — shrift baribir hech qachon yuklanmasdi,
+     lekin har ochilishda tashqi so'rov urinishi bo'lardi va «internet kerak emas»
+     va'dasi yolg'on bo'lib qolardi. Endi style.css dagi tizim shriftlari zanjiri
+     ishlatiladi: Windowsda Consolas va Segoe UI. -->
+<link rel="stylesheet" href="src/css/style.css">
+</head>
+<body>
+<!-- ================================================================
+     2-QISM. SAHIFA TUZILISHI (HTML)
+     ================================================================ -->
+
+<!-- 2.1 shapka -->
+<div class="top">
+  <div class="brand"><b id="pname">—</b><small id="puuid">loyiha yuklanmoqda</small></div>
+  <div class="stat"><u>Detal</u><b id="sParts">0<i>dona</i></b></div>
+  <div class="stat"><u>Massa</u><b id="sKg">0<i>kg</i></b></div>
+  <div class="stat"><u>Pochka</u><b id="sPacks">0</b></div>
+  <div class="stat"><u>Noodatiy</u><b id="sOdd">0</b></div>
+  <div class="stat"><u>Audit</u><b id="auditBadge" style="font-size:13px">—</b></div>
+  <div class="grow"></div>
+  <div class="topact">
+    <span id="saveState" class="savedot" title="avtomatik saqlash"></span>
+    <button class="btn pri" id="btnLoad">Loyiha yuklash</button>
+    <input type="file" id="file" accept=".project,.xml,.txt" hidden>
+  </div>
+</div>
+
+<!-- 2.2 boʻlim tablari -->
+<div class="tabs">
+  <button data-v="mgr">Proekt menejer</button>
+  <button data-v="sort">Saralash</button>
+  <button data-v="work" class="on">Qadoqlash</button>
+  <button data-v="parts">Detallar</button>
+  <button data-v="mats">Materiallar</button>
+  <button data-v="diag">Diagnostika</button>
+  <button data-v="conf">Sozlamalar</button>
+</div>
+
+<main>
+  <!-- 2.2b SARALASH — paddondan stelyaj yacheykalariga.
+       Ekranda faqat skaner va natija: ishchi qoʻlida detal, koʻzi ekranda. -->
+  <section class="view" id="v-sort">
+    <div class="sortpad">
+      <input id="sortScan" class="sortinput" placeholder="Detal barkodini skanerlang" autocomplete="off">
+      <div class="msg" id="sortMsg"></div>
+      <div id="sortLast"></div>
+      <div class="sortfoot">
+        <span id="sortHint"></span>
+        <span id="sortCells"></span>
+        <span id="sortSaved" class="saved"></span>
+        <span class="grow"></span>
+        <button class="btn gh" id="btnSortRack">Stelyajlar</button>
+        <button class="btn gh" id="btnSortPlan">Reja</button>
+        <button class="btn gh" id="btnSortReset">Tozalash</button>
+      </div>
+      <div id="sortRackBox"></div>
+      <div id="sortPlanBox"></div>
+    </div>
+  </section>
+
+  <!-- 2.3 QADOQLASH — asosiy ish ekrani -->
+  <section class="view on" id="v-work">
+   <div class="work">
+    <div class="col">
+      <div class="colhead"><span>Pochkalar</span><span id="packHint"></span></div>
+      <div class="scroll" id="packList"></div>
+    </div>
+
+    <div class="col">
+      <div class="colhead ch2">
+        <span id="stageTitle">Pochka tanlanmagan</span>
+        <span id="stageKg" style="font-family:var(--mono);color:var(--ink2)"></span>
+      </div>
+      <div class="stage">
+        <canvas id="c3d"></canvas>
+        <div class="hud" id="hud"></div>
+        <div class="stagetools">
+          <!-- v12: «Tahrirlash» olib tashlandi — TZ-v2 §1: qadoqlash posti
+               ishchisi hech narsani oʻzgartira olmaydi. U P/M boʻlimida. -->
+          <button class="btn gh" id="btnWrap" style="padding:4px 10px;font-size:11px">Qogʻozga oʻrash</button>
+          <label for="zex">Qalinlik ×</label>
+          <input type="range" id="zex" min="1" max="10" step="1" value="1">
+          <span id="zexv" style="font-family:var(--mono);font-size:11px;color:var(--ink2);width:18px">1</span>
+        </div>
+      </div>
+      <div class="plan">
+        <div class="planrow">
+          <canvas id="c2d" width="330" height="180"></canvas>
+          <div class="legend">
+            <div><s style="background:#a5714c"></s>eng tag detal</div>
+            <div><s style="background:#4fae8a"></s>shu qavatga qoʻyildi</div>
+            <div><s style="background:var(--board)"></s>tugagan qavat</div>
+            <div><s style="background:var(--mark)"></s>keyingi detal — shu yerga</div>
+            <div><s style="border:1px dashed var(--mark)"></s>chiqish chegarasi (<span id="lgOv">20</span> mm)</div>
+            <div id="lgLayer" style="color:var(--ink2);margin-top:4px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="colhead"><span>Keyingi detal</span><span id="stepNo" style="font-family:var(--mono)"></span></div>
+      <div class="scroll">
+        <div class="next" id="nextBox"></div>
+        <div class="qrbox">
+          <div id="lblwrap"></div>
+          <div class="btnrow" style="width:100%;max-width:300px">
+            <button class="btn gh" id="btnPrint1">Shu chek</button>
+            <button class="btn gh" id="btnPrintPack">Detal cheklari</button>
+            <button class="btn gh" id="btnPackLbl">Pochka cheki</button>
+          </div>
+        </div>
+      </div>
+    </div>
+   </div>
+  </section>
+
+  <!-- 2.4 PROEKT MENEJER — yuklash, tur, yoʻnalish, honalar -->
+  <section class="view" id="v-mgr">
+    <div class="pad">
+      <h3>Loyiha yuklash</h3>
+      <div class="drophint" id="dropHint">
+        <div>
+          <b>.project faylni shu yerga sudrab tashlang</b>
+          <small>yoki tanlang · <kbd>Ctrl</kbd>+<kbd>O</kbd> · qoʻllab-quvvatlanadi: .project, .xml</small>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn pri" id="btnLoad2">Fayl tanlash</button>
+          <button class="btn gh" id="btnDemo">Namuna loyiha</button>
+        </div>
+      </div>
+
+      <h3>Oxirgi yuklangan fayllar <span style="color:var(--ink3);text-transform:none;letter-spacing:0">— brauzer xotirasida saqlanadi</span></h3>
+      <div id="recentBox"></div>
+
+      <h3>Buyurtma</h3>
+      <div id="mgrInfo" class="note" style="border-left-color:var(--mark)"></div>
+
+      <h3>Pochka kesimlari <span style="color:var(--ink3);text-transform:none;letter-spacing:0">— buyurtma qaysi oʻq boʻyicha boʻlinsin</span></h3>
+      <div class="fields">
+        <div class="f">
+          <label>Modul kesimi</label>
+          <label class="chk"><input type="checkbox" id="mgrByRoom" checked><span>har modul alohida pochkalansin</span></label>
+          <small>oʻchirilsa — hamma modul detallari aralash teriladi</small>
+        </div>
+        <div class="f">
+          <label>Material kesimi</label>
+          <label class="chk"><input type="checkbox" id="mgrByMat"><span>material boʻyicha ham ajratish</span></label>
+          <small>qalinlik har doim alohida</small>
+        </div>
+      </div>
+
+      <h3>Modullar (<span id="mgrRoomN">0</span> ta) <span style="color:var(--ink3);text-transform:none;letter-spacing:0">— nom bering; belgisi olinganlari pochkalanmaydi</span></h3>
+      <!-- v12: modul belgisi qayerdan olingani — qaror asosi koʻrinib tursin -->
+      <div id="mgrUnitSrc" class="note" style="margin-bottom:10px"></div>
+      <div id="mgrRooms" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px"></div>
+
+      <!-- v12: XONA — nomlangan modul guruhi. «birga» boʻlsa aʼzolari bitta
+           pochkaga tushadi, «alohida» boʻlsa nom faqat belgi boʻlib qoladi -->
+      <div id="mgrModGrpWrap">
+        <h3>Xonalar <span style="color:var(--ink3);text-transform:none;letter-spacing:0">— modullarni xonaga taqsimlash</span></h3>
+        <div class="grpbox">
+          <div id="mgrModPick" class="grppick"></div>
+          <div class="grpact">
+            <input type="text" id="mgrRoomName" class="roomname" placeholder="Xona nomi — masalan «Zal»">
+            <label class="chk" style="margin:0"><input type="checkbox" id="mgrRoomJoin"><span>birga pochkalansin</span></label>
+            <button class="btn" id="btnModGrp">Xona yaratish</button>
+            <span id="mgrModHint" class="grphint"></span>
+          </div>
+          <div id="mgrModGrps" class="grplist"></div>
+        </div>
+      </div>
+
+      <h3>Detal klasslari (<span id="mgrClsN">0</span> ta) <span style="color:var(--ink3);text-transform:none;letter-spacing:0">— belgilangani ALOHIDA pochkalanadi (fasad alohida, bok alohida...)</span></h3>
+      <div id="mgrCls" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px"></div>
+
+      <!-- v11: belgilangan klasslarni bitta toʻplamga qoʻshish (tom + fasad birga) -->
+      <div class="grpbox" style="margin-top:10px">
+        <div class="grpact">
+          <button class="btn" id="btnClsGrp">Belgilanganlarni birga pochkalash</button>
+          <span id="mgrClsHint" class="grphint"></span>
+        </div>
+        <div id="mgrClsGrps" class="grplist"></div>
+      </div>
+
+      <!-- v12: qoʻlda tahrirlash — TZ-v2 §1 boʻyicha FAQAT shu yerda -->
+      <h3>Pochkalarni tuzatish <span style="color:var(--ink3);text-transform:none;letter-spacing:0">— detalni boshqa pochkaga koʻchirish</span></h3>
+      <div id="mgrEdit"></div>
+
+      <div style="margin-top:20px;display:flex;gap:8px">
+        <button class="btn pri" id="mgrApply">Pochkalash →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2.5 DETALLAR jadvali -->
+  <section class="view" id="v-parts">
+    <div class="tbltop">
+      <input id="partQ" type="search" placeholder="Qidirish: kod, nom, mahsulot, material…" autocomplete="off">
+      <span class="cnt" id="partCnt"></span>
+      <div class="grow"></div>
+      <button class="btn gh" id="btnPartCsv" style="padding:5px 11px;font-size:11px">Detallarni CSV</button>
+    </div>
+    <div class="tblwrap"><table class="dt" id="tParts"></table></div>
+  </section>
+
+  <!-- 2.6 MATERIALLAR bazasi -->
+  <section class="view" id="v-mats">
+    <div class="pad">
+      <h3>Yaxlit material bazasi</h3>
+      <div class="note">Bu yerda <b>qayta ishlanmagan yaxlit list</b> maʼlumoti turadi: uch oʻlcham va massa.
+        Tizim kvadrat metrdan kelib chiqib har bir kesilgan detalning ogʻirligini kilogrammda hisoblaydi.
+        Bitta list ogʻirligini kiritsangiz — kg/m² avtomatik chiqadi.</div>
+      <div id="matList"></div>
+      <div style="margin-top:14px"><button class="btn" id="btnAddMat">+ Material qoʻshish</button></div>
+    </div>
+  </section>
+
+  <!-- 2.7 DIAGNOSTIKA — parser ogohlantirishlari, audit, XML tuzilishi -->
+  <section class="view" id="v-diag">
+    <div class="pad" id="diagBox"></div>
+  </section>
+
+  <!-- 2.8 SOZLAMALAR — pochka meʼyorlari -->
+  <section class="view" id="v-conf">
+    <div class="pad">
+      <!-- Kundalik ishda tegiladigan sozlamalar. Qolgani «Nozik sozlash» ichida
+           yopiq turadi: ular bir marta oʻrnatiladi va keyin deyarli tegilmaydi. -->
+      <h3>Asosiy</h3>
+      <div class="fields">
+        <div class="f"><label>Pochka maks. massa, kg</label><input id="cMaxKg" type="number" value="35" step="0.5"><small>abrabotkadan keyingi toza massa</small></div>
+        <div class="f"><label>1 kishi koʻtarish chegarasi, kg</label><input id="cOneMan" type="number" value="25" step="1"><small>oshsa chekda «2 KISHI» chiqadi</small></div>
+        <div class="f"><label>Qadoq materiali (tara), kg</label><input id="cTare" type="number" value="0.6" step="0.1" min="0"><small>qogʻoz + burchak + tasma. Bruttoga qoʻshiladi</small></div>
+        <div class="f">
+          <label>Qalinlik</label>
+          <label class="chk"><input type="checkbox" id="cThick" checked><span>qalinlik boʻyicha ajratish</span></label>
+          <small>16 mm alohida, 3 mm alohida</small>
+        </div>
+        <div class="f">
+          <label>Chiqishga ruxsat</label>
+          <label class="chk"><input type="checkbox" id="cOvhOn" checked><span>oʻrta qavatlar tagdan chiqsin</span></label>
+          <small>har pochkada alohida ham belgilanadi</small>
+        </div>
+      </div>
+
+      <h3>Saralash posti <span style="color:var(--ink3);text-transform:none;letter-spacing:0">— stelyajlar va yacheykalar</span></h3>
+      <div class="fields">
+        <div class="f"><label>Stelyajlar soni</label><input id="cRackN" type="number" value="5" min="1" max="60" step="1"><small>harflar bilan: A, B, C…</small></div>
+        <div class="f"><label>Yacheyka soni (har stelyajda)</label><input id="cCellN" type="number" value="6" min="1" max="40" step="1"><small>yacheyka kodi: A1, A2 … B1</small></div>
+        <div class="f"><label>Jami sigʻim</label><div id="cCellTot" class="note" style="margin:0;padding:8px 11px;font-family:var(--mono);font-size:13px"></div><small>bir vaqtda shuncha pochka saralanadi</small></div>
+      </div>
+
+      <h4 style="margin:16px 0 0;font-size:12px;letter-spacing:.06em;color:var(--ink3)">YACHEYKA OʻLCHAMI (mm)</h4>
+      <div class="fields">
+        <div class="f"><label>Kichik — eni</label><input id="cCellW" type="number" value="250" min="20" max="2000" step="1"><small>detallar tik turadi</small></div>
+        <div class="f"><label>Kichik — chuqurlik</label><input id="cCellD" type="number" value="400" min="50" max="3000" step="1"><small>detal eni shundan katta boʻlsa chiqib turadi</small></div>
+        <div class="f"><label>Chuqur yacheyka soni</label><input id="cBigN" type="number" value="1" min="0" max="20" step="1"><small>har stelyajning oxirgi yacheykalari</small></div>
+        <div class="f"><label>Chuqur — eni</label><input id="cBigW" type="number" value="100" min="20" max="2000" step="1"><small>tor</small></div>
+        <div class="f"><label>Chuqur — chuqurlik</label><input id="cBigD" type="number" value="800" min="50" max="3000" step="1"><small>eni katta detallar uchun</small></div>
+        <div class="f"><label>Yacheyka boʻyi</label><input id="cCellH" type="number" value="1500" min="100" max="5000" step="1"><small>tepasi ochiq — uzun detal chiqib turaveradi</small></div>
+      </div>
+
+      <details class="adv">
+        <summary>Nozik sozlash — terish algoritmi <span>(bir marta oʻrnatiladi)</span></summary>
+        <div class="fields">
+          <div class="f"><label>Chiqish, mm (bir tomon)</label><input id="cOvh" type="number" value="20" step="1"><small>umumiy 2× — jami 40 mm</small></div>
+          <div class="f"><label>Tag detal min. oʻlcham, mm</label><input id="cMinBase" type="number" value="190" step="5"><small>tor detal tag/ust boʻlolmaydi</small></div>
+          <div class="f"><label>Maks. oʻlcham, mm</label><input id="cMaxLen" type="number" value="2100" step="10"><small>kattasi — noodatiy detal</small></div>
+          <div class="f"><label>Tag/ust min. qalinlik, mm</label><input id="cBaseT" type="number" value="0" step="1"><small>0 = cheklovsiz. Yupqa XDF tagga tushmasin desangiz 10 qoʻying</small></div>
+          <div class="f"><label>Qavat toʻldirish, min %</label><input id="cFill" type="number" value="85" step="5"><small>tag detal yuzasining foizi</small></div>
+          <div class="f"><label>Qopqoq toʻldirish, min %</label><input id="cLidFill" type="number" value="80" step="5"><small>eng ust qism</small></div>
+          <div class="f"><label>Qopqoq detallari, maks</label><input id="cLidN" type="number" value="3" step="1" min="1" max="4"><small>2–3 detal birga yopishi mumkin</small></div>
+          <div class="f"><label>Qopqoq kichikligi, maks mm</label><input id="cLidTol" type="number" value="100" step="10"><small>tag gabaritidan shuncha kichik boʻlishi mumkin</small></div>
+          <div class="f"><label>Maks. qavat soni</label><input id="cMaxLay" type="number" value="12" step="1" min="0"><small>tag + oʻrta + qopqoq. 0 = cheklovsiz</small></div>
+          <div class="f"><label>Variatsiya urinishlari</label><input id="cTries" type="number" value="4" step="1"><small>butun buyurtma shuncha marta qayta teriladi</small></div>
+        </div>
+      </details>
+
+      <h3>Material katalogi <span style="color:var(--ink3);text-transform:none;letter-spacing:0">— tur, oʻlcham, kilo. Yangi loyiha yuklanganda nomiga qarab avtomatik qoʻllanadi</span></h3>
+      <div id="catList"></div>
+      <div style="margin:10px 0 4px"><button class="btn" id="btnAddCat">+ Tur qoʻshish</button></div>
+
+      <h3>QR chek va chop etish</h3>
+      <div class="fields">
+        <div class="f"><label>Prefiks</label><input id="cPrefix" type="text" value="SM"><small>tsex/tizim belgisi</small></div>
+        <div class="f">
+          <label>Chek oʻlchami</label>
+          <select id="cLabel" style="width:100%;background:var(--panel);border:1px solid var(--line2);border-radius:var(--r);padding:8px 9px;font-family:var(--mono)">
+            <option value="a4">A4 — 2 ustun (oddiy printer)</option>
+            <option value="100x70">100 × 70 mm — termal printer</option>
+            <option value="58x40">58 × 40 mm — kichik termal</option>
+          </select>
+          <small>termal rejimda har chek alohida varaqda chiqadi</small>
+        </div>
+      </div>
+      <div class="note">QR ichidagi format: <code style="font-family:var(--mono)">PREFIKS.UUID|Pnn|Qn|DETALKOD|LxWxT</code> —
+        skaner tepadagi maydonga yozadi, tizim toʻgʻri detalni tekshiradi.</div>
+
+      <h3>Loyiha</h3>
+      <div class="note" id="saveNote" style="display:none;border-left-color:var(--ok)">Sozlamalar saqlandi — keyingi ochilishda avtomatik qoʻllanadi.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn pri" id="btnSave">Sozlamalarni saqlash</button>
+        <button class="btn" id="btnReset">Standartga qaytarish</button>
+        <button class="btn" id="btnRepack">Qayta pochkalash</button>
+        <button class="btn" id="btnPrintAll">Barcha cheklarni chop etish</button>
+        <button class="btn" id="btnCsv">Pochka roʻyxatini CSV</button>
+        <button class="btn gh" id="btnClearSes">Seansni tozalash</button>
+      </div>
+      <div class="note" style="margin-top:12px">«Seansni tozalash» — yuklangan loyihani va yigʻish progressini brauzer
+        xotirasidan oʻchiradi. Sozlamalar va material katalogi saqlanib qoladi.</div>
+    </div>
+  </section>
+</main>
+
+<!-- 2.9 yuklash modali: yangi buyurtma tasdigʻi
+     v12: «Har modul alohida pochkalansin» va «Modulni detal kodining boshidan
+     aniqlash» katakchalari olib tashlandi — oynada endi faqat FAKT koʻrsatiladi
+     (fayl, modullar, klasslar), tanlov esa P/M menejerida. -->
+<div id="modal" style="display:none;position:fixed;inset:0;background:rgba(10,12,15,.78);z-index:50;align-items:center;justify-content:center">
+  <div style="background:var(--panel);border:1px solid var(--line2);border-radius:6px;padding:22px;width:400px;max-width:92vw">
+    <div style="font-size:15px;font-weight:700;letter-spacing:.04em;margin-bottom:4px">YANGI BUYURTMA</div>
+    <div id="mFile" style="font-family:var(--mono);font-size:11px;color:var(--ink3);margin-bottom:16px"></div>
+    <div class="f" style="margin:10px 0 4px"><label>Modullar (<span id="mRoomN">0</span> ta)</label></div>
+    <div id="mRoomsInfo" style="font-family:var(--mono);font-size:11px;color:var(--ink2);margin:0 0 12px;max-height:110px;overflow:auto;border:1px solid var(--line);border-radius:var(--r);padding:7px 9px;line-height:1.8"></div>
+    <div class="f" style="margin:0 0 4px"><label>Detal klasslari (<span id="mClsN">0</span> ta) — belgilangani ALOHIDA pochkalanadi</label></div>
+    <div id="mCls" style="max-height:150px;overflow:auto;border:1px solid var(--line);border-radius:var(--r);padding:5px 9px;margin-bottom:14px"></div>
+    <div id="mWarn"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn pri" id="mOk" style="flex:1">Pochkalash</button>
+      <button class="btn gh" id="mCancel">Bekor</button>
+    </div>
+  </div>
+</div>
+
+<!-- 2.10 pochkalash jarayoni ko'rsatkichi (interfeys muzlamasligi uchun) -->
+<div id="prog">
+  <div class="progbox">
+    <div class="progttl">Pochkalanmoqda…</div>
+    <div class="progbar"><i id="progFill"></i></div>
+    <div class="progtxt" id="progTxt">tayyorlanmoqda</div>
+    <button class="btn gh" id="progCancel">Bekor qilish</button>
+  </div>
+</div>
+
+<!-- 2.11 chop etish varagʻi -->
+<div id="sheet"></div>
+
+<script src="src/js/01-qr.js"></script>
+<script src="src/data/seed.js"></script>
+<script src="src/js/02-state.js"></script>
+<script src="src/js/03-parser.js"></script>
+<script src="src/js/04-packer.js"></script>
+<script src="src/js/05-audit.js"></script>
+<script src="src/js/06-render3d.js"></script>
+<script src="src/js/07-render2d.js"></script>
+<script src="src/js/08-labels.js"></script>
+<script src="src/js/09-storage.js"></script>
+<script src="src/js/10-ui.js"></script>
+<script src="src/js/11-diag.js"></script>
+<script src="src/js/12-upload.js"></script>
+<script src="src/js/13-app.js"></script>
+<script src="src/js/14-sort.js"></script>
+</body>
+</html>

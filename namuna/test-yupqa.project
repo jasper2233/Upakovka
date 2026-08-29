@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="Yupqa material sinovi" project.uuid="0006cafe-1111-2222-3333">
+  <!-- MATERIALLAR: yaxlit list. t = qalinlik (kasr bo'lishi mumkin) -->
+  <good id="X1" typeId="sheet" name="XDF 0.6 mm orqa devor" l="2800" w="2070" t="0.6" count="6"/>
+  <good id="X2" typeId="sheet" name="HDF 3.2 mm tortma tagi" l="2800" w="2070" t="3.2" count="4"/>
+  <good id="X3" typeId="sheet" name="LDSP 16 mm oq" l="2750" w="1830" t="16" count="12"/>
+  <!-- MAHSULOTLAR: har <good typeId="product"> ichida o'z detallari -->
+  <good id="G1" typeId="product" name="Sinov shkafi" code="990001">
+    <part id="y01" code="99_001" name="BOK CHAP" l="1800" w="450" count="2" elt="1" elb="1" eltMat="ABS 2mm oq"/>
+    <part id="y02" code="99_002" name="BOK O'NG" l="1800" w="450" count="2" elt="1" elb="1" eltMat="ABS 2mm oq"/>
+    <part id="y03" code="99_003" name="POLKA" l="864" w="430" count="5" elt="1" eltMat="ABS 0.8mm oq"/>
+    <part id="y04" code="99_004" name="DNO" l="864" w="450" count="1" elt="1" eltMat="ABS 0.8mm oq"/>
+    <part id="y05" code="99_005" name="TOM" l="864" w="450" count="1" elt="1" eltMat="ABS 0.8mm oq"/>
+    <part id="y06" code="99_006" name="FASAD" l="1770" w="430" count="2" elt="1" elb="1" ell="1" elr="1" eltMat="ABS 2mm oq"/>
+    <part id="y07" code="99_101" name="ORQA DEVOR" l="1790" w="890" count="1"/>
+    <part id="y08" code="99_102" name="ORQA DEVOR 2" l="1200" w="890" count="2"/>
+    <part id="y09" code="99_103" name="ORQA DEVOR 3" l="890" w="600" count="4"/>
+    <part id="y10" code="99_201" name="TORTMA TAGI" l="820" w="400" count="4"/>
+    <part id="y11" code="99_202" name="TORTMA TAGI 2" l="600" w="400" count="2"/>
+  </good>
+  <!-- RASKROY (CS): detal qaysi materialdan kesilishi. Parser materialni SHU YERDAN oladi -->
+  <operation typeId="CS">
+    <material id="X3"/>
+    <part id="y01"/>
+    <part id="y02"/>
+    <part id="y03"/>
+    <part id="y04"/>
+    <part id="y05"/>
+    <part id="y06"/>
+  </operation>
+  <operation typeId="CS">
+    <material id="X1"/>
+    <part id="y07"/>
+    <part id="y08"/>
+    <part id="y09"/>
+  </operation>
+  <operation typeId="CS">
+    <material id="X2"/>
+    <part id="y10"/>
+    <part id="y11"/>
+  </operation>
+</project>

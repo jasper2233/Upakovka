@@ -1,0 +1,20 @@
+# Qator oxirlari QOTIRILGAN.
+# Sabab: git standart holatda Windows'da LF -> CRLF qiladi. Bu ikki joyda ogʻriydi:
+#   1. dist\upakofka-tizimi.html — build.ps1 uning HAJMINI tekshiradi; CRLF
+#      har qatorga bir bayt qoʻshib, hisobni va checksum'ni surib yuboradi.
+#   2. namuna\*.project — testlar bu fayllarni bayt-ma-bayt qayta oʻqiydi.
+# Shuning uchun matn fayllar repoda ham, ish nusxasida ham LF boʻlib qoladi.
+* text=auto eol=lf
+
+# PowerShell skriptlari Windows'da yuriladi — ular CRLF boʻlgani xavfsizroq
+*.ps1 text eol=crlf
+
+# Ikkilik: git tegmasin
+*.png binary
+*.jpg binary
+*.pdf binary
+
+# GitHub'ning til statistikasi: bu JS loyihasi, PowerShell skriptlari yordamchi
+*.ps1 linguist-language=PowerShell
+docs/** linguist-documentation
+namuna/** linguist-vendored

@@ -1,0 +1,24 @@
+# --- MAXFIY: repoga hech qachon tushmasin ---
+# Haqiqiy mijoz buyurtmalari, sex fotolari va eski v9 arxivi shu yerda turadi.
+# Repo OCHIQ, shuning uchun bu papka git uchun umuman mavjud emas.
+# Ichidagilar mahalliy ish uchun kerak, repoda esa ularning sun'iy nusxasi bor.
+_maxfiy/
+
+# --- test qoldiqlari ---
+# smoke.ps1 sahifani nishon yoniga vaqtincha yozadi (-Keep bilan qoladi)
+_smoke-run.html
+# shot.ps1 chiqargan skrinshotlar — kerak bo'lsa qayta yasaladi (.\tests\shot.ps1)
+tests/shot-*.png
+
+# --- OS va muharrir ---
+Thumbs.db
+desktop.ini
+.DS_Store
+*.swp
+*~
+.vscode/
+.idea/
+
+# --- vaqtinchalik ---
+*.tmp
+*.log

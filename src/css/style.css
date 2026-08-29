@@ -1,0 +1,687 @@
+/* ================================================================
+   1-QISM. DIZAYN (CSS) — sahifaning butun koʻrinishi
+   ================================================================ */
+:root{
+  --void:#16181c; --panel:#1e2127; --panel2:#262a31; --panel3:#2f343d;
+  --line:#343943; --line2:#454b57;
+  --board:#c9a46c; --board-lo:#8d6c3d; --board-hi:#e2c48f;
+  --mark:#ffc629; --ok:#4ecb8e; --alert:#ff6b43; --info:#6fb5e8;
+  /* v10c — KONTRAST. Eski qiymatlar: ink2 #98a0ad, ink3 #666e7c.
+     ink3 sexdagi eng koʻp oʻqiladigan matnda (pochka roʻyxatining tagsatrlari,
+     hamma «OʻLCHAM/MASSA» yorliqlari, izohlar) 10 px oʻlchamda ishlatiladi va
+     panel foniga nisbatan atigi 2.8:1 berardi — WCAG AA 4.5:1 talab qiladi.
+     Yangi qiymatlar: ink3 4.6:1 (panel2) / 5.1:1 (panel), ink2 6.7:1. */
+  --ink:#e9e7e2; --ink2:#a9b1be; --ink3:#8a92a0;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --sans:"Space Grotesk",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:3px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:var(--void);color:var(--ink);
+  font-family:var(--sans);font-size:14px;line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:9px}
+::-webkit-scrollbar-track{background:transparent}
+
+/* --- 1.1 shapka: loyiha nomi, hisoblagichlar, rejim, yuklash --- */
+.top{
+  display:flex;align-items:stretch;gap:0;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,#22262d,#1a1d22);flex:0 0 auto;overflow-x:auto;
+}
+.brand{padding:10px 18px;border-right:1px solid var(--line);min-width:220px}
+.brand b{display:block;font-size:15px;letter-spacing:.06em;text-transform:uppercase}
+/* v10c: 36 belgili UUID tor ekranda 4 qatorga boʻlinib, shapkani 90 px ga
+   choʻzardi va tugmalarni pastga surardi. Endi kesiladi. */
+.brand small{display:block;color:var(--ink3);font-family:var(--mono);font-size:10.5px;letter-spacing:.09em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:min(46vw,520px)}
+.stat{padding:10px 16px;border-right:1px solid var(--line);min-width:96px}
+.stat u{display:block;text-decoration:none;color:var(--ink3);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase}
+.stat b{font-family:var(--mono);font-size:19px;font-weight:500;letter-spacing:-.02em}
+.stat b i{font-style:normal;font-size:11px;color:var(--ink3);margin-left:2px}
+.top .grow{flex:1}
+.topact{display:flex;align-items:center;gap:8px;padding:0 14px}
+
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--line);background:var(--void);flex:0 0 auto}
+.tabs button{
+  background:none;border:0;border-bottom:2px solid transparent;padding:9px 18px;
+  color:var(--ink3);letter-spacing:.05em;font-size:12.5px;text-transform:uppercase;
+}
+.tabs button:hover{color:var(--ink2)}
+.tabs button.on{color:var(--mark);border-bottom-color:var(--mark)}
+
+main{flex:1;min-height:0;overflow:hidden}
+.view{display:none;height:100%}
+.view.on{display:block}
+
+/* --- 1.2 pochkalash ekrani: 3 ustunli maket, pochkalar roʻyxati --- */
+.work{display:grid;grid-template-columns:288px minmax(0,1fr) 340px;height:100%}
+.col{min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.col+.col{border-left:1px solid var(--line)}
+.colhead{
+  padding:8px 12px;border-bottom:1px solid var(--line);background:var(--panel);
+  font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink3);
+  display:flex;justify-content:space-between;align-items:center;flex:0 0 auto;
+}
+/* v10c: ustun sarlavhasidagi pochka raqami (P01) — xato xabarlari aynan shu
+   raqamni aytadi, shuning uchun u kulrang fonda yoʻqolib ketmasligi kerak */
+.colhead b{color:var(--ink);font-weight:600}
+.scroll{overflow:auto;flex:1;min-height:0}
+
+.pk{
+  display:grid;grid-template-columns:34px 1fr auto;gap:9px;align-items:center;
+  padding:9px 12px;border-bottom:1px solid var(--line);cursor:pointer;
+}
+.pk:hover{background:var(--panel)}
+.pk.on{background:var(--panel2);box-shadow:inset 3px 0 0 var(--mark)}
+/* v10c: grid elementi standart holatda oʻz min-content enidan kichraymaydi —
+   shu sabab tor ekranda (230 px ustun) matn kesilish oʻrniga kg ustunini
+   oʻngga surib yuborardi va «35.3 / 2 KISHI» ekrandan chiqib ketardi. */
+.pk>div{min-width:0}
+.pk .no{font-family:var(--mono);font-size:16px;color:var(--ink3);text-align:center;line-height:1.1}
+.pk.on .no{color:var(--mark)}
+/* raqam ostidagi progress: 3/14 yoki ✓ */
+.pk .no em{display:block;font-style:normal;font-size:9.5px;color:var(--mark);margin-top:1px}
+.pk .no em.ok{color:var(--ok);font-size:13px}
+/* v10c: sarlavha endi GABARIT — 55 pochkadan 51 tasi shu bilan farq qiladi.
+   Ilgari bu yerda mahsulot nomi turardi va roʻyxatda «01 shkaf · 16 mm» 18 marta
+   ketma-ket takrorlanib, ishchi qatorlarni bir-biridan ajrata olmasdi. */
+.pk .ttl{font-family:var(--mono);font-size:12.5px;letter-spacing:.02em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* v10: har qator ALOHIDA satr va kesiladi — ilgari "6 detal · 3 qavat ·" dan keyin
+   "98%" pastki qatorga tushib, roʻyxat tarqoq koʻrinardi */
+.pk .sub{font-family:var(--mono);font-size:11px;color:var(--ink3);letter-spacing:.04em;margin-top:1px}
+.pk .sub s{display:block;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pk .kg{font-family:var(--mono);font-size:13px;text-align:right;white-space:nowrap;line-height:1.25}
+/* «2 KISHI» — ko'tarish xavfsizligi haqidagi yozuv 9px bo'lishi mumkin emas */
+.pk .kg em{display:block;font-style:normal;font-size:11px;font-weight:700;color:var(--mark);letter-spacing:.02em}
+.pk.odd .no,.pk.odd .kg{color:var(--alert)}
+.bar{height:3px;background:var(--line);margin-top:4px;border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok)}
+.bar i.hot{background:var(--mark)}
+
+/* v10c: MAHSULOT GURUHI sarlavhasi. Pochkalar mahsulot boʻyicha ketma-ket
+   joylashadi (18/12/13/10/2), shuning uchun nomni har qatorda takrorlash oʻrniga
+   yopishib turadigan bitta sarlavha yetarli — u scroll paytida ham koʻrinib turadi. */
+.pkgrp{
+  position:sticky;top:0;z-index:2;background:var(--panel2);
+  border-top:1px solid var(--line2);border-bottom:1px solid var(--line2);
+  padding:6px 12px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+  font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink2);
+}
+.pkgrp:first-child{border-top:0}
+.pkgrp em{font-style:normal;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:.04em;text-transform:none;color:var(--ink3);white-space:nowrap}
+.pkgrp.odd{color:var(--alert)}
+
+/* v12: XONA sarlavhasi — modul sarlavhasidan bir pogʻona yuqori.
+   Farq koʻzga tashlanishi shart: ishchi «qaysi xona» va «qaysi modul» ni
+   bir qarashda ajratishi kerak, shuning uchun rang va chiziq kuchliroq. */
+.pkroom{
+  position:sticky;top:0;z-index:3;background:var(--void);
+  border-top:2px solid var(--mark);border-bottom:1px solid var(--line2);
+  padding:8px 12px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+  font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--mark);
+}
+.pkroom:first-child{border-top:0}
+.pkroom em{font-style:normal;font-family:var(--mono);font-size:10.5px;font-weight:400;
+  letter-spacing:.04em;text-transform:none;color:var(--ink3);white-space:nowrap}
+/* xona sarlavhasi bor boʻlsa modul sarlavhasi undan pastroqqa yopishadi */
+.pkroom + .pkgrp{top:31px}
+
+/* --- 1.3 3D sahna va qavat rejasi --- */
+.stage{flex:1;position:relative;min-height:200px;background:
+  radial-gradient(120% 90% at 50% 0%,#22262e 0%,#16181c 70%)}
+#c3d{width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+#c3d:active{cursor:grabbing}
+.hud{position:absolute;left:12px;top:12px;font-family:var(--mono);font-size:10.5px;
+  color:var(--ink3);letter-spacing:.05em;pointer-events:none;line-height:1.7}
+.hud b{color:var(--ink2);font-weight:500}
+.stagetools{position:absolute;right:12px;top:12px;display:flex;gap:6px;align-items:center;
+  background:rgba(22,24,28,.82);border:1px solid var(--line);border-radius:var(--r);padding:5px 8px}
+.stagetools label{font-size:10px;color:var(--ink3);letter-spacing:.1em;text-transform:uppercase}
+.stagetools input[type=range]{width:88px;accent-color:var(--mark)}
+
+.plan{flex:0 0 auto;border-top:1px solid var(--line);background:var(--panel);padding:10px 12px}
+.planrow{display:flex;gap:12px;align-items:stretch}
+/* v10c: qavat rejasi — ishchiga «detalni QAYERGA qoʻyish» ni koʻrsatadigan yagona
+   chizma. Ilgari u 330×180 px da qotib turardi (3D sahna 1291×549 — 12 barobar
+   kattaroq), detal kodlari esa 9 px edi va 60–80 sm masofadan oʻqilmasdi.
+   Endi ustunning butun eni boʻyicha choʻziladi, balandligi ekranga moslashadi. */
+#c2d{background:var(--void);border:1px solid var(--line);border-radius:var(--r);
+  flex:1 1 auto;width:auto;min-width:0;height:clamp(190px,34vh,340px)}
+.legend{font-family:var(--mono);font-size:10.5px;color:var(--ink3);line-height:1.9;flex:0 0 auto}
+.legend s{display:inline-block;width:9px;height:9px;margin-right:6px;text-decoration:none;vertical-align:-1px}
+
+/* --- 1.4 keyingi detal paneli, QR chek, tugmalar --- */
+.next{padding:14px;border-bottom:1px solid var(--line)}
+.step{font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--ink3);text-transform:uppercase}
+.code{font-family:var(--mono);font-size:27px;font-weight:600;letter-spacing:-.02em;color:var(--mark);line-height:1.1;margin:2px 0 1px}
+.nm{font-size:12.5px;color:var(--ink2);min-height:18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);margin:12px 0;border-radius:var(--r);overflow:hidden}
+.cell{background:var(--panel);padding:7px 9px}
+.cell u{display:block;text-decoration:none;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+.cell b{font-family:var(--mono);font-size:14px;font-weight:500}
+.where{background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--mark);
+  padding:9px 11px;border-radius:var(--r);margin-bottom:12px}
+.where u{display:block;text-decoration:none;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+.where b{font-family:var(--mono);font-size:13.5px}
+
+.scan{display:flex;gap:7px;margin-bottom:9px}
+.scan input{flex:1;background:var(--void);border:1px solid var(--line2);border-radius:var(--r);
+  padding:9px 11px;font-family:var(--mono);font-size:13px;letter-spacing:.04em}
+.scan input:focus{outline:none;border-color:var(--mark)}
+.msg{font-family:var(--mono);font-size:11px;padding:6px 0;min-height:24px}
+.msg.ok{color:var(--ok)} .msg.err{color:var(--alert)}
+
+.btn{background:var(--panel2);border:1px solid var(--line2);border-radius:var(--r);
+  padding:8px 13px;font-size:12.5px;letter-spacing:.03em;transition:.12s}
+.btn:hover{background:var(--panel3);border-color:var(--ink3)}
+.btn.pri{background:var(--mark);border-color:var(--mark);color:#1a1408;font-weight:700}
+.btn.pri:hover{background:#ffd457}
+.btn.gh{background:none}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btnrow{display:flex;gap:7px}
+.btnrow .btn{flex:1}
+
+.qrbox{padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.label{background:#fff;color:#000;width:100%;max-width:300px;border-radius:2px;padding:10px 11px;
+  display:grid;grid-template-columns:1fr 94px;gap:10px;font-family:var(--mono)}
+.label .lc{font-size:20px;font-weight:600;letter-spacing:-.02em;line-height:1.05}
+.label .ln{font-size:8.5px;line-height:1.3;height:22px;overflow:hidden;font-family:var(--sans);color:#444;margin-top:1px}
+.label table{width:100%;border-collapse:collapse;font-size:9px;margin-top:5px;table-layout:fixed}
+.label td{padding:1.5px 0;vertical-align:top;word-break:break-word}
+/* v10c: #7a7a7a oq qogʻozda 4.29:1 berardi (9 px matn uchun 4.5 kerak), termal
+   printer esa kulrangni yanada oqartiradi. #5f5f5f — 6.5:1. */
+.label td:first-child{color:#5f5f5f;width:52px;padding-right:7px;white-space:nowrap;letter-spacing:.02em}
+.label .big{font-size:12px;font-weight:600}
+.label canvas{width:94px;height:94px;image-rendering:pixelated;display:block}
+.plabel{display:block!important;width:330px}
+.plabel .ph{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:6px}
+.plabel .ph b{font-size:19px;letter-spacing:-.01em}
+.plabel .ph span{font-size:8.5px;color:#666;font-family:var(--sans)}
+.plabel .pb{display:grid;grid-template-columns:1fr 100px;gap:10px}
+.plabel .pb canvas{width:100px;height:100px}
+.plabel .pf{margin-top:6px;padding-top:4px;border-top:1px dashed #bbb;font-size:7.5px;color:#555;line-height:1.35;word-break:break-word}
+.plabel .warn{margin-top:5px;background:#000;color:#fff;font-size:9.5px;letter-spacing:.06em;padding:3px 6px;text-align:center}
+.label .pill{display:inline-block;background:#000;color:#fff;font-size:9px;padding:1px 5px;border-radius:2px;letter-spacing:.06em}
+
+/* --- 1.5 detallar jadvali --- */
+.tblwrap{height:100%;overflow:auto}
+table.dt{width:100%;border-collapse:collapse;font-size:12px}
+table.dt th{
+  position:sticky;top:0;background:var(--panel2);text-align:left;padding:7px 10px;
+  font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink3);
+  border-bottom:1px solid var(--line);white-space:nowrap;z-index:2;
+}
+table.dt td{padding:6px 10px;border-bottom:1px solid #23262c;white-space:nowrap}
+table.dt td.m{font-family:var(--mono);font-size:11.5px}
+table.dt tr:hover td{background:var(--panel)}
+.tag{font-family:var(--mono);font-size:9.5px;padding:1px 6px;border-radius:2px;letter-spacing:.06em}
+.tag.a{background:rgba(255,107,67,.16);color:var(--alert)}
+.tag.b{background:rgba(78,203,142,.14);color:var(--ok)}
+.tag.c{background:rgba(255,198,41,.14);color:var(--mark)}
+
+/* --- 1.6 sozlamalar va menejer formalari --- */
+/* v10: ilgari 1000px edi — 1920px monitorda ekranning yarmi boʻsh qolardi */
+.pad{padding:20px 24px;max-width:1500px;overflow:auto;height:100%}
+h3{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink3);
+   margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+h3:first-child{margin-top:0}
+.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+/* uzun qiymatli maydon (material nomi) ikki ustunni egallaydi */
+.f.wide{grid-column:span 2}
+.f label{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:4px}
+.f input,.f select{width:100%;background:var(--panel);border:1px solid var(--line2);
+  border-radius:var(--r);padding:7px 9px;font-family:var(--mono);font-size:13px}
+.f input:focus,.f select:focus{outline:none;border-color:var(--mark)}
+.f small{display:block;color:var(--ink3);font-size:10.5px;margin-top:3px}
+.note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--info);
+  padding:10px 13px;border-radius:var(--r);font-size:12.5px;color:var(--ink2);margin:12px 0}
+/* v10c: bu bloklar <div> edi — faqat 14–16 px katak bosilardi, yonidagi matn esa
+   bosilmasdi. Qoʻlqopli barmoq bilan 16 px kvadratga tegish qiyin (WCAG 2.5.8
+   eng kami 24×24 px). Endi <label> — butun qator bosiladi. */
+.chk{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:13px;cursor:pointer}
+.chk input{accent-color:var(--mark);width:18px;height:18px;flex:0 0 auto}
+.chk:hover{color:var(--ink)}
+/* <div> dan <label> ga oʻtgach bu bloklar «.f label» qoidasiga tushib qoldi va
+   matn 10 px KATTA HARFga aylanib, ikki qatorga boʻlinib ketdi. Selektor aniqroq. */
+.f label.chk{display:flex;font-size:13px;letter-spacing:0;text-transform:none;
+  color:var(--ink);margin-bottom:0}
+
+/* --- 1.7 chop etish (print) qoidalari --- */
+#sheet{display:none}
+@media print{
+  body>*{display:none!important}
+  #sheet{display:block!important;background:#fff}
+  @page{size:A4;margin:8mm}
+  .lbls{display:grid;grid-template-columns:repeat(2,1fr);gap:4mm}
+  .label{width:auto;border:1px dashed #bbb;break-inside:avoid}
+
+  /* MUHIM: brauzer standart holatda fon ranglarini CHOP ETMAYDI. Qora fonli
+     elementlarda (pill, «2 KISHI» ogohlantirishi, chek sarlavhasi) fon yoʻqoladi
+     va OQ MATN OQ QOGʻOZDA koʻrinmay qoladi — ya'ni eng muhim ogohlantirish
+     bosma chekda umuman boʻlmaydi. Ikki tomonlama himoya:
+       1) fon chop etilishini majburlaymiz,
+       2) baribir chiqmasa deb, matnni qora + ramkali qilamiz. */
+  .label .pill,.plabel .warn{
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;
+  }
+  @supports not (print-color-adjust: exact){
+    .label .pill{background:transparent!important;color:#000!important;border:1px solid #000}
+    .plabel .warn{background:transparent!important;color:#000!important;border:2px solid #000}
+  }
+}
+@media(max-width:1180px){
+  /* v10: ilgari 300px edi, lekin .label ning oʻzi 300px + .qrbox padding 28px —
+     chek va uchinchi tugma oʻng chetdan kesilardi. Aynan sex planshetining oʻlchami. */
+  .work{grid-template-columns:230px minmax(0,1fr) 330px}
+  /* v10c: tor ekranda izohlar ustuni rejaning enini yeb qoʻyardi (1000 px da
+     kanvasga atigi ~200 px qolardi). Endi izohlar reja OSTIGA, bitta qatorga. */
+  .planrow{flex-direction:column}
+  #c2d{width:100%;height:clamp(180px,26vh,260px)}
+  .legend{display:flex;flex-wrap:wrap;gap:1px 14px;line-height:1.6}
+  /* v10c: sahna sarlavhasidagi ikki yozuv yonma-yon turib har biri ichidan
+     boʻlinardi va «CHIQISHGA … RUXSAT» soʻzlari orasiga gabarit matni kirib
+     ketardi. Endi ular ustma-ust, har biri butun qatorni egallaydi. */
+  .colhead.ch2{flex-direction:column;align-items:flex-start;row-gap:2px;line-height:1.5}
+  /* HUD «Tahrirlash / Qogʻozga oʻrash» tugmalari ostida qolardi */
+  .hud{top:auto;bottom:12px}
+  /* v10c: shapka gorizontal aylanardi va «Loyiha yuklash» — sahifadagi asosiy
+     tugma — 1000 px da ekrandan tashqarida qolardi. flex-wrap faqat haqiqatan
+     sigʻmaganda ishlaydi, shuning uchun 1180 px da hech nima oʻzgarmaydi. */
+  .top{flex-wrap:wrap;overflow-x:visible}
+  .top .grow{display:none}
+  .topact{margin-left:auto}
+}
+@media(max-width:900px){
+  /* .work{height:100%} uch «auto» qatorni ekran boʻyiga siqib qoʻyardi va ustunlar
+     bir-birining ustiga chiqib ketardi (qavat rejasi oʻng ustun matni ustiga chizilardi) */
+  .work{grid-template-columns:1fr;grid-template-rows:auto auto auto;height:auto;min-height:100%;overflow:visible}
+  .col+.col{border-left:0;border-top:1px solid var(--line)}
+  body{overflow:auto}
+  /* v10c: bir ustunli maketda .col{overflow:hidden} + .scroll{flex:1} juftligi
+     ustunlarga balandlik bermasdi: qavat rejasi qirqilib, oʻng ustunning butun
+     ichki qismi (detal maʼlumotlari) umuman koʻrinmasdi — faqat tugmalar qolardi.
+     Endi ustunlar tabiiy balandlikda, sahifaning oʻzi aylanadi. */
+  .col{display:block;overflow:visible}
+  .scroll{overflow:visible;flex:none}
+  /* 55 pochkali roʻyxat butun ekran boʻyi choʻzilib, ish paneli ekrandan pastga
+     tushib ketardi — planshet portret holatda ushlanganda ishchi 3D sahnani ham,
+     «keyingi detal» kartasini ham koʻrmasdi. Faqat shu roʻyxat oʻzida aylanadi. */
+  #packList{overflow:auto;max-height:30vh}
+  /* v10c: TARTIB. Portret planshetda ishchining tsikli «keyingi detalni oʻqi →
+     qoʻy → Qoʻyildi» — yaʼni oʻng ustun asosiy ish yuzasi. Ilgari u sahifaning
+     eng pastida, ikki ekran narida turardi. Endi u birinchi, pochkalar roʻyxati
+     (kamdan-kam kerak boʻladi) — eng pastda. */
+  .work>.col:nth-child(1){order:3}
+  .work>.col:nth-child(2){order:2}
+  .work>.col:nth-child(3){order:1}
+  .col+.col{border-top:0}
+  .col{border-top:1px solid var(--line)}
+  .stage{height:min(46vw,400px)}
+  #c2d{height:min(54vw,320px)}
+  /* eng tor holatda tugmalar qatori butun enni egallaydi */
+  .topact{width:100%;margin-left:0;padding:8px 14px;border-top:1px solid var(--line)}
+  .topact select{flex:1;min-width:0}
+}
+
+/* ================================================================
+   1.8 v10 QOʻSHIMCHALARI — yuklash, jarayon, diagnostika, chek oʻlchami
+   ================================================================ */
+
+/* --- fayl sudrab tashlash: butun oyna ustidagi qatlam --- */
+#dropzone{
+  position:fixed;inset:0;z-index:80;display:none;
+  align-items:center;justify-content:center;
+  background:rgba(10,12,15,.86);backdrop-filter:blur(2px);
+}
+/* v12: bu yerda #dropzone .dzin / b / small qoidalari turardi. upDropzone()
+   (12-upload.js) sudrab tashlash oynasini butunlay inline style bilan yasaydi —
+   .dzin ham, <b>/<small> ham chizilmaydi, yaʼni qoidalar hech qachon qoʻllanmasdi. */
+
+/* --- menejerdagi yuklash maydoni --- */
+.drophint{
+  display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
+  border:1px dashed var(--line2);border-radius:6px;padding:18px 20px;background:var(--panel);
+}
+.drophint.hot{border-color:var(--mark);background:var(--panel2)}
+.drophint b{font-size:14px}
+.drophint small{display:block;color:var(--ink3);font-family:var(--mono);font-size:11px;margin-top:4px}
+.drophint kbd{
+  /* v10c: ink3 aynan panel3 fonida 3.99:1 ga tushib qolardi (boshqa joyda 5+) */
+  font-family:var(--mono);font-size:10px;color:var(--ink);background:var(--panel3);
+  border:1px solid var(--line2);border-radius:3px;padding:1px 4px;
+}
+
+/* v12: «oxirgi fayllar» uchun .recent/.rr/.rn/.rm qoidalari shu yerda turardi.
+   upRecRow() (12-upload.js) satrni butunlay inline style bilan chizadi —
+   bu klasslar HTML ga hech qachon chiqmaydi. */
+
+/* --- pochkalash jarayoni (interfeys muzlamasligi uchun) --- */
+#prog{
+  position:fixed;inset:0;z-index:70;display:none;
+  align-items:center;justify-content:center;background:rgba(10,12,15,.72);
+}
+#prog.on{display:flex}
+.progbox{
+  background:var(--panel);border:1px solid var(--line2);border-radius:6px;
+  padding:22px 26px;width:340px;text-align:center;
+}
+.progttl{font-size:14px;font-weight:700;letter-spacing:.04em;margin-bottom:12px}
+.progbar{height:6px;background:var(--void);border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.progbar i{display:block;height:100%;background:var(--mark);width:0;transition:width .12s linear}
+.progtxt{font-family:var(--mono);font-size:11px;color:var(--ink3);margin:9px 0 14px;min-height:15px}
+
+/* --- avtomatik saqlash nuqtasi --- */
+.savedot{
+  width:8px;height:8px;border-radius:50%;background:var(--line2);align-self:center;
+  margin-right:4px;transition:background .2s;
+}
+.savedot.busy{background:var(--mark)}
+.savedot.ok{background:var(--ok)}
+.savedot.err{background:var(--alert)}
+
+/* v12: diagnostika uchun .diagsec/.diaggrid/.diagcell/.diagpre qoidalari shu yerda
+   turardi. 11-diag.js hisobotni butunlay inline style bilan chizadi (diagPre()
+   .diagpre bilan deyarli aynan bir xil stilni qoʻlda yozadi) — klasslar HTML ga
+   hech qachon chiqmaydi. */
+
+/* --- detallar jadvali: ustidagi qidiruv paneli (215 qator uchun shart) --- */
+#v-parts.on{display:flex;flex-direction:column}
+.tbltop{
+  display:flex;gap:10px;align-items:center;flex:0 0 auto;
+  padding:8px 12px;border-bottom:1px solid var(--line);background:var(--panel);
+}
+.tbltop input{
+  flex:1;max-width:360px;background:var(--void);border:1px solid var(--line2);
+  border-radius:var(--r);padding:6px 10px;font-family:var(--mono);font-size:12px;
+}
+.tbltop input:focus{outline:none;border-color:var(--mark)}
+.tbltop .cnt{font-family:var(--mono);font-size:11px;color:var(--ink3);white-space:nowrap}
+.tbltop .grow{flex:1}   /* .grow ilgari faqat .top ichida ishlardi */
+
+/* ================================================================
+   1.9 v11 SARALASH POSTI — stelyaj yacheykalari
+   Ishchi 60–80 sm masofadan yacheyka kodini oʻqiydi, shuning uchun
+   natija 64 px da chiqadi — ekrandagi eng katta yozuv.
+   ================================================================ */
+.sortpad{
+  height:100%;overflow:auto;padding:22px 26px 40px;
+  max-width:900px;margin:0 auto;display:flex;flex-direction:column;
+}
+/* Skaner maydoni — ekrandagi yagona kirish nuqtasi */
+.sortinput{
+  width:100%;background:var(--void);border:2px solid var(--line2);border-radius:5px;
+  padding:16px 18px;font-family:var(--mono);font-size:19px;color:var(--ink);
+  flex:0 0 auto;
+}
+.sortinput:focus{outline:none;border-color:var(--mark)}
+.sortinput::placeholder{color:var(--ink3)}
+#sortMsg:empty{display:none}
+#sortMsg{margin-top:10px}
+
+/* NATIJA — ekrandagi eng katta narsa. Ishchi 60–80 sm dan oʻqiydi va
+   detalni koʻtarib stelyajgacha borguncha qayta qaray oladi. */
+.bigcell{
+  font-family:var(--mono);font-weight:600;letter-spacing:-.03em;line-height:.92;
+  font-size:clamp(120px,21vw,260px);color:var(--mark);text-align:center;
+  margin:18px 0 6px;
+}
+.bigcell.full{color:var(--ok)}
+.bigpack{font-family:var(--mono);font-size:20px;color:var(--ink2);text-align:center}
+.bigpack b{color:var(--ink)}
+.okword{color:var(--ok);font-weight:600;letter-spacing:.06em}
+.bigcode{
+  font-family:var(--mono);font-size:34px;font-weight:600;color:var(--ink);
+  text-align:center;margin-top:22px;letter-spacing:-.01em;
+}
+.bigdim{font-family:var(--mono);font-size:19px;color:var(--ink2);text-align:center;margin-top:4px}
+.bigname{font-size:15px;color:var(--ink3);text-align:center;margin-top:6px}
+.sortidle{
+  border:1px dashed var(--line2);border-radius:var(--r);margin-top:20px;
+  padding:64px 16px;text-align:center;color:var(--ink3);font-size:16px;
+}
+
+.sortfoot{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:26px;
+  padding-top:14px;border-top:1px solid var(--line);
+  font-family:var(--mono);font-size:12px;color:var(--ink3);
+}
+.sortfoot .grow{flex:1}
+.sortfoot .saved{display:none;color:var(--ok)}
+.sortfoot .btn{padding:6px 13px;font-size:12px}
+.sortfoot .btn.on{border-color:var(--mark);color:var(--mark)}
+
+/* Stelyajlar — ishchi qaysi yacheyka boʻshligini kiritadi */
+#sortRackBox{display:none;margin-top:14px}
+/* Yuqoridagi qator: koʻrish rejimida hisob + «Tahrirlash»,
+   tahrirlash rejimida «Saqlash / Bekor» */
+.rackbar{
+  display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:10px;
+  border-bottom:1px solid var(--line);
+  font-family:var(--mono);font-size:12px;color:var(--ink3);
+}
+.rackbar .grow{flex:1}
+.rackbar b{color:var(--ink2)}
+.rackbar b.m{color:var(--mark)}
+.rackbar b.o{color:var(--ink3)}
+.rackbar .btn{padding:6px 14px;font-size:12px}
+.rackbar.edit{border-bottom-color:var(--mark)}
+.rackbar.edit b{color:var(--mark);letter-spacing:.1em;text-transform:uppercase;font-size:11px}
+/* koʻrish rejimida kataklar bosilmaydi — bu holat koʻzga tashlanishi kerak */
+.cbox[disabled],.rackbtn[disabled]{cursor:default;opacity:.72}
+.cbox[disabled]:hover{border-color:var(--line)}
+.rackbtn[disabled]:hover{border-color:var(--line2);color:var(--ink)}
+.rackrow{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px}
+.rackbtn{
+  flex:0 0 auto;width:36px;height:36px;background:var(--panel2);
+  border:1px solid var(--line2);border-radius:var(--r);
+  font-family:var(--mono);font-size:15px;font-weight:600;color:var(--ink);
+}
+.rackbtn:hover{border-color:var(--mark);color:var(--mark)}
+.rackbtn.off{color:var(--ink3);background:transparent;border-style:dashed}
+.rackcells{display:flex;flex-wrap:wrap;gap:5px;min-width:0}
+.cbox{
+  width:66px;padding:4px 5px;text-align:left;background:var(--panel);
+  border:1px solid var(--line);border-radius:var(--r);font-family:var(--mono);line-height:1.3;
+}
+.cbox b{display:block;font-size:12px;font-weight:600;color:var(--ink2)}
+.cbox s{display:block;text-decoration:none;font-size:9.5px;color:var(--ink3)}
+.cbox:hover{border-color:var(--mark)}
+.cbox.busy{border-color:var(--mark);background:var(--panel2);cursor:not-allowed}
+.cbox.busy b{color:var(--ink)}
+.cbox.busy s{color:var(--mark)}
+/* yopiq yacheyka — chiziqli fon, «bu yerga qoʻymaymiz» degani darhol koʻrinsin */
+.cbox.off{
+  border-style:dashed;border-color:var(--line);
+  background:repeating-linear-gradient(135deg,transparent 0 5px,rgba(138,146,160,.10) 5px 10px);
+}
+.cbox.off b,.cbox.off s{color:var(--ink3)}
+/* v12: KATTA (chuqur) yacheyka — tor, lekin 80 sm chuqur. Eni katta detallar
+   shunga tushadi, shuning uchun u boshqa yacheykalardan ajralib turishi kerak. */
+.cbox.big{border-color:var(--acc,#7aa2c8);border-left-width:3px}
+.cbox.big u{display:block;text-decoration:none;font-size:9px;color:var(--acc,#7aa2c8);letter-spacing:.04em}
+/* Sexdagi haqiqiy oʻlchamlar — panel tepasida, bir qatorda */
+.rackgeo{
+  display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 11px;
+  font-family:var(--mono);font-size:11.5px;color:var(--ink3);
+}
+.rackgeo span{display:inline-flex;align-items:center;gap:6px}
+.rackgeo .sw{width:9px;height:9px;border:1px solid var(--line2);border-radius:2px;display:inline-block}
+.rackgeo .sw.big{border-color:var(--acc,#7aa2c8);border-left-width:3px}
+
+/* Reja — brigadir uchun, odatda yopiq turadi */
+#sortPlanBox{display:none;margin-top:14px}
+.planhead{font-size:12.5px;color:var(--ink3);line-height:1.6;margin-bottom:10px}
+.plangrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:6px}
+.planrow2{
+  display:flex;align-items:baseline;gap:8px;background:var(--panel);
+  border:1px solid var(--line);border-radius:var(--r);padding:7px 10px;
+  font-family:var(--mono);font-size:12px;
+}
+.planrow2 b{color:var(--ink2);font-size:13px;min-width:30px}
+.planrow2 s{text-decoration:none;color:var(--ink)}
+.planrow2 i{font-style:normal;color:var(--ink3);margin-left:auto}
+.planrow2 em{font-style:normal;color:var(--mark)}
+.planrow2.live{border-color:var(--mark);background:var(--panel2)}
+.planrow2.live b{color:var(--mark)}
+
+/* Yacheyka belgisi qadoqlash ekranida — pochka detallari qayerda turgani */
+.celltag{
+  display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:600;
+  color:var(--void);background:var(--mark);border-radius:2px;
+  padding:1px 5px;margin-right:6px;vertical-align:1px;letter-spacing:.02em;
+}
+.celltag.big{font-size:11.5px;padding:2px 7px;margin:0 0 0 8px;vertical-align:0}
+
+@media(max-width:900px){ .sortpad{padding:16px 14px 30px} }
+
+/* Nozik sozlash — yopiq turadigan boʻlim. Sozlamalar 19 tagacha oʻsib ketgan edi,
+   holbuki ularning 10 tasi bir marta oʻrnatiladi va keyin tegilmaydi. */
+.adv{margin-top:24px;border-top:1px solid var(--line);padding-top:6px}
+.adv>summary{
+  cursor:pointer;list-style:none;padding:10px 0;
+  font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink3);
+}
+.adv>summary::-webkit-details-marker{display:none}
+.adv>summary::before{content:"▸ ";color:var(--mark)}
+.adv[open]>summary::before{content:"▾ "}
+.adv>summary:hover{color:var(--ink2)}
+.adv>summary span{text-transform:none;letter-spacing:0;color:var(--ink3);font-size:11.5px}
+.adv .fields{margin:10px 0 18px}
+
+/* --- v11 GURUHLAR: modul va klass toʻplamlari --- */
+.grpbox{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:11px 13px}
+.grppick{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+.grppick label{
+  display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line2);
+  border-radius:var(--r);padding:7px 11px;cursor:pointer;font-family:var(--mono);font-size:12.5px;
+}
+.grppick label:hover{border-color:var(--ink3)}
+.grppick label.on{border-color:var(--mark);background:var(--panel3)}
+.grppick input{accent-color:var(--mark);width:18px;height:18px;flex:0 0 auto}
+.grppick label i{font-style:normal;color:var(--ink3);font-size:11px}
+.grpact{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+.grphint{font-family:var(--mono);font-size:11px;color:var(--ink3)}
+.grplist{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}
+.grplist:empty{display:none}
+.grpchip{
+  display:flex;align-items:center;gap:9px;background:var(--panel2);
+  border:1px solid var(--mark);border-left:3px solid var(--mark);
+  border-radius:var(--r);padding:7px 9px 7px 11px;font-size:12.5px;
+}
+.grpchip b{font-family:var(--mono);color:var(--mark);font-size:12px}
+.grpchip span{font-family:var(--mono);font-size:11.5px;color:var(--ink2)}
+.grpchip button{
+  background:none;border:1px solid var(--line2);border-radius:var(--r);color:var(--ink2);
+  font-size:13px;line-height:1;padding:4px 8px;
+}
+.grpchip button:hover{color:var(--alert);border-color:var(--alert)}
+/* v12: «birga / alohida» almashtirgichi — buzish tugmasi emas, shuning uchun
+   hoverda qizarmaydi; yoqilgan holati rangda koʻrinadi */
+.grpchip .joinbtn{font-family:var(--mono);font-size:11px;letter-spacing:.04em;padding:4px 9px}
+.grpchip .joinbtn:hover{color:var(--mark);border-color:var(--mark)}
+.grpchip .joinbtn.on{color:var(--mark);border-color:var(--mark);background:var(--panel3)}
+
+/* v12: modul nomi — kartaning ichida bevosita tahrirlanadi.
+   Boʻsh boʻlsa ramkasi belgi beradi: nomsiz modul chekda «01» boʻlib chiqadi. */
+input.unitname{
+  flex:1;min-width:0;background:var(--void);border:1px solid var(--line2);
+  border-radius:var(--r);padding:5px 8px;color:var(--ink);font-size:13px;
+}
+input.unitname:focus{border-color:var(--mark);outline:none}
+input.unitname:placeholder-shown{border-style:dashed;color:var(--ink3)}
+input.roomname{
+  background:var(--void);border:1px solid var(--line2);border-radius:var(--r);
+  padding:7px 10px;color:var(--ink);font-size:13px;min-width:190px;
+}
+input.roomname:focus{border-color:var(--mark);outline:none}
+
+/* v12: «Pochkalarni tuzatish» — P/M dagi qoʻlda koʻchirish bloki.
+   Ilgari bu ekran Qadoqlash sahifasida, tor «keyingi detal» ustunida edi;
+   endi menejerda va joyi keng, shuning uchun qatorlar ham keng. */
+.edhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.edhead select{
+  background:var(--panel);border:1px solid var(--line2);border-radius:var(--r);
+  padding:8px 10px;color:var(--ink);font-family:var(--mono);font-size:12.5px;min-width:260px;
+}
+.edlist{border:1px solid var(--line);border-radius:var(--r);
+  max-height:420px;overflow:auto;background:var(--panel)}
+.edrow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;
+  padding:9px 12px;border-bottom:1px solid var(--line);font-size:13px}
+.edrow:last-child{border-bottom:0}
+.edrow.base{opacity:.55}
+.edrow .mono{font-family:var(--mono);font-size:12.5px;color:var(--ink)}
+.edrow small{display:block;color:var(--ink3);font-size:11px;margin-top:3px}
+.edrow select{
+  background:var(--void);border:1px solid var(--line2);border-radius:var(--r);
+  padding:5px 7px;color:var(--ink);font-family:var(--mono);font-size:11.5px;
+}
+.edrow .btn{padding:5px 11px;font-size:12px}
+/* v12: .pk .gtag olib tashlandi — guruh belgisi .pkgrp bilan chiziladi (10-ui.js) */
+
+/* --- material katalogi kartasi: oʻchirish tugmasi sarlavhaga koʻchdi --- */
+.catcard{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+  padding:11px 13px;margin-bottom:8px}
+.cathead{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;gap:10px}
+.cathead b{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--ink2)}
+/* v10c: bu ISHLAYDIGAN oʻchirish tugmasi edi, lekin kulrang matn + kulrang ramka
+   uni «oʻchirilgan (disabled)» qilib koʻrsatardi — foydalanuvchi javob boʻlmagach
+   qayta-qayta bosardi. Endi matn oʻqiladigan, ramka esa koʻrinadigan. */
+.btn.del{padding:3px 10px;font-size:11px;color:var(--ink2);border-color:var(--line2)}
+.btn.del:hover{color:var(--alert);border-color:var(--alert);background:rgba(255,107,67,.10)}
+
+/* --- chek tugmalari bitta qatorda sigʻsin --- */
+.qrbox .btnrow .btn{padding:7px 4px;font-size:11px;white-space:nowrap}
+
+/* --- «2 KISHI KOʻTARADI» — pochka tayyor ekranidagi ogohlantirish.
+   Ilgari bu 11px .msg matn edi; ko'tarish jarohati eng qimmat xato, shuning uchun
+   u yerdan ko'zga tashlanadigan blok bo'ldi. --- */
+.heavy{
+  margin-top:12px;padding:10px 12px;border-radius:var(--r);
+  background:rgba(255,198,41,.14);border-left:3px solid var(--mark);
+  color:var(--mark);font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:.04em;
+}
+
+/* --- xato xabari faqat RANG bilan berilmasin (rang ko'rmaydigan ishchi uchun) --- */
+.msg.err{background:rgba(255,107,67,.12);border-left:3px solid var(--alert);padding:6px 9px;border-radius:var(--r)}
+.msg.ok{background:rgba(78,203,142,.10);border-left:3px solid var(--ok);padding:6px 9px;border-radius:var(--r)}
+
+/* --- FOKUS KOʻRSATKICHI ---
+   Ilgari :focus uslubi faqat uchta matn maydonida bor edi: klaviatura bilan yurgan
+   foydalanuvchi qayerda turganini umuman koʻrmasdi. --mark rangli halqa hamma joyda. */
+.btn:focus-visible,
+.tabs button:focus-visible,
+.pk:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[role="button"]:focus-visible{
+  outline:2px solid var(--mark);outline-offset:1px;border-radius:var(--r);
+}
+.pk:focus-visible{outline-offset:-2px}
+
+/* --- qoʻlqopli barmoq uchun: kichik tugmalar biroz kattaroq --- */
+.stagetools .btn{min-height:28px}
+.stagetools input[type=checkbox],.colhead input[type=checkbox]{width:15px;height:15px}
+
+/* --- chek oʻlchami: termal printerlar uchun har chek alohida varaqda --- */
+@media print{
+  #sheet.sz-100x70 .lbls,#sheet.sz-58x40 .lbls{display:block}
+  #sheet.sz-100x70 .label,#sheet.sz-58x40 .label{
+    width:auto;border:0;break-after:page;page-break-after:always;margin:0;
+  }
+  #sheet.sz-100x70 .label:last-child,#sheet.sz-58x40 .label:last-child{break-after:auto;page-break-after:auto}
+  #sheet.sz-58x40 .label{padding:2mm 2.5mm}
+  #sheet.sz-58x40 .label .lc{font-size:13px}
+  #sheet.sz-58x40 .label .ln{font-size:7px;height:16px}
+  #sheet.sz-58x40 .label table{font-size:7px}
+  #sheet.sz-58x40 .label .big{font-size:9px}
+  #sheet.sz-58x40 .label canvas{width:64px;height:64px}
+}
