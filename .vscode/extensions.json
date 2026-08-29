@@ -29,7 +29,14 @@
     "mechatroner.rainbow-csv",
 
     // Past kontrastli mavzu — uzoq ishlashda ko'z kamroq charchaydi
-    "github.github-vscode-theme"
+    "github.github-vscode-theme",
+
+    // Fayl daraxti: har tur o'z belgisiga ega bo'ladi, nomni o'qimay turib
+    // ham qaysi fayl ekani ko'rinadi
+    "pkief.material-icon-theme",
+
+    // Kod ichidagi TODO / FIXME / MUHIM belgilarini bitta daraxtga yig'adi
+    "gruntfuggly.todo-tree"
   ],
 
   // Bu loyihaga keraksiz — taklif qilinmasin

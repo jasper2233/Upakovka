@@ -18,12 +18,12 @@ desktop.ini
 *~
 .idea/
 
-# VS Code: loyiha sozlamalari REPODA turadi — repoli ochgan har kim bir xil
-# holatda ishlashi uchun (kengaytma tavsiyalari, qator oxirlari, vazifalar).
-# Shaxsiy/mahalliy fayllar esa kirmaydi.
+# VS Code: sozlamalar (font, mavzu, qator oxirlari) GLOBAL — har loyihada bir xil.
+# Repoda faqat shu loyihaga xos ikkita fayl qoladi:
+#   extensions.json — reponi ochgan odamga kengaytma tavsiyasi
+#   tasks.json      — build.ps1 va testlarni ishga tushiruvchi vazifalar
 .vscode/*
 !.vscode/extensions.json
-!.vscode/settings.json
 !.vscode/tasks.json
 
 # --- vaqtinchalik ---
