@@ -16,8 +16,15 @@ desktop.ini
 .DS_Store
 *.swp
 *~
-.vscode/
 .idea/
+
+# VS Code: loyiha sozlamalari REPODA turadi — repoli ochgan har kim bir xil
+# holatda ishlashi uchun (kengaytma tavsiyalari, qator oxirlari, vazifalar).
+# Shaxsiy/mahalliy fayllar esa kirmaydi.
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
 
 # --- vaqtinchalik ---
 *.tmp

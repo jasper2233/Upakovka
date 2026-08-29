@@ -1,0 +1,70 @@
+{
+  "version": "2.0.0",
+  // Ctrl+Shift+B — asosiy vazifa (yig'ish)
+  // Ctrl+Shift+P -> "Tasks: Run Task" — qolganlari
+  "tasks": [
+    {
+      "label": "Yig'ish (bir faylli versiya)",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\build.ps1"],
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Test — file:// (sexdagidek)",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\tests\\smoke.ps1"],
+      "group": { "kind": "test", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Test — http:// (GitHub Pages sharoiti)",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\tests\\smoke.ps1", "-Http"],
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Test — dist (yig'ilgan versiya)",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\tests\\smoke.ps1", "-Target", "dist"],
+      "group": "test",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Test — HAMMASI (uchala rejim)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Test — file:// (sexdagidek)",
+        "Test — http:// (GitHub Pages sharoiti)",
+        "Test — dist (yig'ilgan versiya)"
+      ],
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Skrinshot — proekt menejer",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\tests\\shot.ps1", "-View", "mgr"],
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Namuna fayllarni qayta yasash",
+      "type": "shell",
+      "command": "powershell",
+      "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\tools\\seed-to-project.ps1"],
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": []
+    }
+  ]
+}

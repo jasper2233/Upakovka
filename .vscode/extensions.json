@@ -1,0 +1,37 @@
+{
+  // Bu loyihani VS Code da ochgan odamga tavsiya qilinadigan kengaytmalar.
+  // VS Code ularni o'zi taklif qiladi ("Do you want to install the recommended
+  // extensions?"). Majburiy emas — tavsiya.
+  "recommendations": [
+    // build.ps1, tests\smoke.ps1, tests\shot.ps1, tools\seed-to-project.ps1
+    // — loyihaning butun asboblari PowerShell da
+    "ms-vscode.powershell",
+
+    // Sahifani http:// orqali ochadi. MUHIM: GitHub Pages ham http(s) beradi,
+    // file:// esa boshqacha ishlaydi (IndexedDB, saqlash origini).
+    // Sinashda shuni ishlating — Alt+L Alt+O yoki pastdagi "Go Live".
+    "ritwickdey.liveserver",
+
+    // Xatoni pastdagi panelda emas, aynan qator yonida ko'rsatadi
+    "usernamehw.errorlens",
+
+    // src/js/NN-*.js yo'llarini avtomatik to'ldiradi.
+    // index.html da 15 ta <script src> bor — qo'lda yozish xatoga olib keladi.
+    "christian-kohler.path-intellisense",
+
+    // Kod izohlarga boy (har qaror sababi yozilgan) — ranglar bo'yicha ajratadi
+    "aaron-bond.better-comments",
+
+    // docs/ da 5 ta markdown hujjat bor
+    "davidanson.vscode-markdownlint",
+
+    // Detallar jadvali CSV ga eksport qilinadi — uni o'qish uchun
+    "mechatroner.rainbow-csv",
+
+    // Past kontrastli mavzu — uzoq ishlashda ko'z kamroq charchaydi
+    "github.github-vscode-theme"
+  ],
+
+  // Bu loyihaga keraksiz — taklif qilinmasin
+  "unwantedRecommendations": []
+}

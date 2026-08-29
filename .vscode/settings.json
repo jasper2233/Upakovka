@@ -1,0 +1,54 @@
+{
+  // Loyihaga tegishli sozlamalar — shaxsiy sozlamangizdan ustun turadi,
+  // lekin faqat shu papka ochilganda. Maqsad: har kim bir xil natija olsin.
+
+  // ── Qator oxirlari ─────────────────────────────────────────
+  // .gitattributes bilan AYNAN mos bo'lishi shart. Aks holda har saqlashda
+  // git "butun fayl o'zgardi" deb ko'rsatadi va diff o'qib bo'lmaydi.
+  "files.eol": "\n",
+  "[powershell]": { "files.eol": "\r\n" },
+
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.encoding": "utf8",
+
+  // ── Ko'rinmasin ────────────────────────────────────────────
+  // dist\ — build natijasi, qidiruvda ikki nusxa chiqmasin
+  // _maxfiy\ — haqiqiy mijoz fayllari, ular repoga ham, qidiruvga ham kirmaydi
+  "search.exclude": {
+    "dist": true,
+    "_maxfiy": true
+  },
+  "files.watcherExclude": {
+    "**/dist/**": true,
+    "**/_maxfiy/**": true
+  },
+
+  // ── Chekinish ──────────────────────────────────────────────
+  // Loyiha uslubi: 2 probel, tab emas
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+
+  // ── Live Server ────────────────────────────────────────────
+  // Ildizdan xizmat qiladi — index.html va src/ nisbiy yo'llari
+  // GitHub Pages dagidek yechilsin
+  "liveServer.settings.root": "/",
+  "liveServer.settings.port": 5501,
+
+  // ── PowerShell ─────────────────────────────────────────────
+  // Skriptlar Windows PowerShell 5.1 uchun yozilgan (7.x emas):
+  // `&&`, ternary, `??` ishlatilmaydi. Tahlilchi shuni bilsin.
+  "powershell.codeFormatting.preset": "OTBS",
+  "powershell.integratedConsole.showOnStartup": false,
+
+  // ── Markdown ───────────────────────────────────────────────
+  "[markdown]": {
+    "editor.wordWrap": "bounded",
+    "editor.wordWrapColumn": 95
+  },
+  // LICENSE faylida sarlavha bo'lmaydi — bu xato emas
+  "markdownlint.config": {
+    "MD041": false,
+    "MD013": false
+  }
+}
