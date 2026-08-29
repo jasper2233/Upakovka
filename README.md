@@ -1,5 +1,8 @@
 # Upakofka tizimi
 
+**Jonli demo:** https://jasper2233.github.io/Upakovka/
+Ochilgach **«Namuna loyiha»** tugmasini bosing — tizim darrov 55 ta pochka teradi.
+
 Mebel tsexi uchun **detallarni pochkalash (upakofka) MES tizimi**.
 Raskroy dasturining `.project` faylini yuklaysiz — tizim detallarni pochkalarga teradi,
 har detal uchun QR chek chiqaradi va upakovshikka 3D da qadam-baqadam qayerga qo'yishni ko'rsatadi.
