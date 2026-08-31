@@ -1,13 +1,7 @@
 # Upakofka tizimi
 
-> **Yopiq repo.** Kod ochiq emas — faqat egasi ruxsat bergan akauntlar ko'radi.
-> Shu sababli jonli demo (GitHub Pages) o'chirilgan: Pages yopiq repoda faqat
-> pullik rejada ishlaydi, ochiq repoda esa sahifa bilan birga KOD ham hammaga
-> ko'rinadi.
->
-> Ko'rish uchun: `index.html` ni brauzerda oching yoki
-> `dist\upakofka-tizimi.html` ni fleshkada tashing. Ochilgach
-> **«Namuna loyiha»** tugmasini bosing — tizim darrov pochkalarni teradi.
+**Jonli demo:** https://jasper2233.github.io/Upakovka/
+Ochilgach **«Namuna loyiha»** tugmasini bosing — tizim darrov pochkalarni teradi.
 
 Mebel tsexi uchun **detallarni pochkalash (upakofka) MES tizimi**.
 Raskroy dasturining `.project` faylini yuklaysiz — tizim detallarni pochkalarga teradi,
@@ -35,15 +29,10 @@ index.html   -> brauzerda ochish (ikki marta bosish yetadi)
 Natija: `dist\upakofka-tizimi.html` — hamma narsa bitta faylda.
 Uni fleshkaga tashlab istalgan kompyuterda ochsa bo'ladi.
 
-### Veb (GitHub Pages) — hozir o'chirilgan
+### Veb (GitHub Pages)
 
-Repo yopiq bo'lgani uchun Pages ishlamaydi: GitHub Free rejasida Pages faqat
-OCHIQ repodan xizmat qiladi, ochiq repo esa kodni hammaga beradi.
-
-Kod texnik jihatdan Pages uchun tayyor: repo ildizidan to'g'ridan-to'g'ri
-xizmat qiladi — build ham, bundler ham, Actions ham kerak emas
-(`Settings → Pages → Source: main / (root)`). Kerak bo'lsa ikki yo'l bor:
-GitHub Pro/Team (yopiq repodan Pages) yoki reponi ochiq qilish.
+Repo ildizidan to'g'ridan-to'g'ri xizmat qiladi — build ham, bundler ham,
+Actions ham kerak emas. `Settings → Pages → Source: main / (root)`.
 
 Ishlashi tekshirilgan: butun test to'plami `http://` orqali ham yuriladi —
 ```powershell
