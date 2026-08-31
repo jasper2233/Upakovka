@@ -211,6 +211,29 @@ function diagWarnHTML(){
   return h + diagTbl(rows);
 }
 
+/* (b2) v17: POCHKALANMAYDIGAN OBYEKTLAR — xona devori, pol, shift.
+   Haqiqiy proyekt fayllarida ular ham «part» boʻlib keladi. Tizim ularni
+   pochkalamaydi (03-parser `partSkipWhy`), lekin JIMGINA tashlab yubormaydi:
+   P/M nima chiqarib tashlanganini va nima uchun ekanini shu yerda koʻradi. */
+function diagSkipHTML(){
+  var sk = (DIAG && DIAG.skipped) ? DIAG.skipped : [];
+  if (!sk.length) return "";
+  var n = sk.reduce(function(a, x){ return a + (x.q || 1); }, 0);
+  var h = '<h3>Pochkalanmagan obyektlar · ' + n + '</h3>' +
+    '<div class="note" style="border-left-color:var(--mark)">' +
+    'Bular mebel detali emas — proyekt faylida xona obyektlari (devor, pol, shift) ' +
+    'ham «detal» boʻlib keladi. Ular pochkalanmaydi va buyurtma massasiga kirmaydi. ' +
+    'Chegara: <b>Sozlamalar → Detal maks. qalinligi</b>.</div>';
+  var rows = '<tr><th>Kod</th><th>Nom</th><th>Soni</th><th>Sabab</th></tr>';
+  sk.forEach(function(x){
+    rows += '<tr><td class="m">' + esc(x.code || "—") + '</td>' +
+      '<td style="white-space:normal">' + esc(x.name || "—") + '</td>' +
+      '<td class="m">' + (x.q || 1) + '</td>' +
+      '<td style="white-space:normal">' + esc(x.why || "") + '</td></tr>';
+  });
+  return h + diagTbl(rows);
+}
+
 /* (c) audit — 05-audit.js boʻlmasa jim oʻtkazadi */
 function diagAuditHTML(){
   if (typeof auditPacks !== "function") return "";
@@ -357,6 +380,7 @@ function renderDiag(){
   if (!box) return;
   var h = diagSafe(diagFileHTML,    "Fayl") +
           diagSafe(diagWarnHTML,    "Parser ogohlantirishlari") +
+          diagSafe(diagSkipHTML,    "Pochkalanmagan obyektlar") +
           diagSafe(diagAuditHTML,   "Audit") +
           diagSafe(diagProjectHTML, "Loyiha tarkibi") +
           diagSafe(diagXmlHTML,     "XML tuzilishi");

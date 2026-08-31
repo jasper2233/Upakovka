@@ -671,17 +671,177 @@ select:focus-visible,
 .stagetools .btn{min-height:28px}
 .stagetools input[type=checkbox],.colhead input[type=checkbox]{width:15px;height:15px}
 
-/* --- chek oʻlchami: termal printerlar uchun har chek alohida varaqda --- */
+/* --- chek oʻlchami: termal printerlar uchun har chek alohida varaqda ---
+   v20: ilgari har oʻlcham uchun alohida selektor bor edi (`sz-100x70`,
+   `sz-58x40`) va qoʻlda oʻlcham qoʻshilishi bilan ular yaroqsiz boʻlib qolardi.
+   Endi ikkita sinf yetarli:
+     `sz-lbl`       — har chek alohida varaqda (A4 dan tashqari hamma oʻlcham)
+     `sz-lbl.tiny`  — boʻyi 62 mm dan past: shrift kichrayadi
+   Sinfni `applyPageSize()` qoʻyadi, @page oʻlchami ham oʻsha yerda hisoblanadi. */
 @media print{
-  #sheet.sz-100x70 .lbls,#sheet.sz-58x40 .lbls{display:block}
-  #sheet.sz-100x70 .label,#sheet.sz-58x40 .label{
+  #sheet.sz-lbl .lbls{display:block}
+  #sheet.sz-lbl .label{
     width:auto;border:0;break-after:page;page-break-after:always;margin:0;
   }
-  #sheet.sz-100x70 .label:last-child,#sheet.sz-58x40 .label:last-child{break-after:auto;page-break-after:auto}
-  #sheet.sz-58x40 .label{padding:2mm 2.5mm}
-  #sheet.sz-58x40 .label .lc{font-size:13px}
-  #sheet.sz-58x40 .label .ln{font-size:7px;height:16px}
-  #sheet.sz-58x40 .label table{font-size:7px}
-  #sheet.sz-58x40 .label .big{font-size:9px}
-  #sheet.sz-58x40 .label canvas{width:64px;height:64px}
+  #sheet.sz-lbl .label:last-child{break-after:auto;page-break-after:auto}
+
+  #sheet.sz-lbl.tiny .label{padding:2mm 2.5mm}
+  #sheet.sz-lbl.tiny .label .lc{font-size:13px}
+  #sheet.sz-lbl.tiny .label .ln{font-size:7px;height:16px}
+  #sheet.sz-lbl.tiny .label table{font-size:7px}
+  #sheet.sz-lbl.tiny .label .big{font-size:9px}
+  #sheet.sz-lbl.tiny .label canvas{width:64px;height:64px}
+
+  /* --- v20: pochka chekidagi DETALLAR ROʻYXATI.
+     Ilgari etakda kodlar « · » bilan ulangan bitta uzun qator turardi va 300
+     belgida kesilardi — ishchi qaysi detal yoʻqligini koʻrolmasdi. Endi har
+     detal alohida katakcha: kod (qalin) + oʻlcham. */
+  .plabel .pf{
+    display:flex; flex-wrap:wrap; gap:1px 5px;
+    font-family:var(--mono); font-size:7px; line-height:1.45;
+    border-top:1px solid #999; margin-top:1.5mm; padding-top:1mm; color:#000;
+  }
+  .plabel .pf span{white-space:nowrap}
+  .plabel .pf span b{font-weight:700}
+  .plabel .pf .more{font-style:italic}
+  #sheet.sz-lbl.tiny .plabel .pf{font-size:6px;gap:0 4px}
 }
+
+/* ============================================================
+   v20 — BUYURTMA HUJJATI (A4, toʻliq tarkib)
+
+   Ekranda koʻrsatilmaydi (`#sheet{display:none}`), faqat chop etishda chiqadi.
+   Oq qogʻoz uchun rang sxemasi: qora matn, kulrang chiziqlar — tizimning
+   qorongʻi palitrasi bu yerda ishlamaydi.
+   ============================================================ */
+@media print{
+  .odoc{font-family:var(--sans);color:#000;font-size:9.5px;line-height:1.45}
+  .odoc .mono{font-family:var(--mono)}
+
+  .odoc .oh{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    border-bottom:2px solid #000; padding-bottom:2mm; margin-bottom:3mm;
+  }
+  .odoc .oh b{font-size:15px;letter-spacing:.01em}
+  .odoc .sub{font-family:var(--mono);font-size:8.5px;color:#444;margin-top:1mm}
+
+  .odoc table.osum{width:100%;border-collapse:collapse;margin:0 0 4mm}
+  .odoc table.osum td{
+    border:1px solid #999; padding:1.5mm 2mm; text-align:center; width:16.6%;
+  }
+  .odoc table.osum u{display:block;text-decoration:none;font-size:7.5px;
+    letter-spacing:.08em;text-transform:uppercase;color:#555}
+  .odoc table.osum b{display:block;font-family:var(--mono);font-size:12px;margin-top:.5mm}
+
+  .odoc h4{
+    font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+    margin:5mm 0 1.5mm; padding-bottom:1mm; border-bottom:1px solid #000;
+    break-after:avoid; page-break-after:avoid;
+  }
+  .odoc h4.bad{border-bottom-width:2px}
+
+  .odoc table.otab{width:100%;border-collapse:collapse;margin:0 0 2mm}
+  .odoc table.otab th{
+    font-size:7.5px; letter-spacing:.06em; text-transform:uppercase; color:#333;
+    text-align:left; border-bottom:1px solid #666; padding:1mm 1.5mm;
+  }
+  /* Rang ANIQ berilishi shart: tizimning ekran qoidalari chop etishda ham
+     amalda qoladi va baʼzi katakchalar kulrang/koʻkimtir chiqib ketardi. */
+  .odoc table.otab td{border-bottom:1px solid #ddd;padding:.8mm 1.5mm;vertical-align:top;color:#000}
+  .odoc table.otab td b,.odoc .mono,.odoc b{color:#000}
+  .odoc table.otab.sm{font-size:8.5px}
+  .odoc table.otab tr{break-inside:avoid;page-break-inside:avoid}
+
+  .odoc .opk{
+    font-family:var(--mono); font-size:9px; font-weight:700;
+    background:#eee; -webkit-print-color-adjust:exact; print-color-adjust:exact;
+    border-left:3px solid #000; padding:1mm 2mm; margin:3mm 0 1mm;
+    break-after:avoid; page-break-after:avoid;
+  }
+  .odoc .onote{font-size:8.5px;color:#333;border-left:2px solid #999;
+    padding:1mm 0 1mm 2mm;margin:1mm 0 3mm}
+
+  .odoc .osign{
+    display:flex; gap:8mm; margin-top:8mm; padding-top:3mm; border-top:1px solid #000;
+    font-size:8.5px; letter-spacing:.06em; text-transform:uppercase; color:#333;
+    break-inside:avoid; page-break-inside:avoid;
+  }
+  .odoc .osign>div{flex:1}
+  .odoc .osign span{
+    display:block; border-bottom:1px solid #000; height:8mm; margin-top:1mm;
+    font-family:var(--mono); text-transform:none; color:#000; font-size:9px;
+    display:flex; align-items:flex-end; padding-bottom:.5mm;
+  }
+}
+
+/* ============================================================
+   v20 — SOZLAMALAR: OQIM BLOKLARI VA PODSKASKA
+
+   Muammo: «odatiy» (standart) va «noodatiy» (nostandart) meʼyorlar bitta
+   roʻyxatda turardi. 35 kg bilan 40 kg, 2100 mm bilan 3200 mm yonma-yon —
+   boshqaruvchi qaysi raqam qaysi oqimniki ekanini koʻrmasdi va nostandart
+   limitni oʻzgartirib standart pochkalarni buzdim deb oʻylardi.
+
+   Yechim: har oqim alohida blok, chap chetida rangli chiziq va oʻng burchakda
+   belgi. Rang bir marta oʻrganiladi va keyin oʻqimasdan ajratiladi:
+     yashil  — standart pochka
+     qizgʻish — nostandart bogʻ
+     koʻk    — ikkalasiga taʼsir qiladi
+   ============================================================ */
+.blk{
+  border:1px solid var(--line); border-left:3px solid var(--line2);
+  border-radius:var(--r); background:#1a1d22;
+  padding:14px 16px 16px; margin:0 0 16px;
+}
+.blk>h3{margin-top:0}
+.blk-std{border-left-color:var(--ok)}
+.blk-nst{border-left-color:var(--alert)}
+.blk-all{border-left-color:var(--info)}
+
+.blk>h3>.tag{
+  float:right; font-family:var(--mono); font-size:9.5px; letter-spacing:.1em;
+  padding:2px 8px; border-radius:9px; border:1px solid var(--line2); color:var(--ink3);
+}
+.blk-std>h3>.tag{color:var(--ok);    border-color:#2f5f47; background:#1b2a23}
+.blk-nst>h3>.tag{color:var(--alert); border-color:#6b3a2a; background:#2a1d19}
+.blk-all>h3>.tag{color:var(--info);  border-color:#2f4d63; background:#192530}
+
+/* blok ichidagi kichik sarlavha */
+.blk h4.sub{
+  margin:16px 0 8px; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink3); font-weight:600;
+}
+.blk h4.sub:first-of-type{margin-top:10px}
+
+/* Yorliq bir yoki ikki satr boʻlishi mumkin («?» belgisi baʼzan pastga tushadi).
+   Min balandliksiz bir qatordagi inputlar turli sathda turib qolardi. */
+.blk .f>label:first-child{min-height:24px}
+
+/* ---------- PODSKASKA («?» belgisi) ----------
+   Tooltip `.f` ga nisbatan joylashadi (shuning uchun `.f{position:relative}`),
+   `.q` ning oʻziga emas — 13 px li doiraga nisbatan 320 px li quti ekrandan
+   chiqib ketardi. Klaviatura bilan ham ochiladi: `tabindex="0"` + `:focus`. */
+.f{position:relative}
+.q{
+  display:inline-block; width:14px; height:14px; line-height:13px; text-align:center;
+  margin-left:5px; border:1px solid var(--line2); border-radius:50%;
+  font-family:var(--mono); font-size:9px; color:var(--ink3);
+  cursor:help; vertical-align:1px; user-select:none;
+}
+.q:hover,.q:focus{color:var(--void); background:var(--mark); border-color:var(--mark); outline:none}
+.q::after{
+  content:attr(data-tip);
+  position:absolute; left:0; top:100%; margin-top:6px; z-index:60;
+  width:320px; max-width:76vw;
+  background:var(--panel3); color:var(--ink);
+  border:1px solid var(--line2); border-left:3px solid var(--mark);
+  border-radius:var(--r); padding:10px 12px;
+  font-family:var(--sans); font-size:11.5px; line-height:1.55;
+  letter-spacing:0; text-transform:none; text-align:left; white-space:pre-line;
+  box-shadow:0 10px 26px rgba(0,0,0,.6);
+  opacity:0; visibility:hidden; transition:opacity .12s; pointer-events:none;
+}
+.q:hover::after,.q:focus::after{opacity:1; visibility:visible}
+/* oxirgi ustunda tooltip oʻngga chiqib ketmasin */
+.fields>.f:nth-child(4n) .q::after,
+.fields>.f:last-child .q::after{left:auto; right:0; border-left-width:1px; border-right:3px solid var(--mark)}

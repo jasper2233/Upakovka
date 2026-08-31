@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-<!-- Upakofka tizimi — build 2026-08-29 15:40 -->
+<!-- Upakofka tizimi — build 2026-08-31 12:33 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Upakofka tizimi</title>
@@ -685,20 +685,181 @@ select:focus-visible,
 .stagetools .btn{min-height:28px}
 .stagetools input[type=checkbox],.colhead input[type=checkbox]{width:15px;height:15px}
 
-/* --- chek oʻlchami: termal printerlar uchun har chek alohida varaqda --- */
+/* --- chek oʻlchami: termal printerlar uchun har chek alohida varaqda ---
+   v20: ilgari har oʻlcham uchun alohida selektor bor edi (`sz-100x70`,
+   `sz-58x40`) va qoʻlda oʻlcham qoʻshilishi bilan ular yaroqsiz boʻlib qolardi.
+   Endi ikkita sinf yetarli:
+     `sz-lbl`       — har chek alohida varaqda (A4 dan tashqari hamma oʻlcham)
+     `sz-lbl.tiny`  — boʻyi 62 mm dan past: shrift kichrayadi
+   Sinfni `applyPageSize()` qoʻyadi, @page oʻlchami ham oʻsha yerda hisoblanadi. */
 @media print{
-  #sheet.sz-100x70 .lbls,#sheet.sz-58x40 .lbls{display:block}
-  #sheet.sz-100x70 .label,#sheet.sz-58x40 .label{
+  #sheet.sz-lbl .lbls{display:block}
+  #sheet.sz-lbl .label{
     width:auto;border:0;break-after:page;page-break-after:always;margin:0;
   }
-  #sheet.sz-100x70 .label:last-child,#sheet.sz-58x40 .label:last-child{break-after:auto;page-break-after:auto}
-  #sheet.sz-58x40 .label{padding:2mm 2.5mm}
-  #sheet.sz-58x40 .label .lc{font-size:13px}
-  #sheet.sz-58x40 .label .ln{font-size:7px;height:16px}
-  #sheet.sz-58x40 .label table{font-size:7px}
-  #sheet.sz-58x40 .label .big{font-size:9px}
-  #sheet.sz-58x40 .label canvas{width:64px;height:64px}
+  #sheet.sz-lbl .label:last-child{break-after:auto;page-break-after:auto}
+
+  #sheet.sz-lbl.tiny .label{padding:2mm 2.5mm}
+  #sheet.sz-lbl.tiny .label .lc{font-size:13px}
+  #sheet.sz-lbl.tiny .label .ln{font-size:7px;height:16px}
+  #sheet.sz-lbl.tiny .label table{font-size:7px}
+  #sheet.sz-lbl.tiny .label .big{font-size:9px}
+  #sheet.sz-lbl.tiny .label canvas{width:64px;height:64px}
+
+  /* --- v20: pochka chekidagi DETALLAR ROʻYXATI.
+     Ilgari etakda kodlar « · » bilan ulangan bitta uzun qator turardi va 300
+     belgida kesilardi — ishchi qaysi detal yoʻqligini koʻrolmasdi. Endi har
+     detal alohida katakcha: kod (qalin) + oʻlcham. */
+  .plabel .pf{
+    display:flex; flex-wrap:wrap; gap:1px 5px;
+    font-family:var(--mono); font-size:7px; line-height:1.45;
+    border-top:1px solid #999; margin-top:1.5mm; padding-top:1mm; color:#000;
+  }
+  .plabel .pf span{white-space:nowrap}
+  .plabel .pf span b{font-weight:700}
+  .plabel .pf .more{font-style:italic}
+  #sheet.sz-lbl.tiny .plabel .pf{font-size:6px;gap:0 4px}
 }
+
+/* ============================================================
+   v20 — BUYURTMA HUJJATI (A4, toʻliq tarkib)
+
+   Ekranda koʻrsatilmaydi (`#sheet{display:none}`), faqat chop etishda chiqadi.
+   Oq qogʻoz uchun rang sxemasi: qora matn, kulrang chiziqlar — tizimning
+   qorongʻi palitrasi bu yerda ishlamaydi.
+   ============================================================ */
+@media print{
+  .odoc{font-family:var(--sans);color:#000;font-size:9.5px;line-height:1.45}
+  .odoc .mono{font-family:var(--mono)}
+
+  .odoc .oh{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    border-bottom:2px solid #000; padding-bottom:2mm; margin-bottom:3mm;
+  }
+  .odoc .oh b{font-size:15px;letter-spacing:.01em}
+  .odoc .sub{font-family:var(--mono);font-size:8.5px;color:#444;margin-top:1mm}
+
+  .odoc table.osum{width:100%;border-collapse:collapse;margin:0 0 4mm}
+  .odoc table.osum td{
+    border:1px solid #999; padding:1.5mm 2mm; text-align:center; width:16.6%;
+  }
+  .odoc table.osum u{display:block;text-decoration:none;font-size:7.5px;
+    letter-spacing:.08em;text-transform:uppercase;color:#555}
+  .odoc table.osum b{display:block;font-family:var(--mono);font-size:12px;margin-top:.5mm}
+
+  .odoc h4{
+    font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+    margin:5mm 0 1.5mm; padding-bottom:1mm; border-bottom:1px solid #000;
+    break-after:avoid; page-break-after:avoid;
+  }
+  .odoc h4.bad{border-bottom-width:2px}
+
+  .odoc table.otab{width:100%;border-collapse:collapse;margin:0 0 2mm}
+  .odoc table.otab th{
+    font-size:7.5px; letter-spacing:.06em; text-transform:uppercase; color:#333;
+    text-align:left; border-bottom:1px solid #666; padding:1mm 1.5mm;
+  }
+  /* Rang ANIQ berilishi shart: tizimning ekran qoidalari chop etishda ham
+     amalda qoladi va baʼzi katakchalar kulrang/koʻkimtir chiqib ketardi. */
+  .odoc table.otab td{border-bottom:1px solid #ddd;padding:.8mm 1.5mm;vertical-align:top;color:#000}
+  .odoc table.otab td b,.odoc .mono,.odoc b{color:#000}
+  .odoc table.otab.sm{font-size:8.5px}
+  .odoc table.otab tr{break-inside:avoid;page-break-inside:avoid}
+
+  .odoc .opk{
+    font-family:var(--mono); font-size:9px; font-weight:700;
+    background:#eee; -webkit-print-color-adjust:exact; print-color-adjust:exact;
+    border-left:3px solid #000; padding:1mm 2mm; margin:3mm 0 1mm;
+    break-after:avoid; page-break-after:avoid;
+  }
+  .odoc .onote{font-size:8.5px;color:#333;border-left:2px solid #999;
+    padding:1mm 0 1mm 2mm;margin:1mm 0 3mm}
+
+  .odoc .osign{
+    display:flex; gap:8mm; margin-top:8mm; padding-top:3mm; border-top:1px solid #000;
+    font-size:8.5px; letter-spacing:.06em; text-transform:uppercase; color:#333;
+    break-inside:avoid; page-break-inside:avoid;
+  }
+  .odoc .osign>div{flex:1}
+  .odoc .osign span{
+    display:block; border-bottom:1px solid #000; height:8mm; margin-top:1mm;
+    font-family:var(--mono); text-transform:none; color:#000; font-size:9px;
+    display:flex; align-items:flex-end; padding-bottom:.5mm;
+  }
+}
+
+/* ============================================================
+   v20 — SOZLAMALAR: OQIM BLOKLARI VA PODSKASKA
+
+   Muammo: «odatiy» (standart) va «noodatiy» (nostandart) meʼyorlar bitta
+   roʻyxatda turardi. 35 kg bilan 40 kg, 2100 mm bilan 3200 mm yonma-yon —
+   boshqaruvchi qaysi raqam qaysi oqimniki ekanini koʻrmasdi va nostandart
+   limitni oʻzgartirib standart pochkalarni buzdim deb oʻylardi.
+
+   Yechim: har oqim alohida blok, chap chetida rangli chiziq va oʻng burchakda
+   belgi. Rang bir marta oʻrganiladi va keyin oʻqimasdan ajratiladi:
+     yashil  — standart pochka
+     qizgʻish — nostandart bogʻ
+     koʻk    — ikkalasiga taʼsir qiladi
+   ============================================================ */
+.blk{
+  border:1px solid var(--line); border-left:3px solid var(--line2);
+  border-radius:var(--r); background:#1a1d22;
+  padding:14px 16px 16px; margin:0 0 16px;
+}
+.blk>h3{margin-top:0}
+.blk-std{border-left-color:var(--ok)}
+.blk-nst{border-left-color:var(--alert)}
+.blk-all{border-left-color:var(--info)}
+
+.blk>h3>.tag{
+  float:right; font-family:var(--mono); font-size:9.5px; letter-spacing:.1em;
+  padding:2px 8px; border-radius:9px; border:1px solid var(--line2); color:var(--ink3);
+}
+.blk-std>h3>.tag{color:var(--ok);    border-color:#2f5f47; background:#1b2a23}
+.blk-nst>h3>.tag{color:var(--alert); border-color:#6b3a2a; background:#2a1d19}
+.blk-all>h3>.tag{color:var(--info);  border-color:#2f4d63; background:#192530}
+
+/* blok ichidagi kichik sarlavha */
+.blk h4.sub{
+  margin:16px 0 8px; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink3); font-weight:600;
+}
+.blk h4.sub:first-of-type{margin-top:10px}
+
+/* Yorliq bir yoki ikki satr boʻlishi mumkin («?» belgisi baʼzan pastga tushadi).
+   Min balandliksiz bir qatordagi inputlar turli sathda turib qolardi. */
+.blk .f>label:first-child{min-height:24px}
+
+/* ---------- PODSKASKA («?» belgisi) ----------
+   Tooltip `.f` ga nisbatan joylashadi (shuning uchun `.f{position:relative}`),
+   `.q` ning oʻziga emas — 13 px li doiraga nisbatan 320 px li quti ekrandan
+   chiqib ketardi. Klaviatura bilan ham ochiladi: `tabindex="0"` + `:focus`. */
+.f{position:relative}
+.q{
+  display:inline-block; width:14px; height:14px; line-height:13px; text-align:center;
+  margin-left:5px; border:1px solid var(--line2); border-radius:50%;
+  font-family:var(--mono); font-size:9px; color:var(--ink3);
+  cursor:help; vertical-align:1px; user-select:none;
+}
+.q:hover,.q:focus{color:var(--void); background:var(--mark); border-color:var(--mark); outline:none}
+.q::after{
+  content:attr(data-tip);
+  position:absolute; left:0; top:100%; margin-top:6px; z-index:60;
+  width:320px; max-width:76vw;
+  background:var(--panel3); color:var(--ink);
+  border:1px solid var(--line2); border-left:3px solid var(--mark);
+  border-radius:var(--r); padding:10px 12px;
+  font-family:var(--sans); font-size:11.5px; line-height:1.55;
+  letter-spacing:0; text-transform:none; text-align:left; white-space:pre-line;
+  box-shadow:0 10px 26px rgba(0,0,0,.6);
+  opacity:0; visibility:hidden; transition:opacity .12s; pointer-events:none;
+}
+.q:hover::after,.q:focus::after{opacity:1; visibility:visible}
+/* oxirgi ustunda tooltip oʻngga chiqib ketmasin */
+.fields>.f:nth-child(4n) .q::after,
+.fields>.f:last-child .q::after{left:auto; right:0; border-left-width:1px; border-right:3px solid var(--mark)}
+
 </style>
 </head>
 <body>
@@ -921,22 +1082,98 @@ select:focus-visible,
   <!-- 2.8 SOZLAMALAR — pochka meʼyorlari -->
   <section class="view" id="v-conf">
     <div class="pad">
-      <!-- Kundalik ishda tegiladigan sozlamalar. Qolgani «Nozik sozlash» ichida
-           yopiq turadi: ular bir marta oʻrnatiladi va keyin deyarli tegilmaydi. -->
-      <h3>Asosiy</h3>
-      <div class="fields">
-        <div class="f"><label>Pochka maks. massa, kg</label><input id="cMaxKg" type="number" value="35" step="0.5"><small>abrabotkadan keyingi toza massa</small></div>
-        <div class="f"><label>1 kishi koʻtarish chegarasi, kg</label><input id="cOneMan" type="number" value="25" step="1"><small>oshsa chekda «2 KISHI» chiqadi</small></div>
-        <div class="f"><label>Qadoq materiali (tara), kg</label><input id="cTare" type="number" value="0.6" step="0.1" min="0"><small>qogʻoz + burchak + tasma. Bruttoga qoʻshiladi</small></div>
-        <div class="f">
-          <label>Qalinlik</label>
-          <label class="chk"><input type="checkbox" id="cThick" checked><span>qalinlik boʻyicha ajratish</span></label>
-          <small>16 mm alohida, 3 mm alohida</small>
+      <!-- v20: SOZLAMALAR OQIM BOʻYICHA AJRATILDI.
+           Sabab: «odatiy» (standart) va «noodatiy» (nostandart) meʼyorlar bitta
+           roʻyxatda turganda 35 kg bilan 40 kg, 2100 mm bilan 3200 mm adashadi —
+           boshqaruvchi qaysi raqam qaysi oqimniki ekanini koʻrmaydi.
+           Endi har oqim oʻz bloki, oʻz rangi va oʻz belgisi bilan turadi;
+           har maydonda «?» — nima qilishi va oshirsa/kamaytirsa nima boʻlishi. -->
+      <div class="note" style="margin:0 0 14px;border-left-color:var(--mark)">
+        <b>Ikki oqim.</b> Har detal avval <b>tag oynasi</b>dan oʻtkaziladi.
+        Oynaga sigʻsa — <b style="color:var(--ok)">STANDART</b> pochkaga,
+        sigʻmasa — <b style="color:var(--alert)">NOSTANDART</b> bogʻga tushadi.
+        Ikkala oqim detali bitta pochkada <b>hech qachon</b> aralashmaydi.
+        Har maydondagi <span class="q" tabindex="0" data-tip="Mana shunday podskaska. Sichqonchani olib borsangiz yoki Tab bilan tanlasangiz chiqadi.">?</span>
+        — nima uchun kerakligi va oʻzgartirsa nima boʻlishi.
+      </div>
+
+      <!-- ============== STANDART OQIM ============== -->
+      <div class="blk blk-std">
+        <h3><span class="tag">STANDART</span>Standart pochka
+          <span style="color:var(--ink3);text-transform:none;letter-spacing:0">— tag oynasiga sigʻgan detallar</span></h3>
+
+        <h4 class="sub">Tag oynasi — kim standart hisoblanadi</h4>
+        <div class="fields">
+          <div class="f"><label>Pochka maks. massa, kg <span class="q" tabindex="0" data-tip="Bitta standart pochkaning abrabotkadan keyingi TOZA massasi (qadoq materialisiz).&#10;&#10;Ikki vazifasi bor:&#10;1) pochka shundan ogʻir terilmaydi;&#10;2) shundan ogʻir DETALning oʻzi standart oqimga umuman kirmaydi — nostandart bogʻga oʻtadi.&#10;&#10;Asos: ISO 11228-1 — bir kishi 25 kg gacha koʻtaradi. 35 kg — ikki kishilik meʼyor.&#10;Kamaytirsangiz pochka soni oshadi, koʻtarsangiz ish xavfli boʻladi.">?</span></label><input id="cMaxKg" type="number" value="35" step="0.5"><small>abrabotkadan keyingi toza massa</small></div>
+          <div class="f"><label>Tag boʻyi, maks mm <span class="q" tabindex="0" data-tip="Standart pochkaning eng uzun oʻlchami. Detal shundan uzun boʻlsa — nostandart oqimga oʻtadi.&#10;&#10;Odatda yuk mashinasi kuzovi yoki stelyaj boʻyi bilan bogʻlanadi. Koʻtarsangiz uzun detallar standart pochkaga qaytadi, lekin ular stelyajga sigʻmay qolishi mumkin.">?</span></label><input id="cMaxLen" type="number" value="2100" step="10"><small>uzuni — nostandart oqimga</small></div>
+          <div class="f"><label>Tag eni, maks mm <span class="q" tabindex="0" data-tip="Standart pochkaning eng keng oʻlchami. Detal shundan keng boʻlsa — nostandart oqimga.&#10;&#10;Eshik/koridor eni va aravaning eni bilan bogʻlanadi. Bu chegara nostandart bogʻ gabaritiga taʼsir qilmaydi — u alohida («Nostandart maks. eni»).">?</span></label><input id="cBaseWMax" type="number" value="1900" step="10"><small>kengi — nostandart oqimga</small></div>
+          <div class="f"><label>Standart detal min. eni, mm <span class="q" tabindex="0" data-tip="Oynaning PASTKI chegarasi. Detal shundan tor boʻlsa standart oqimga umuman kirmaydi — nostandart bogʻga oʻtadi va oʻziga oʻxshagan mayda detallar bilan bogʻlanadi.&#10;&#10;«Tag eni, min» dan farqi: u faqat TAG boʻlishni taqiqlaydi, detal baribir standart pochkaning qavatiga tushadi. Bu esa OQIMni oʻzgartiradi.&#10;&#10;0 = oʻchiq. Mayda detallarni alohida yigʻish qulay boʻlgandagina yoqiladi — aks holda pochka soni oshadi.">?</span></label><input id="cMinPartW" type="number" value="0" step="10" min="0"><small>0 = oʻchiq. Kichigi nostandart oqimga oʻtadi</small></div>
+          <div class="f"><label>Standart detal min. boʻyi, mm <span class="q" tabindex="0" data-tip="Xuddi «min. eni» kabi, faqat uzunlik boʻyicha. Shundan qisqa detal nostandart oqimga oʻtadi.&#10;&#10;0 = oʻchiq.">?</span></label><input id="cMinPartL" type="number" value="0" step="10" min="0"><small>0 = oʻchiq. Kichigi nostandart oqimga oʻtadi</small></div>
         </div>
-        <div class="f">
-          <label>Chiqishga ruxsat</label>
-          <label class="chk"><input type="checkbox" id="cOvhOn" checked><span>oʻrta qavatlar tagdan chiqsin</span></label>
-          <small>har pochkada alohida ham belgilanadi</small>
+
+        <h4 class="sub">Tag (paddon) detal — kim pochkaga tag boʻla oladi</h4>
+        <div class="fields">
+          <div class="f"><label>Tag eni, min mm <span class="q" tabindex="0" data-tip="Tor detal tagda tik turolmaydi — pochka egiladi va tasma tortilganda sinadi.&#10;&#10;Bu chegaradan tor detal TAG boʻlolmaydi, lekin ustki qavatga bemalol tushadi va oqimi oʻzgarmaydi.&#10;&#10;Kamaytirsangiz tag nomzodlari koʻpayadi (pochka kamayadi), lekin tagi tor pochka paydo boʻladi.">?</span></label><input id="cMinBase" type="number" value="190" step="5"><small>tor detal tagda tik turolmaydi</small></div>
+          <div class="f"><label>Tag boʻyi, min mm <span class="q" tabindex="0" data-tip="Kalta detal tag boʻlmasin. 0 = cheklovsiz.&#10;&#10;Odatda kerak emas: «Paddon qamrovi» va «Chetdan qochish» kalta tagni allaqachon rad etadi.">?</span></label><input id="cBaseLMin" type="number" value="0" step="10"><small>0 = cheklovsiz</small></div>
+          <div class="f"><label>Tag/qopqoq min. qalinlik, mm <span class="q" tabindex="0" data-tip="Tag ham, qopqoq ham shundan yupqa detaldan boʻlmaydi.&#10;&#10;3 mm HDF orqa devor ustiga pochka terilsa sinadi, tagda esa butun pochkani koʻtarolmaydi.&#10;&#10;Istisno: butun guruh yupqa boʻlsa (masalan faqat 3 mm orqa devorlar) tizim oʻzi eng qalinini tag qilib oladi — aks holda ular umuman pochkalanmay qolardi.">?</span></label><input id="cBaseT" type="number" value="16" step="1"><small>yupqa detal tag ham, qopqoq ham boʻlolmaydi</small></div>
+          <div class="f"><label>Paddon qamrovi, min % <span class="q" tabindex="0" data-tip="Tag detal yuzasi butun pochka gabaritining kamida shuncha foizini egallasin (80…100).&#10;&#10;Kichik tag — pochkaning chetlari havoda qoladi, yuk tashishda pastdagi detal sinadi.&#10;&#10;Koʻtarsangiz sifat oshadi, lekin tag nomzodi kamayib pochka soni oshadi.">?</span></label><input id="cBaseCover" type="number" value="90" step="1" min="80" max="100"><small>tag yuzasi gabaritning shuncha % i (80…100)</small></div>
+          <div class="f"><label>Chetdan qochish, maks mm <span class="q" tabindex="0" data-tip="Tag detal umumiy gabaritdan shuncha mm ichkarida boʻlishi mumkin.&#10;&#10;Undan koʻp qochsa pochka chekkasi tayanchsiz osilib qoladi. 40 mm — qoʻlda koʻtarilganda sezilmaydigan chet.">?</span></label><input id="cBaseInset" type="number" value="40" step="5" min="0"><small>tag gabaritdan shuncha ichkarida boʻlishi mumkin</small></div>
+        </div>
+
+        <h4 class="sub">Qavat va balandlik</h4>
+        <div class="fields">
+          <div class="f"><label>Pochka maks. balandligi, mm <span class="q" tabindex="0" data-tip="Yigʻilgan pochkaning eng katta balandligi (detallar qalinligi yigʻindisi).&#10;&#10;Qavat soni chegarasi bilan BIRGA ishlaydi: qaysi biri avval toʻlsa, qavat qoʻshish shu yerda toʻxtaydi.&#10;&#10;0 = cheklovsiz. Stelyaj yoki mashina yarusi balandligi bilan bogʻlanadi.">?</span></label><input id="cMaxH" type="number" value="0" step="10" min="0"><small>0 = cheklovsiz. Qavat soni bilan birga ishlaydi</small></div>
+          <div class="f">
+            <label>Chiqishga ruxsat <span class="q" tabindex="0" data-tip="Oʻrta qavatdagi detal tag gabaritidan «Chiqish, mm» qadar chetga chiqib turishi mumkin.&#10;&#10;Yoqilgan holda qavat zichroq toʻladi va pochka kamayadi; oʻchirilganda hamma detal tag ichida qoladi — pochka toza koʻrinadi, lekin soni oshadi.&#10;&#10;Har pochkada alohida ham belgilanadi (qadoqlash ekranidagi belgi).">?</span></label>
+            <label class="chk"><input type="checkbox" id="cOvhOn" checked><span>oʻrta qavatlar tagdan chiqsin</span></label>
+            <small>har pochkada alohida ham belgilanadi</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============== NOSTANDART OQIM ============== -->
+      <div class="blk blk-nst">
+        <h3><span class="tag">NOSTANDART</span>Nostandart bogʻ
+          <span style="color:var(--ink3);text-transform:none;letter-spacing:0">— tag oynasidan chiqqanlar</span></h3>
+        <div class="note" style="margin:0 0 12px;border-left-color:var(--alert);font-size:12px">
+          Bu yerdagi raqamlar <b>faqat</b> nostandart oqimga taʼsir qiladi. Nostandart detal
+          faqat oʻziga oʻxshagan nostandart detal bilan bogʻlanadi; standart detal
+          bu bogʻga <b>hech qachon</b> tushmaydi.
+        </div>
+        <div class="fields">
+          <div class="f"><label>Nostandart maks. massa, kg <span class="q" tabindex="0" data-tip="Nostandart bogʻ uchun ALOHIDA massa chegarasi (standart 35 kg oʻrniga).&#10;&#10;Uzun/tor detallar bogʻi qoʻlda emas, arava yoki ikki kishi bilan tashiladi — shuning uchun standartdan ogʻirroq boʻlishi mumkin.&#10;&#10;Bu raqam standart pochkalarga umuman taʼsir qilmaydi.">?</span></label><input id="cOddKg" type="number" value="40" step="0.5"><small>uzun/tor detallar pochkasi uchun alohida limit</small></div>
+          <div class="f"><label>Nostandart maks. boʻyi, mm <span class="q" tabindex="0" data-tip="Nostandart bogʻning eng uzun oʻlchami. Detal shundan ham uzun boʻlsa bogʻ tuzilmaydi — u YOLGʻIZ qoladi.&#10;&#10;Sexdan chiqadigan eng uzun detal (masalan 3200 mm plita) boʻyicha qoʻyiladi.">?</span></label><input id="cOddLMax" type="number" value="3200" step="50"><small>undan uzuni yolgʻiz turadi</small></div>
+          <div class="f"><label>Nostandart maks. eni, mm <span class="q" tabindex="0" data-tip="Bogʻ gabariti shundan kengaymaydi. Bogʻga yangi detal qoʻshilganda umumiy eni tekshiriladi.&#10;&#10;Arava yoki eshik eni bilan bogʻlanadi.">?</span></label><input id="cOddWMax" type="number" value="1900" step="10"><small>bogʻ gabariti shundan oshmaydi</small></div>
+          <div class="f"><label>«Oʻlchami yaqin», maks mm <span class="q" tabindex="0" data-tip="Ikki nostandart detal shu qadar mm ichida farq qilsa — ular BITTA bogʻga tushadi.&#10;&#10;Kichraytirsangiz bogʻlar bir xil oʻlchamli boʻladi (chiroyli, mustahkam), lekin soni oshadi. Kattalashtirsangiz bogʻ kamayadi, lekin ichida turli oʻlchamlar aralashib bogʻ qiyshayadi.&#10;&#10;300 mm — namunada eng yaxshi natija bergan qiymat.">?</span></label><input id="cOddTol" type="number" value="300" step="10" min="0"><small>shuncha mm ichida farq qilsa bitta bogʻga tushadi</small></div>
+        </div>
+      </div>
+
+      <!-- ============== IKKALASIGA ============== -->
+      <div class="blk blk-all">
+        <h3><span class="tag">IKKALASIGA</span>Umumiy
+          <span style="color:var(--ink3);text-transform:none;letter-spacing:0">— standart va nostandart oqimga birdek</span></h3>
+        <div class="fields">
+          <div class="f"><label>1 kishi koʻtarish chegarasi, kg <span class="q" tabindex="0" data-tip="Pochka BRUTTO massasi shundan oshsa chekda va roʻyxatda «2 KISHI» belgisi chiqadi.&#10;&#10;Terishga taʼsir qilmaydi — faqat ogohlantiradi.&#10;&#10;Asos: ISO 11228-1 va NIOSH — bir kishi uchun 23…25 kg.">?</span></label><input id="cOneMan" type="number" value="25" step="1"><small>oshsa chekda «2 KISHI» chiqadi</small></div>
+          <div class="f"><label>Qadoq materiali (tara), kg <span class="q" tabindex="0" data-tip="Qogʻoz + burchak + tasma massasi. Toza massaga qoʻshilib BRUTTO beradi.&#10;&#10;Brutto chekda koʻrsatiladi va «2 KISHI» belgisi shunga qarab qoʻyiladi. Terish chegarasi (35/40 kg) esa TOZA massa boʻyicha hisoblanadi.">?</span></label><input id="cTare" type="number" value="0.6" step="0.1" min="0"><small>qogʻoz + burchak + tasma. Bruttoga qoʻshiladi</small></div>
+          <div class="f"><label>Detal maks. qalinligi, mm <span class="q" tabindex="0" data-tip="Shundan qalin obyekt umuman pochkalanmaydi va massaga ham kirmaydi.&#10;&#10;Raskroy faylida detal bilan bir qatorda XONA obyektlari ham keladi — devor, pol, shift. Ular 100…300 mm «qalinlikda» boʻladi va pochkaga tushsa massa yolgʻon chiqadi (namunada 2396 kg li «pochka» chiqqan edi).&#10;&#10;Rad etilganlar «Diagnostika» boʻlimida roʻyxat boʻlib koʻrinadi.">?</span></label><input id="cMaxPartT" type="number" value="60" step="5" min="0"><small>undan qalini pochkalanmaydi — xona devori, pol, shift</small></div>
+          <div class="f">
+            <label>Qalinlik <span class="q" tabindex="0" data-tip="Yoqilgan holda har qalinlik alohida pochkalanadi: 16 mm alohida, 3 mm alohida.&#10;&#10;Oʻchirilganda turli qalinlik bitta pochkaga tushishi mumkin (lekin bitta QAVATda baribir aralashmaydi — pastdagi «Qalinlik matritsasi» ga qarang).">?</span></label>
+            <label class="chk"><input type="checkbox" id="cThick" checked><span>qalinlik boʻyicha ajratish</span></label>
+            <small>16 mm alohida, 3 mm alohida</small>
+          </div>
+          <div class="f"><label>Qoldiq uchun zaxira, kg <span class="q" tabindex="0" data-tip="Guruh oxirida 2–4 detal qolganda ular yangi yarim boʻsh pochka ochmasin — mavjud pochkaga singdiriladi. Shunda pochka chegaradan shuncha kg gacha oshishi mumkin.&#10;&#10;ZAXIRA — OXIRGI CHORA: avval chegara ICHIDA joy qidiriladi, faqat topilmasa zaxira ochiladi.&#10;&#10;0 qoʻysangiz zaxira yopiladi — hamma pochka 35 kg ichida qoladi, lekin yengil pochkalar koʻpayadi.">?</span></label><input id="cTailOver" type="number" value="10" step="0.5" min="0"><small>qoldiq singdirilganda limitdan shuncha oshishi mumkin</small></div>
+          <div class="f"><label>Quyruqda maks. boʻshliq, mm <span class="q" tabindex="0" data-tip="Singdirilgan qoldiq qavatida detallar orasida (va tag chetigacha) qolgan eng katta TAYANCHSIZ oraliq.&#10;&#10;Nega foiz emas, millimetr: 4 ta tor detal butun chuqurlik boʻylab tarqalsa 44 % beradi va qopqoq bemalol tayanadi; oʻsha 44 % ikkita keng detal boʻlib yigʻilsa qopqoq 681 mm boʻshliq ustidan oʻtadi va ustiga pochka terilganda sinadi.&#10;&#10;Kichraytirsangiz sifat oshadi, pochka soni ham oshadi (namunada: oʻchiq — 47 ta, 500 — 48, 300 — 50, 200 — 53).&#10;0 = oʻchiq.">?</span></label><input id="cTailGap" type="number" value="300" step="25" min="0"><small>qopqoq shuncha mm dan koʻp tayanchsiz turmasin. 0 = oʻchiq</small></div>
+          <div class="f"><label>Quyruq tayanchi, min % <span class="q" tabindex="0" data-tip="Singdirilgan qoldiq qavati pochkani har oʻq boʻyicha kamida shuncha foiz qoplasin.&#10;&#10;Nega boʻshliqdan tashqari yana shu kerak: 1910×300 li pochkaga 1720×160 li detal MARKAZGA qoʻyilsa chetdagi boʻshliqlar atigi 70 va 102 mm — boʻshliq chegarasi bemalol oʻtkazadi. Lekin qopqoq 300 mm enli pochkada 160 mm enli qirraga tayanadi (53 %) va ustiga pochka terilganda ARRA-KAMON boʻlib ag'dariladi.&#10;&#10;Ikki oʻq alohida oʻlchanadi, kichigi olinadi: bir oʻq boʻyicha 90 % boʻlishi ikkinchisini oqlamaydi.&#10;&#10;Namunada: oʻchiq — 50 pochka (eng tor tayanch 18 %), 60 % — 52 pochka, 70 % — 54, 80 % — 55, 90 % — 56.&#10;0 = oʻchiq.">?</span></label><input id="cTailSpan" type="number" value="70" step="5" min="0" max="100"><small>qopqoq tor qirraga tayanib chayqalmasin. 0 = oʻchiq</small></div>
+          <div class="f"><label>Tom detali tayanchi, min % <span class="q" tabindex="0" data-tip="HAR BIR tom detali oʻz yuzasining kamida shuncha foizi bilan ostidagi qavatga tegishi shart. Ostida qavat boʻlmasa — tag detalga.&#10;&#10;«Quyruq tayanchi» dan farqi: u BUTUN qavatning umumiy kengligini oʻlchaydi va tomning biron detali ostidagi qavatdan butunlay chiqib ketganini koʻrmaydi. Sexda koʻrilgani shu: tom uch detaldan iborat, oʻrtadagisi yaxshi tegadi, chetdagi ikkitasi osilib qolgan — tegish yuzasi 30 % ham emas.&#10;&#10;Nega har detal alohida: uchtasining oʻrtachasi 70 % boʻlishi mumkin, lekin chetdagi bittasi 0 % boʻlsa u baribir sinadi. Oʻrtacha nosozlikni yashiradi.&#10;&#10;Namunada: oʻchiq — 54 pochka (eng yomon tayanch 56 %), 65 % — 55 pochka (75 %), 80 % — 56 pochka (80 %).&#10;0 = oʻchiq.">?</span></label><input id="cLidSupp" type="number" value="65" step="5" min="0" max="100"><small>har tom detali ostidagi qavatga shuncha % tegsin. 0 = oʻchiq</small></div>
+          <div class="f"><label>Tom ostidagi qavat, min % <span class="q" tabindex="0" data-tip="Tom ostidagi qavat («toʻshak») oʻz yuzasining kamida shuncha foizini qoplasin.&#10;&#10;«Tom detali tayanchi» dan farqi: u har detalning TEGISH yuzasini oʻlchaydi, bu esa toʻshakning OʻZI toʻlaligini talab qiladi.&#10;&#10;Sabab: tom uch tasmadan iborat boʻlsa (1897×100 + 1790×100 + 1897×100) va ostidagi qavat faqat oʻrtani egallasa, chetdagi ikkita tasma qirraga tayanib DUMALAB ketadi — tasma tortilgunga qadar joyidan qoʻzgʻaladi.&#10;&#10;Amalda bu QUYRUQqa tegishli: oddiy qavatlar allaqachon toʻldirish chegarasidan oʻtadi, quyruq esa undan ozod. Endi siyrak quyruq tom ostiga qoʻyilmaydi — bir qavat pastga suqiladi yoki umuman singdirilmaydi.&#10;&#10;Buzilishi XATO hisoblanadi (audit TOM_TAGI).&#10;&#10;Namunada: oʻchiq — 55 pochka (eng yomon toʻshak 75 %), 85 % — 56 pochka (85 %).&#10;0 = oʻchiq.">?</span></label><input id="cLidBed" type="number" value="85" step="5" min="0" max="100"><small>siyrak quyruq tom ostiga tushmasin. 0 = oʻchiq</small></div>
+        </div>
+
+        <h4 class="sub">Qalinlik matritsasi — qaysi qalinlik asosiy pochkaga qoʻshilsin</h4>
+        <div id="thickMix" class="note" style="margin:0"></div>
+        <div class="note" style="margin:8px 0 0;font-size:12px;color:var(--ink3)">
+          Asosiy qalinlik — detali eng koʻp boʻlgani, u avtomatik aniqlanadi. Belgilangan
+          qalinlik shu pochkaga <b>alohida qavat</b> boʻlib qoʻshiladi; bitta qavatda ikki
+          xil qalinlik hech qachon aralashmaydi. Tag va qopqoq baribir yupqa detaldan boʻlmaydi.
         </div>
       </div>
 
@@ -961,12 +1198,10 @@ select:focus-visible,
         <summary>Nozik sozlash — terish algoritmi <span>(bir marta oʻrnatiladi)</span></summary>
         <div class="fields">
           <div class="f"><label>Chiqish, mm (bir tomon)</label><input id="cOvh" type="number" value="20" step="1"><small>umumiy 2× — jami 40 mm</small></div>
-          <div class="f"><label>Tag detal min. oʻlcham, mm</label><input id="cMinBase" type="number" value="190" step="5"><small>tor detal tag/ust boʻlolmaydi</small></div>
-          <div class="f"><label>Maks. oʻlcham, mm</label><input id="cMaxLen" type="number" value="2100" step="10"><small>kattasi — noodatiy detal</small></div>
-          <div class="f"><label>Tag/ust min. qalinlik, mm</label><input id="cBaseT" type="number" value="0" step="1"><small>0 = cheklovsiz. Yupqa XDF tagga tushmasin desangiz 10 qoʻying</small></div>
           <div class="f"><label>Qavat toʻldirish, min %</label><input id="cFill" type="number" value="85" step="5"><small>tag detal yuzasining foizi</small></div>
-          <div class="f"><label>Qopqoq toʻldirish, min %</label><input id="cLidFill" type="number" value="80" step="5"><small>eng ust qism</small></div>
+          <div class="f"><label>Tom (qopqoq) yopilishi, min %</label><input id="cLidFill" type="number" value="90" step="5"><small>eng ustki yuza — ustiga boshqa pochka teriladi</small></div>
           <div class="f"><label>Qopqoq detallari, maks</label><input id="cLidN" type="number" value="3" step="1" min="1" max="4"><small>2–3 detal birga yopishi mumkin</small></div>
+          <div class="f"><label>Tom ulushi, min %</label><input id="cLidBal" type="number" value="40" step="5" min="0" max="100"><small>2 detalda 60/40, 3 detalda 30/30/30. 88/12 rad etiladi</small></div>
           <div class="f"><label>Qopqoq kichikligi, maks mm</label><input id="cLidTol" type="number" value="100" step="10"><small>tag gabaritidan shuncha kichik boʻlishi mumkin</small></div>
           <div class="f"><label>Maks. qavat soni</label><input id="cMaxLay" type="number" value="12" step="1" min="0"><small>tag + oʻrta + qopqoq. 0 = cheklovsiz</small></div>
           <div class="f"><label>Variatsiya urinishlari</label><input id="cTries" type="number" value="4" step="1"><small>butun buyurtma shuncha marta qayta teriladi</small></div>
@@ -979,19 +1214,40 @@ select:focus-visible,
 
       <h3>QR chek va chop etish</h3>
       <div class="fields">
-        <div class="f"><label>Prefiks</label><input id="cPrefix" type="text" value="SM"><small>tsex/tizim belgisi</small></div>
+        <div class="f"><label>Prefiks <span class="q" tabindex="0" data-tip="Chek va QR kodining boshidagi tsex/tizim belgisi.&#10;&#10;QR formati: PREFIKS.UUID|Pnn|Qn|DETALKOD|LxWxT — skaner shu qatorni yozadi, tizim detalni tekshiradi.">?</span></label><input id="cPrefix" type="text" value="SM"><small>tsex/tizim belgisi</small></div>
         <div class="f">
-          <label>Chek oʻlchami</label>
+          <label>Chek oʻlchami <span class="q" tabindex="0" data-tip="Chop etishda @page oʻlchamini belgilaydi.&#10;&#10;A4 — bir varaqda 2 ustun chek (oddiy printer).&#10;100×70, 80×60, 58×40 — termal printer, har chek alohida varaqda.&#10;«Boshqa (qoʻlda)» — oʻlchamni pastdagi ikki maydondan oʻzingiz kiritasiz.&#10;&#10;80×60 — pochka cheki uchun standart oʻlcham: ichida pochka maʼlumoti, QR va detallar roʻyxati sigʻadi.">?</span></label>
           <select id="cLabel" style="width:100%;background:var(--panel);border:1px solid var(--line2);border-radius:var(--r);padding:8px 9px;font-family:var(--mono)">
             <option value="a4">A4 — 2 ustun (oddiy printer)</option>
             <option value="100x70">100 × 70 mm — termal printer</option>
+            <option value="80x60">80 × 60 mm — pochka cheki</option>
             <option value="58x40">58 × 40 mm — kichik termal</option>
+            <option value="custom">Boshqa — qoʻlda (mm)</option>
           </select>
           <small>termal rejimda har chek alohida varaqda chiqadi</small>
+        </div>
+        <div class="f"><label>Qoʻlda: eni, mm <span class="q" tabindex="0" data-tip="«Boshqa — qoʻlda» tanlanganda chek eni.&#10;&#10;Faqat shu rejimda ishlaydi; tayyor oʻlcham tanlangan boʻlsa tegilmaydi.&#10;&#10;Rulon eni bilan bir xil qoʻying — printer chekni oʻzi kesadi.">?</span></label><input id="cLabelW" type="number" value="80" step="1" min="20" max="300"><small>faqat «Boshqa — qoʻlda» rejimida</small></div>
+        <div class="f"><label>Qoʻlda: boʻyi, mm <span class="q" tabindex="0" data-tip="«Boshqa — qoʻlda» tanlanganda chek boʻyi.&#10;&#10;60 mm dan past boʻlsa tizim shriftni avtomatik kichraytiradi va detallar roʻyxatini qisqartiradi.">?</span></label><input id="cLabelH" type="number" value="60" step="1" min="20" max="300"><small>60 mm dan past — mayda shrift</small></div>
+        <div class="f">
+          <label>Avtomatik chek <span class="q" tabindex="0" data-tip="Pochkaning oxirgi detali qoʻyilishi bilan pochka cheki chop oynasi oʻzi ochiladi.&#10;&#10;Ish tartibi: oxirgi detal → qogʻozga oʻrash → chekni yopishtirish. Ilgari ishchi «Pochka cheki» tugmasini qidirib topishi kerak edi va koʻpincha unutardi.&#10;&#10;Brauzer jimgina bosib chiqara olmaydi — chop oynasi ochiladi, ishchi Enter bosadi.&#10;&#10;Oʻchirsangiz chek faqat tugma bilan chiqadi.">?</span></label>
+          <label class="chk"><input type="checkbox" id="cAutoLbl" checked><span>pochka tugaganda oʻzi chiqsin</span></label>
+          <small>oxirgi detal qoʻyilgach chop oynasi ochiladi</small>
         </div>
       </div>
       <div class="note">QR ichidagi format: <code style="font-family:var(--mono)">PREFIKS.UUID|Pnn|Qn|DETALKOD|LxWxT</code> —
         skaner tepadagi maydonga yozadi, tizim toʻgʻri detalni tekshiradi.</div>
+
+      <h3>Buyurtma hujjati <span style="color:var(--ink3);text-transform:none;letter-spacing:0">— A4, toʻliq tarkib</span></h3>
+      <div class="note" style="margin:0 0 10px;font-size:12px">
+        A4 hujjat butun buyurtma <b>toʻliq yigʻilgandan keyin</b> chiqadi: har pochka,
+        har detal, jami massa va imzo joylari. Yigʻilmagan pochka qolgan boʻlsa hujjat
+        chop etilmaydi — nima qolganini pastda koʻrsatadi.
+      </div>
+      <div id="orderDocNote" class="note" style="margin:0 0 10px;font-family:var(--mono);font-size:12px">—</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" id="btnOrderChk">Holatni tekshirish</button>
+        <button class="btn pri" id="btnOrderDoc">Toʻliq tarkib — A4</button>
+      </div>
 
       <h3>Loyiha</h3>
       <div class="note" id="saveNote" style="display:none;border-left-color:var(--ok)">Sozlamalar saqlandi — keyingi ochilishda avtomatik qoʻllanadi.</div>
@@ -1236,12 +1492,174 @@ var SEED = {"name":"Namuna komplekt","uuid":"5eed0000-1111-4222-8333-44445555666
 /* ============================================================
    3.3 HOLAT — barcha sozlamalar (S), loyiha (P), pochkalar (PACKS)
    ============================================================ */
-var APP_VER = 12;  // har yangilanishda +1
+var APP_VER = 20;  // har yangilanishda +1
 var S = {
-  maxKg:35, ovh:20, minBase:190, maxLen:2100, minBaseT:0, tries:4, prefix:"SM", byThick:true,
-  minFill:85, lidFill:80, lidN:3, lidTol:100, oneMan:25, maxLayers:12, sepCls:{},
+  maxKg:35, ovh:20, minBase:190, maxLen:2100, minBaseT:16, tries:4, prefix:"SM", byThick:true,
+  minFill:85, lidFill:90, lidN:3, lidTol:100, oneMan:25, maxLayers:12, sepCls:{},
+
+  /* ---- v14: TAG (PADDON) OʻLCHOV OYNASI ----------------------------------
+     Qaysi detal tag boʻla oladi. Toʻrt chegara bitta oynani beradi:
+       minBase  — eni MIN  (tor detal tagda tik turolmaydi)
+       baseWMax — eni MAKS (kengi listdan chiqadi, kranga sigʻmaydi)
+       baseLMin — buyi MIN (kalta detal ustiga qavat terib boʻlmaydi)
+       maxLen   — buyi MAKS (uzunidan yuqorisi — nostandart)
+     Oyna FAQAT TAGGA tegishli: oynadan chiqqan detal qavatga bemalol tushadi,
+     agar u tag gabaritiga sigʻsa. Shu sabab mayda polka nostandartga oʻtmaydi. */
+  baseWMax:1900, baseLMin:0,
+
+  /* v18: STANDART DETALNING MIN OʻLCHAMI.
+     Detal shu chegaradan kichik boʻlsa — u standart oqimga umuman kirmaydi,
+     NOSTANDART oqimga oʻtadi va oʻziga oʻxshagan mayda detallar bilan bogʻ
+     boʻladi. Tag oynasining pastki chegarasidan (minBase, baseLMin) farqi:
+     u faqat «tag boʻlolmaydi» deydi, detal baribir standart pochkaning
+     qavatiga tushaveradi. Bu esa detalni butunlay boshqa oqimga yuboradi.
+     Standart 0 = oʻchiq: mayda polkalar eskicha standart pochkada qoladi.
+     Sexda mayda detallarni alohida yigʻish qulay boʻlsa — shu yerda yoqiladi. */
+  minPartW:0, minPartL:0,
+
+  /* ---- v14: PADDON QAMROVI ----------------------------------------------
+     Tag pochkaning deyarli butun tagini egallashi shart, aks holda ustidagi
+     qavatlar chetdan osilib qoladi va pochka agʻdariladi.
+       baseCover — tag yuzasi pochka gabarit yuzasining ≥ shuncha % i (80…100)
+       baseInset — tag gabaritdan har tomonga ≤ shuncha mm ichkarida
+     Ikkalasi BIRGA tekshiriladi: foiz umumiy qamrovni, mm esa bitta yomon
+     tomonni ushlaydi (uzun pochkada 5% ham 60 mm boʻlishi mumkin). */
+  baseCover:90, baseInset:40,
+
+  /* v14: pochka maks BALANDLIGI, mm. 0 = cheklovsiz. Qavat soni (maxLayers)
+     aralash qalinlikda balandlikni yomon oʻlchaydi: 12 ta 3 mm = 36 mm,
+     12 ta 16 mm = 192 mm. Shuning uchun mm boʻyicha ikkinchi chegara. */
+  maxH:0,
+
+  /* v17: TOM ULUSHI, min %. Koʻp detalli tomda eng kichik detalning ulushi.
+       minUlush(n) = lidBal − 10 × (n − 2)
+       2 detal → 40 %  (60/40 va 50/50 ruxsat, 88/12 rad)
+       3 detal → 30 %  (30/30/30 atrofida)
+     Sabab: mayda detal tomda qolsa, ustiga terilgan pochkaning ogʻirligi
+     oʻsha kichik yuzaga toʻplanadi va detal eziladi. */
+  lidBal:40,
+
+  /* ---- v14: NOSTANDART DETALLAR -----------------------------------------
+     Tag oynasidan chiqqan yoki limitdan ogʻir detallar. Ular endi shunchaki
+     bir joyga tashlanmaydi — saralanib pochkalanadi:
+       oddKg   — nostandart pochka massa limiti (standartdan katta boʻlishi mumkin)
+       oddLMax — nostandart pochka maks buyi
+       oddWMax — nostandart pochka maks eni
+       oddTol  — «oʻlchami yaqin» chegarasi: shuncha mm ichida farq qilsa birga
+     Bir xil oʻlchamli detallar avval oʻzaro bogʻ qilinadi (uzun-tor detal uchun
+     tabiiy), xilma-xil qolganlariga toʻliq pochka mantiqi qoʻllanadi. */
+  oddKg:40, oddLMax:3200, oddWMax:1900, oddTol:300,
+
+  /* v16: QOLDIQ UCHUN MASSA ZAXIRASI, kg.
+     Guruh oxirida qoladigan yengil pochkani boshqasiga singdirishda massa
+     limitidan shuncha kg oshishga ruxsat beriladi. Sabab: qoldiq detal
+     odatda 2–8 kg boʻladi, nishon pochkada esa 30 kg turadi — 35 kg limiti
+     tufayli ular alohida qolib ketardi va butun buyurtmada oʻnlab yarim boʻsh
+     pochka toʻplanardi. Bitta 43 kg li pochka ikkita (33 + 10) dan koʻra
+     tashishga ham, omborga ham qulayroq.
+     DIQQAT: zaxira FAQAT singdirishda ishlaydi — oddiy terish baribir
+     maxKg bilan cheklangan. Zaxiradan foydalangan pochka `overKg` belgisini
+     oladi, chekda «2 KISHI» chiqadi va roʻyxatda alohida koʻrinadi. */
+  tailKgOver:10,
+
+  /* v20: QUYRUQ QAVATIDA RUXSAT ETILGAN ENG KATTA BOʻSHLIQ, mm. 0 = oʻchiq.
+
+     Quyruq qavati `minFill` (85 %) shartidan ozod — u guruh oxirida qolgan
+     2–4 detalni sigʻdirish uchun bor. Lekin toʻldirish FOIZI notoʻgʻri
+     oʻlchov: 4 ta tor detal butun chuqurlik boʻylab tarqalsa 44 % beradi va
+     ustidagi qopqoq bemalol tayanadi; oʻsha 44 % ikkita keng detal boʻlib
+     yigʻilsa esa qopqoq 681 mm boʻshliq ustidan oʻtadi va ustiga pochka
+     terilganda egilib sinadi.
+
+     Shuning uchun chegara FOIZDA emas, MILLIMETRDA: quyruq detallari orasida
+     (va tag chetigacha) qolgan eng katta tayanchsiz oraliq shundan oshmasin.
+     300 mm — 16 mm LDSP taxtasi ustiga 40 kg li pochka qoʻyilganda xavfsiz
+     oraliq. Kattalashtirsa quyruq koʻproq ishlaydi, lekin qopqoq egiladi. */
+  tailGap:300,
+
+  /* v20: QUYRUQ QAVATINING ENG KICHIK TAYANCH KENGLIGI, % (har oʻq boʻyicha).
+     0 = oʻchiq.
+
+     `tailGap` boʻshliqni oʻlchaydi, bu esa TAYANCH KENGLIGINI. Sexda koʻrilgan
+     nosozlik aynan ikkinchisi edi: 1910×300 li pochkaga 1720×160 li quyruq
+     markazga tushgan. Chetdagi boʻshliqlar 70 va 102 mm — `tailGap` oʻtkazadi.
+     Lekin qopqoq 300 mm enli pochkada 160 mm enli qirraga tayanadi (53 %) va
+     ustiga pochka terilganda ag'dariladi.
+
+     Qoplanish har oʻq boʻyicha alohida oʻlchanadi, kichigi olinadi. */
+  tailSpan:70,
+
+  /* v20: TOM DETALINING TAYANCH ULUSHI, % (har detal ALOHIDA). 0 = oʻchiq.
+
+     `tailSpan` butun qavatning umumiy kengligini oʻlchaydi — u tomning
+     BIRON detali ostidagi qavatdan butunlay chiqib ketganini koʻrmaydi.
+     Sexda koʻrilgani shu: tom uch detaldan iborat, oʻrtadagisi ostidagi
+     qavatga yaxshi tegadi, chetdagi ikkitasi esa undan chiqib osilib qoladi —
+     ularning tegish yuzasi 30 % ham emas.
+
+     Endi HAR BIR tom detali oʻz yuzasining kamida shuncha foizi bilan
+     ostidagi qavatga tegishi shart. Ostida qavat boʻlmasa — tag detalga.
+
+     Nima uchun har detal alohida: uchta detalning oʻrtachasi 70 % boʻlishi
+     mumkin, lekin chetdagi bittasi 0 % boʻlsa u baribir osilib turadi va
+     ustiga pochka terilganda sinadi. Oʻrtacha bu nosozlikni yashiradi. */
+  lidSupp:65,
+
+  /* v20: TOM OSTIDAGI QAVAT (TOʻSHAK) — eng kam toʻldirish, %. 0 = oʻchiq.
+
+     `lidSupp` har bir tom detalining TEGISH yuzasini oʻlchaydi. Sexda undan
+     ham qatʼiyroq talab qoʻyildi: tom ostidagi qavatning OʻZI toʻliq boʻlsin.
+
+     Sabab: tom uch tasmadan iborat boʻlsa (1897×100 + 1790×100 + 1897×100) va
+     ostidagi qavat faqat oʻrtani egallasa, chetdagi ikkita tasma qirraga
+     tayanib DUMALAB ketadi — tasma tortilgunga qadar joyidan qoʻzgʻaladi.
+     Toʻshak qavat oʻz yuzasining 85 % ini qoplasa tom detallari qoʻzgʻalmaydi.
+
+     Amalda bu quyruqqa tegishli: oddiy qavatlar allaqachon `minFill` (85 %)
+     dan oʻtadi, quyruq esa undan ozod. Endi SIYRAK quyruq tom ostiga
+     qoʻyilmaydi — u pastroqqa suqiladi yoki umuman singdirilmaydi.
+
+     Chegara `minFill` dan qatʼiyroq boʻlolmaydi: oddiy qavat `minFill` bilan
+     qabul qilinadi, undan koʻpini talab qilish bajarilmas shart boʻlardi. */
+  lidBed:85,
+
+  /* v17: DETAL MAKS QALINLIGI, mm — undan qalini POCHKALANMAYDI.
+     Haqiqiy eksportlarda proyekt faylida mebel detallari bilan bir qatorda
+     XONA OBYEKTLARI ham keladi: devor, pol, shift. Ular ham «part» boʻlib
+     yoziladi va oʻz materialiga ega («Devor», 350 mm, 245 kg/m²). Tizim ularni
+     sodda pochkalab, 2,4 TONNALIK «pochka» yasab qoʻyardi.
+     60 mm chegarasi 205 ta haqiqiy fayl oʻlchanib tanlangan (tests\corpus.ps1).
+     Korpusda 30 mm dan qalin BARCHA materiallar ikki aniq guruhga boʻlinadi:
+       HAQIQIY  — «Stolishnitsa» 40 mm (28 kg/m²), «MATO» 50 mm (35 kg/m²),
+                  LMDF/LDSP 32 mm (22 kg/m²)
+       SOXTA    — «Devor» 100 / 200 / 350 mm (70…245 kg/m²), «Pol» 100 mm
+     50 va 100 mm orasida hech narsa yoʻq, shuning uchun 60 mm — xavfsiz
+     chegara: stolishnitsa ham, yumshoq mebel qoplamasi ham oʻtadi.
+     Chiqarib tashlangan obyektlar YOʻQOLMAYDI — ular Diagnostikada
+     roʻyxat boʻlib chiqadi (`DIAG.skipped`). */
+  maxPartT:60,
+
+  /* ---- v14: QALINLIK MATRITSASI -----------------------------------------
+     { "3":true } — 3 mm detallar ASOSIY pochkaga qoʻshiladi.
+     Asosiy qalinlik = buyurtmada detali eng koʻp boʻlgan qalinlik (avtomatik).
+     Qoʻshilgan qalinlik pochkada ALOHIDA QAVAT boʻlib turadi — bitta qavatda
+     ikki xil qalinlik hech qachon aralashmaydi (qavat notekis boʻlib qolardi).
+     Tag va qopqoq baribir minBaseT dan yupqa boʻlolmaydi. */
+  thickMix:{},
   tare:0.6,          // v10: qadoq materiali — qogʻoz + 4 burchak + tasma (faqat chek uchun)
-  labelSize:"a4",    // v10: chek oʻlchami — a4 | 100x70 | 58x40
+  labelSize:"a4",    // v10: chek oʻlchami — a4 | 100x70 | 80x60 | 58x40 | custom
+
+  /* v20: QOʻLDA OʻLCHAM. Sexdagi termal printer ruloni har xil boʻladi va tayyor
+     roʻyxatdagi uch oʻlcham yetmaydi. labelSize="custom" boʻlganda @page oʻlchami
+     aynan shu ikki raqamdan olinadi (mm). Boshqa rejimda ular tegilmaydi. */
+  labelW:80, labelH:60,
+
+  /* v20: POCHKA TUGAGANDA CHEK OʻZI CHIQSIN.
+     Ish tartibi: oxirgi detal qoʻyiladi → qogʻozga oʻraladi → chek yopishtiriladi.
+     Ilgari ishchi «Pochka cheki» tugmasini qidirib topishi kerak edi va koʻpincha
+     unutardi — pochka chekssiz omborga ketardi.
+     Brauzer jimgina bosib chiqara olmaydi: chop oynasi ochiladi, ishchi Enter bosadi. */
+  autoLbl:true,
   matCat:[ {key:"LDSP", t:16, l:2750, w:1830, kgm2:11.20},
            {key:"LMDF", t:16, l:2750, w:1830, kgm2:12.32},
            {key:"MDF",  t:16, l:2750, w:1830, kgm2:12.32},
@@ -1621,14 +2039,42 @@ function matOf(id){
   return P.materials[0];
 }
 
+/* v17: POCHKALANMAYDIGAN OBYEKTLAR.
+   Haqiqiy proyekt fayllarida mebel detallari bilan bir qatorda XONA
+   obyektlari ham keladi — devor, pol, shift. Ular ham `part` boʻlib yoziladi
+   va oʻz materialiga ega («Devor», 350 mm, 245 kg/m²). Tizim ularni sodda
+   pochkalab 2,4 tonnalik «pochka» yasab qoʻyardi.
+
+   Chegara QALINLIK boʻyicha, oʻlcham boʻyicha EMAS. Sabab tajribadan:
+     - «listga sigʻmaydi» qoidasi ishlamaydi — faylda koʻpincha QOLDIQ list
+       oʻlchami yoziladi (960×1830), haqiqiy 2428 mm li bok esa toʻgʻri detal;
+     - yumshoq mebel qoplamasi («MATO», 50 mm) haqiqiy mahsulot va oʻtishi kerak.
+   Chegara 205 ta haqiqiy faylda oʻlchandi: 30 mm dan qalin materiallar ikki
+   guruhga aniq boʻlinadi — HAQIQIY 32…50 mm (stolishnitsa 40, MATO 50) va
+   SOXTA 100…350 mm (Devor, Pol). Oraligʻi boʻsh, shuning uchun 60 mm.
+
+   Chiqarib tashlangani YOʻQOLMAYDI: roʻyxati DIAG.skipped ga yoziladi va
+   Diagnostikada koʻrinadi. */
+function partSkipWhy(p, m){
+  var t = m ? +m.t : 16;
+  var lim = +S.maxPartT || 0;
+  if (lim && t > lim)
+    return t + " mm qalinlik — " + lim + " mm dan qalin (" +
+           ((m && m.name) ? m.name : "material") + ")";
+  return null;
+}
+
 function buildItems(){
   var out = [];
   if (!P || !P.parts) return out;
+  var skipped = [];
   P.parts.forEach(function(p){
     // v11: birlik belgisi «good» kodidan yoki detal kodining prefiksidan olinadi
     var u = unitOf(p);
     if (S.rooms && S.rooms[u] === false) return;      // oʻchirilgan birlik
     var m = matOf(p.m);
+    var why = partSkipWhy(p, m);
+    if (why){ skipped.push({ code:p.c, name:p.n, q:Math.max(1, p.q|0), why:why }); return; }
     var L = Math.max(p.l, p.w), W = Math.min(p.l, p.w);
     var area = (L*W)/1e6;                 // mm² -> m²
     var kg = area * (m ? m.kgm2 : KGM2_FALLBACK);  // m² × kg/m² -> kg
@@ -1642,6 +2088,9 @@ function buildItems(){
         kg:kg, of:q });
     }
   });
+  /* Tashxis uchun: qaysi obyekt nega chiqarib tashlangani. buildItems() sof
+     funksiya boʻlib qolishi uchun DIAG ga faqat YOZADI, undan oʻqimaydi. */
+  if (typeof DIAG === "object" && DIAG) DIAG.skipped = skipped;
   return out;
 }
 </script>
@@ -1745,9 +2194,14 @@ function mirrorLayer(items, baseL, baseW){
 /* v12: `off` (chiqish) parametri olib tashlandi — u signaturada turardi, lekin
    funksiya tanasida bir marta ham ishlatilmasdi. Qavat chegarasi envL/envW orqali
    allaqachon kelayotgan edi. */
-function makeLayer(pool, envL, envW, kgBudget, baseL, baseW, ord, maxN, flip, rndj){
+/* v14: `tOnly` — QAVAT QALINLIGI. Berilsa, qavatga faqat aynan shu qalinlikdagi
+   detal tushadi. Sabab: aralash qalinlikdagi qavat notekis boʻladi — 16 mm
+   detal yonidagi 3 mm detal ustidagi qavatni 13 mm ga qiyshaytiradi, pochka
+   burchagi koʻtariladi va tasma boʻshab qoladi. null = eskicha (aralash). */
+function makeLayer(pool, envL, envW, kgBudget, baseL, baseW, ord, maxN, flip, rndj, tOnly){
   var area = baseL*baseW, lim = maxN || 1e9;
-  var cands = pool.filter(function(x){ return !x.used; }).sort(ORD[ord]);
+  function tOK(x){ return tOnly == null || Math.abs(x.T - tOnly) < 1e-9; }
+  var cands = pool.filter(function(x){ return !x.used && tOK(x); }).sort(ORD[ord]);
   if (rndj) for (var ji=0; ji+1<cands.length; ji++)          // yengil aralashtirish
     if (rndj() < 0.14){ var tmp=cands[ji]; cands[ji]=cands[ji+1]; cands[ji+1]=tmp; }
   var strips = [], kg = 0, usedH = 0, cnt = 0;
@@ -1802,7 +2256,7 @@ function makeLayer(pool, envL, envW, kgBudget, baseL, baseW, ord, maxN, flip, rn
   var gapH = yB - yF;
   if (gapH > 40 && cnt < lim){
     var pk = new Packer(baseL, gapH), sub=[];
-    pool.filter(function(x){ return !x.used; }).sort(ORD[ord]).forEach(function(it){
+    pool.filter(function(x){ return !x.used && tOK(x); }).sort(ORD[ord]).forEach(function(it){
       if (cnt>=lim || kg + it.kg > kgBudget + 1e-9) return;
       var n = pk.find(it.L, it.W); if (!n) return;
       pk.place(n);
@@ -1819,20 +2273,136 @@ function makeLayer(pool, envL, envW, kgBudget, baseL, baseW, ord, maxN, flip, rn
   centerLayer(items, baseL, baseW);
   if (flip) mirrorLayer(items, baseL, baseW);      // gʻisht terish: qator boshi almashadi
   return { items:items, kg:kg, fill:area? cov/area : 0, bb:bboxOf(items), flipped:!!flip,
-           strips:strips.length, h:items.reduce(function(m,q){ return Math.max(m,q.it.T); },0) };
+           strips:strips.length, t:(tOnly != null ? tOnly : null),
+           h:items.reduce(function(m,q){ return Math.max(m,q.it.T); },0) };
 }
+
+/* v14: pooldagi boʻsh detallarning qalinliklari — detali koʻpi birinchi.
+   Qavat qurishda shu tartibda sinaladi: eng koʻp detalli qalinlik odatda eng
+   zich qavat beradi, demak birinchi urinishdayoq yaxshi natija chiqadi. */
+function poolThicks(pool){
+  var m = {}, out = [];
+  pool.forEach(function(x){ if (!x.used) m[x.T] = (m[x.T] || 0) + 1; });
+  Object.keys(m).forEach(function(k){ out.push({ t:+k, n:m[k] }); });
+  out.sort(function(a,b){ return b.n - a.n || b.t - a.t; });
+  return out;
+}
+
+/* v14: YUPQA TAG USTIGA QALIN DETAL QOʻYILMAYDI.
+
+   Tag minBaseT dan yupqa boʻlishi — zaxira yoʻli: guruhda qalin detal umuman
+   boʻlmagan holat (butun pochka 3 mm orqa devor). Bunday pochka faqat yupqa
+   detallardan iborat boʻlib qolishi kerak: 3 mm paddon ustiga 16 mm bok
+   qoʻyilsa, tag ezilib pochka buklanadi.
+
+   Qoida qavat qurishda ham, quyruq singdirishda ham bir xil qoʻllanadi. */
+function thickOKon(base, t){
+  var m = S.minBaseT || 0;
+  return !(base.T < m - 1e-9 && t >= m - 1e-9);
+}
+
+/* v17: TOM ULUSHLARI — koʻp detalli tomda eng kichik detalning ulushi.
+
+   Buyurtmachi talabi ikki nuqta bilan berilgan:
+     2 detal — 60/40 dan yomon boʻlmasin, yaʼni eng kichigi ≥ 40 %
+     3 detal — 30/30/30 atrofida,        yaʼni eng kichigi ≥ 30 %
+   Ikki nuqta bitta chiziqda yotadi:
+       minUlush(n) = lidBal % − 10 % × (n − 2)
+   lidBal = 40 boʻlganda: n=2 → 40 %, n=3 → 30 %, n=4 → 20 %.
+
+   Nega kerak: tomga mayda detal tushsa, ustiga terilgan pochkaning ogʻirligi
+   oʻsha kichik yuzaga toʻplanadi. Qogʻoz oʻralganda ham oʻsha joyda burma
+   hosil boʻladi, tasma tortilganda detal siniydi. v16 gacha bu qoida faqat
+   `makeLid()` yasagan qopqoqqa qoʻllanardi; eng ustki qavat shunchaki
+   «qopqoq» deb koʻtarilganda esa tekshirilmasdan qolardi — natijada 96 %
+   yopilgan, lekin 958×510 va 511×84 detallardan iborat tom chiqib ketardi. */
+function lidBalOK(L){
+  var n = L.items.length;
+  if (n < 2 || !S.lidBal) return true;
+  var minShare = (S.lidBal / 100) - 0.10 * (n - 2);
+  if (minShare <= 0) return true;
+  var tot = 0, mn = Infinity;
+  L.items.forEach(function(q){ var a = q.a * q.b; tot += a; if (a < mn) mn = a; });
+  if (!tot) return true;
+  return (mn / tot) >= minShare - 1e-9;
+}
+
+/* ============================================================
+   v15: TOM (pochkaning eng ustki yuzasi) QOIDASI
+
+   Nega alohida va qatʼiy: yetkazib berishda pochkalar BIR-BIRINING USTIGA
+   teriladi. Pastdagi pochkaning tomi ochiq qolsa — ustidagi pochkaning butun
+   ogʻirligi shu bir necha kichik detalga tushadi. Ogʻirlik teng taqsimlanmaydi,
+   detal qirralari ezilib sinadi, tasma boʻshaydi.
+
+   v13 da quyruq qavati (3.6.7.1) ataylab shu talabdan ozod qilingan edi —
+   «ustida hech narsa yoʻq, demak egiladigan narsa ham yoʻq» degan asos bilan.
+   Asos NOTOʻGʻRI edi: ustida keyingi pochka turadi. Endi istisno yoʻq.
+
+   TOM SHARTI — beshtasi BIRDAN, eng ustki qavat kim boʻlishidan qatʼi nazar:
+     1. yuza      — tag yuzasining kamida `lidFill` % ini yopadi (standart 90)
+     2. detal     — koʻpi bilan `lidN` ta (standart 3)
+     3. muvozanat — ulushlar teng: 2 detalda 60/40, 3 detalda 30/30/30 atrofida
+     4. gabarit   — hech bir detal pochka konvertidan chiqmaydi
+     5. qalinlik  — hech bir detal `minBaseT` dan yupqa emas
+
+   v16 gacha 2 va 3 shartlar FAQAT `makeLid()` yasagan qopqoqqa qoʻllanardi.
+   Eng ustki qavat shunchaki «qopqoq» deb koʻtarilganda ular tekshirilmasdan
+   qolardi — natijada 96 % yopilgan, lekin 958×510 va 511×84 detallardan
+   iborat tom chiqib ketardi. Yuza yopiq, lekin ogʻirlik notekis: ustiga
+   terilgan pochka mayda detalni ezib sindiradi.
+
+   QALINLIK ZAXIRASI: tag oʻzi `minBaseT` dan yupqa boʻlsa (butun pochka 3 mm
+   orqa devor — 04-packer `thickOKon` buni kafolatlaydi), qalinlik talabi
+   tushiriladi. Aks holda bunday pochkaning tomi hech qachon yopilmasdi.
+   ============================================================ */
+function tomOK(L, base, off){
+  if (!L || !L.items || !L.items.length || !base) return false;
+  if (S.lidN && L.items.length > S.lidN) return false;
+  if (!lidBalOK(L)) return false;
+  var minT = (base.T >= (S.minBaseT || 0) - 1e-9) ? (S.minBaseT || 0) : 0;
+  /* «Gabaritdan chiqmasin» — POCHKA gabaritidan, tag chetidan emas. Oʻrta
+     qavatlar chiqishga (S.ovh) haqli va aynan ular gabaritni belgilaydi;
+     tom ham xuddi shu konvert ichida qolsa, u pochkadan chiqib turmaydi.
+     Chiqishning oʻzi paddon qamrovi (baseCover/baseInset) bilan cheklangan. */
+  var e = (off || 0) + 1e-6;
+  for (var i = 0; i < L.items.length; i++){
+    var q = L.items[i];
+    if (q.it.T < minT - 1e-9) return false;                      // yupqa detal tom boʻlmaydi
+    if (q.x < -e || q.y < -e ||
+        q.x + q.a > base.L + e || q.y + q.b > base.W + e) return false;
+  }
+  return L.fill >= (S.lidFill || 0)/100 - 1e-9;
+}
+/* v17: qopqoq yasash sharti endi TOM sharti bilan bir xil — ikkovi bir
+   qoidaga birlashdi. Nom saqlanadi: chaqiruv joyi qaysi maʼnoda ishlatayotgani
+   koʻrinib tursin. */
+function lidOK(L, base, off){ return tomOK(L, base, off); }
 
 /* 3.6.4 QOPQOQ — avval yaxlit 1 detal, boʻlmasa 2, keyin 3 */
 function makeLid(pool, base, kgBudget){
   function drop(L){ L.items.forEach(function(q){ q.it.used=false; }); }
+  /* v14: qopqoq TAG bilan bir xil talabga tushadi — u pochkaning ustki yuzasi,
+     ustiga boshqa pochka terilishi va tasma tortilishi mumkin. Shu sabab:
+       - minBaseT dan yupqa detal qopqoq boʻlolmaydi (3 mm XDF ezilib ketadi);
+       - qopqoq ham BITTA qalinlikdan (aralashsa usti notekis boʻladi);
+       - koʻp detalli qopqoqda ulushlar muvozanatli (lidBalOK). */
+  var minT = S.minBaseT || 0;
+  var ths = poolThicks(pool).filter(function(r){
+    return r.t >= minT - 1e-9 && thickOKon(base, r.t);
+  });
+  if (!ths.length) return null;
   for (var n=1; n<=S.lidN; n++){
     var best=null;
+    for (var ti=0; ti<ths.length; ti++)
     for (var o=0;o<ORD.length;o++){
-      var L = makeLayer(pool, base.L, base.W, kgBudget, base.L, base.W, o, n);
+      var L = makeLayer(pool, base.L, base.W, kgBudget, base.L, base.W, o, n,
+                        false, null, ths[ti].t);
       if (!L.items.length){ continue; }
-      var ok = (base.L-L.bb.L) <= S.lidTol && (base.W-L.bb.W) <= S.lidTol && L.fill >= S.lidFill/100;
+      var ok = (base.L-L.bb.L) <= S.lidTol && (base.W-L.bb.W) <= S.lidTol &&
+               lidOK(L, base, 0);
       // v12: L.whole yoziladigan, lekin hech qayerda oʻqilmaydigan maydon edi — olindi
-      if (ok && (!best || L.fill > best.fill)){ if (best) drop(best); L.lid=true; best=L; }
+      if (ok && (!best || L.fill > best.fill)){ if (best) drop(best); L.lid=true; L.tom=true; best=L; }
       else drop(L);
     }
     if (best) return best;      // eng kam detalli variant gʻolib
@@ -1845,30 +2415,82 @@ function makeLid(pool, base, kgBudget){
        strat 0: avval qopqoqni zaxiraga olamiz, keyin oʻrta qavatlar
        strat 1: avval qavatlarni toʻldiramiz, oxirgisi qopqoq boʻladi --- */
 function layoutPack(base, mids, allowOvh, ord, strat, rndj){
-  var off = allowOvh ? S.ovh : 0;
+  /* v14: chiqish PADDON QAMROVI bilan cheklanadi. `baseInset` — tag chetdan
+     necha mm ichkarida qolishi mumkinligi; chiqish shundan katta boʻlsa tag
+     ustidagi qavat osilib qoladi. Shuning uchun konvert ikkalasining kichigidan. */
+  var off = allowOvh ? Math.min(S.ovh, (S.baseInset != null ? S.baseInset : S.ovh)) : 0;
   var envL = base.L + 2*off, envW = base.W + 2*off, area = base.L*base.W;
   mids.forEach(function(i){ i.used = false; });
   var budget = S.maxKg - base.kg, layers = [], lid = null;
 
-  if (strat === 0){ lid = makeLid(mids, base, budget); if (lid) budget -= lid.kg; }
+  function drop(L){ L.items.forEach(function(q){ q.it.used=false; }); }
+
+  /* v14: PADDON QAMROVI — tag yuzasi pochka gabaritining kamida baseCover % i
+     boʻlishi shart. `list` — hozircha qabul qilingan qavatlar + sinalayotgani. */
+  function coverOK(list){
+    var gL = base.L, gW = base.W;
+    list.forEach(function(L){ if (L && L.bb){ gL = Math.max(gL, L.bb.L); gW = Math.max(gW, L.bb.W); } });
+    if (S.baseInset != null){
+      if ((gL - base.L)/2 > S.baseInset + 1e-9) return false;
+      if ((gW - base.W)/2 > S.baseInset + 1e-9) return false;
+    }
+    if (!S.baseCover) return true;
+    return (area / (gL*gW)) >= S.baseCover/100 - 1e-9;
+  }
+  /* v14: BALANDLIK — maxH mm. Qavat soni aralash qalinlikda balandlikni yomon
+     oʻlchaydi (12×3 mm = 36 mm, 12×16 mm = 192 mm), shuning uchun ikkinchi chegara. */
+  function heightOK(extra){
+    if (!S.maxH) return true;
+    var h = base.T + layers.reduce(function(s,L){ return s+L.h; }, 0) +
+            (lid ? lid.h : 0) + (extra || 0);
+    return h <= S.maxH + 1e-9;
+  }
+
+  if (strat === 0){
+    lid = makeLid(mids, base, budget);
+    /* v20: qopqoq qavat siklidan OLDIN yasaladi, shuning uchun `heightOK` uni
+       hisobga oladi — lekin qopqoqning OʻZI chegaradan chiqarib yuborishi
+       mumkin edi (tag + qopqoq > maxH). Unda qopqoqdan voz kechamiz. */
+    if (lid && !heightOK(0)){ drop(lid); lid = null; }
+    if (lid) budget -= lid.kg;
+  }
 
   // QAVAT LIMITI: tag(1) + oʻrta qavatlar + qopqoq(1) <= S.maxLayers
   var midCap = S.maxLayers > 0
     ? Math.max(0, S.maxLayers - 1 - (lid ? 1 : (strat===0 ? 0 : 1)))
     : 1e9;
 
+  /* v14: har qavat BITTA qalinlikdan. Qolgan qalinliklar navbat bilan sinaladi
+     va eng zichi olinadi — shu sabab 3 mm orqa devorlar 16 mm pochkasining
+     oʻz qavatiga tushadi, aralashib ketmaydi. */
   for (var g=0; g<40 && layers.length < midCap; g++){
-    var L = makeLayer(mids, envL, envW, budget, base.L, base.W, ord||0, 1e9, layers.length % 2 === 1, rndj);
-    if (!L.items.length) break;
-    if (L.fill < S.minFill/100){ L.items.forEach(function(q){ q.it.used=false; }); break; }
-    layers.push(L); budget -= L.kg;
+    var ths = poolThicks(mids), bestL = null, flip = layers.length % 2 === 1;
+    for (var ti=0; ti<ths.length; ti++){
+      if (!thickOKon(base, ths[ti].t)) continue;      // yupqa tag ustiga qalin detal yoʻq
+      var Lc = makeLayer(mids, envL, envW, budget, base.L, base.W, ord||0, 1e9,
+                         flip, rndj, ths[ti].t);
+      if (!Lc.items.length){ continue; }
+      if (Lc.fill < S.minFill/100 || !coverOK(layers.concat([Lc])) || !heightOK(Lc.h)){
+        drop(Lc); continue;
+      }
+      if (!bestL || Lc.fill > bestL.fill){ if (bestL) drop(bestL); bestL = Lc; }
+      else drop(Lc);
+    }
+    if (!bestL) break;
+    layers.push(bestL); budget -= bestL.kg;
   }
 
   // agar pochka faqat tag detaldan iborat boʻlib qolsa — toʻliq boʻlmagan qavatga ruxsat
   if (!lid && !layers.length && midCap > 0){
-    var Wk = makeLayer(mids, envL, envW, budget, base.L, base.W, ord||0, 1e9, false, rndj);
-    if (Wk.items.length){ Wk.weak = true; layers.push(Wk); }
-    else Wk.items.forEach(function(q){ q.it.used=false; });
+    var wths = poolThicks(mids), Wk = null;
+    for (var wi=0; wi<wths.length && !Wk; wi++){
+      if (!thickOKon(base, wths[wi].t)) continue;
+      var Wc = makeLayer(mids, envL, envW, budget, base.L, base.W, ord||0, 1e9,
+                         false, rndj, wths[wi].t);
+      if (Wc.items.length && coverOK([Wc]) && heightOK(Wc.h)) Wk = Wc;
+      else drop(Wc);
+    }
+    if (Wk){ Wk.weak = true; layers.push(Wk); budget -= Wk.kg; }
   }
 
   // tartiblash: koʻp detalli / toʻliq boʻlmagan qavatlar PASTGA,
@@ -1879,7 +2501,12 @@ function layoutPack(base, mids, allowOvh, ord, strat, rndj){
             L.items[0].x+L.items[0].a<=base.L+1e-9 &&
             L.items[0].y+L.items[0].b<=base.W+1e-9) ? 1 : 0;
   }
-  layers.sort(function(a,b){ return wholeness(a)-wholeness(b); });
+  /* v15: saralash kaliti — avval TOM boʻla oladiganlar. Ilgari faqat
+     «yaxlitlik» qaralardi; yaxlit boʻlmagan, lekin tag yuzasining 95 % ini
+     yopadigan ikki detalli qavat pastda qolib, ustiga 27 % li qavat chiqib
+     ketishi mumkin edi. */
+  function topRank(L){ return tomOK(L, base, off) ? 2 : (wholeness(L) ? 1 : 0); }
+  layers.sort(function(a,b){ return topRank(a)-topRank(b); });
   // gʻisht terish paritetini qayta qoʻllash (yaxlit qavatlar simmetrik, ularga taʼsir yoʻq)
   layers.forEach(function(L,i){
     if (wholeness(L)) return;
@@ -1892,6 +2519,23 @@ function layoutPack(base, mids, allowOvh, ord, strat, rndj){
     // qopqoq: eng tepadagi qavat; agar yaxlit boʻlmasa "soft" deb belgilanadi
     var last = layers[layers.length-1];
     last.lid = true;
+    /* v15: haqiqatan tom boʻla oldimi.
+       v20: endi OSTIDAGI QAVATGA TAYANISHI ham shartga kiradi. Tom yuzasi
+       toʻgʻri, nisbatlari toʻgʻri boʻlishi mumkin, lekin uning chetdagi detali
+       ostidagi qavatdan chiqib osilib qolsa — u baribir sinadi. */
+    var belL = layers.length > 1 ? layers[layers.length-2] : null;
+    var bel  = belL ? belL.items : null;
+    /* v20: toʻshak — tom ostidagi qavat. Ostida qavat boʻlmasa tom TAG ustida
+       yotadi, tag esa yaxlit detal: shart avtomatik bajariladi. */
+    last.tom  = tomOK(last, base, off) && stackSuppOK(last, bel, base) &&
+                (!belL || bedOK(belL));
+    last.supp = layerSupp(last, bel, base);   // tashxis va sinov uchun
+    last.bed  = belL ? belL.fill : 1;
+    /* v14: bu qopqoq makeLid() dan OʻTMAGAN — u shunchaki eng ustki qavat
+       boʻlgani uchun qopqoq deb belgilanmoqda. Demak unga qopqoq qoidalari
+       (min qalinlik, muvozanat) qoʻllanmagan. Belgi tashxis va sinov uchun:
+       «haqiqiy qopqoq» bilan «koʻtarilgan qopqoq» ni ajratib turadi. */
+    last.impl = true;
     last.soft = !wholeness(last) && (last.fill < S.lidFill/100 || last.items.some(function(q){
       return q.x < -1e-9 || q.y < -1e-9 || q.x+q.a > base.L+1e-9 || q.y+q.b > base.W+1e-9; }));
   }
@@ -1909,10 +2553,20 @@ var PACKPROG = { t:0, tries:0, g:0, groups:0, packs:0, cancel:false };
 function* greedyPackGen(list, rnd){
   var rem = list.slice().sort(ORD[0]), packs=[], odd=[], guard=0;
   while (rem.length && guard++ < 900){
+    /* v14: TAG OYNASI — toʻrt chegara (eni min/maks, boʻyi min/maks) + qalinlik.
+       Qalinlik chegarasi ZAXIRA yoʻli bilan: agar guruhda minBaseT ga yetadigan
+       birorta detal boʻlmasa (masalan butun guruh 3 mm orqa devor), talab shu
+       guruhning eng qalin detaliga tushiriladi. Aks holda butun guruh
+       nostandartga oʻtib ketardi — bu qoidaning maqsadi emas. */
+    var maxT = 0;
+    rem.forEach(function(x){ if (x.T > maxT) maxT = x.T; });
+    var minT = Math.min(S.minBaseT || 0, maxT);
     var elig=[];
     for (var i=0;i<rem.length;i++){
       var it=rem[i];
-      if (it.W>=S.minBase && it.L<=S.maxLen && it.kg<=S.maxKg && it.T>=S.minBaseT) elig.push(i);
+      if (it.W>=S.minBase && it.W<=(S.baseWMax||1e9) &&
+          it.L>=(S.baseLMin||0) && it.L<=S.maxLen &&
+          it.kg<=S.maxKg && it.T>=minT) elig.push(i);
     }
     if (!elig.length){ odd = odd.concat(rem); rem = []; break; }
 
@@ -1921,13 +2575,25 @@ function* greedyPackGen(list, rnd){
       var base = rem[bi];
       var others = rem.filter(function(_,k){ return k!==bi; });
       var pk = layoutPack(base, others, S.ovhOn, o, st, rndj);
+      /* v15: BALLDA ENG KATTA VAZN — YOPIQ TOM.
+         Ilgari ball «qopqoq bormi» degan savolga qarardi (L.lid bayrogʻi), lekin
+         qopqoq eng ustki qavat qilib KOʻTARILGAN boʻlsa ham bayroq oʻrnatilardi —
+         27 % yopilgan qavat ham «qopqoq» boʻlib hisoblanardi va jarima olmasdi.
+         Endi ball haqiqiy holatga qaraydi: eng ustki qavat TOM shartidan
+         (yuza ≥ lidFill, gabarit ichida, minBaseT dan qalin) oʻtdimi.
+         Sabab: yetkazib berishda pochkalar ustma-ust teriladi va pastdagi
+         pochkaning ochiq tomi ustidagining ogʻirligini bir necha detalga
+         toʻplaydi. */
+      var topL = pk.layers.length ? pk.layers[pk.layers.length-1] : null;
+      var tomGood = !!(topL && topL.tom);
       var lidL = pk.layers.filter(function(L){ return L.lid; })[0];
       var lidWhole = lidL && lidL.items.length===1 && !lidL.soft;
       var gO = 0;
       pk.layers.forEach(function(L){ if (L.bb){
         gO = Math.max(gO, Math.max(0,L.bb.L-base.L) + Math.max(0,L.bb.W-base.W)); } });
       var sc = -pk.kg*3 + gO*0.05
-             + (lidL ? (lidL.soft ? 30 : (lidWhole ? 0 : 16)) : 90)
+             + (tomGood ? 0 : 90)                 // ochiq tom — eng ogʻir jarima
+             + (lidWhole ? 0 : 8)                 // yaxlit qopqoq — kichik ustunlik
              + (pk.layers.length === 0 ? 400 : 0)
              + rnd()*4;
       if (!best || sc < best.sc) best = { pk:pk, sc:sc, bi:bi };
@@ -1957,7 +2623,12 @@ function* greedyPackGen(list, rnd){
 function* packGroupGen(list, rnd){
   var r = yield* greedyPackGen(list, rnd);
   for (var pass=0; pass<2; pass++){
-    var weak = r.packs.filter(function(p){ return p.kg < S.maxKg*0.62 || p.layers.length===0; });
+    /* v15: ochiq tomli pochka ham kuchsiz — uni qayta terishga arziydi, chunki
+       tomi yopiq boshqa terish varianti topilishi mumkin. */
+    var weak = r.packs.filter(function(p){
+      return p.kg < S.maxKg*0.62 || p.layers.length===0 ||
+             !p.layers[p.layers.length-1].tom;
+    });
     if (weak.length < 2) break;
     var strong = r.packs.filter(function(p){ return weak.indexOf(p) < 0; });
     var pool = [];
@@ -1967,14 +2638,477 @@ function* packGroupGen(list, rnd){
     });
     pool = pool.concat(r.odd);
     var r2 = yield* greedyPackGen(pool, rnd);
+    function openTop(list){
+      return list.filter(function(p){
+        return !p.layers.length || !p.layers[p.layers.length-1].tom;
+      }).length;
+    }
     var aloneA = weak.filter(function(p){ return p.layers.length===0; }).length;
     var aloneB = r2.packs.filter(function(p){ return p.layers.length===0; }).length;
-    var before = weak.length*10 + aloneA*4 + (r.odd.length?1:0);
-    var after  = r2.packs.length*10 + aloneB*4 + (r2.odd.length?1:0);
+    // v15: ochiq tom ham hisobga kiradi — birlashtirish uni kamaytirsa foydali
+    var before = weak.length*10 + aloneA*4 + openTop(weak)*6 + (r.odd.length?1:0);
+    var after  = r2.packs.length*10 + aloneB*4 + openTop(r2.packs)*6 + (r2.odd.length?1:0);
     if (after < before) r = { packs: strong.concat(r2.packs), odd: r2.odd };
     else break;
   }
+  absorbTails(r.packs);          // 3.6.7.1 — qolgan yengil pochkalarni ustiga singdirish
   return r;
+}
+
+/* 3.6.7.1 QUYRUQ — guruh oxirida qoladigan YENGIL pochkani boshqa pochka USTIGA
+   qoʻshib yuborish.
+
+   Muammo: `minFill` (85%) qavat siklini uzadi — guruhning oxirgi 2–4 detali
+   toʻliq qavat yasay olmaydi va oʻziga alohida pochka ochadi. namunada shu sabab
+   3 mm orqa devorlar har modulda ikkiga boʻlinardi: 12 kg + 3 kg. Konsolidatsiya
+   (3.6.7) buni tuzata olmaydi — u aynan shu greedy algoritmni qayta yuritadi va
+   `minFill` yana oʻsha joyda uzadi.
+
+   Yechim: qolgan detallar tayyor pochkaning ENG USTIGA qoʻyiladi. Nega toʻldirish
+   talabi bu yerda tushiriladi — `minFill` mazmuni «ustidagi qavat egilmasin»:
+   quyruq qavatning USTIDA hech narsa yoʻq, demak egiladigan narsa ham yoʻq.
+   Quyruq qopqoqning ustiga tushadi, yaʼni tekis yuzada yotadi va qogʻoz bilan
+   tasma uni joyida ushlab turadi.
+
+   Qatʼiy shartlar (buzilsa singdirish bekor):
+     - massa limiti va qavat limiti oshmaydi;
+     - detallar konvert ichida qoladi (makeLayer envL/envW bilan tekshiradi);
+     - nishon pochka SHU guruhdan — modul/material/klass/qalinlik chegarasi buzilmaydi
+       (packGroupGen bitta guruh ichida ishlaydi, shuning uchun bu avtomatik);
+     - HAMMASI yoki HECH NARSA: yengil pochka yarmigacha koʻchmaydi, aks holda
+       ikkita chala pochka qolardi.
+   Determinizm: tasodif ishlatilmaydi, tartib massa va uid boʻyicha qatʼiy. */
+var TAIL_LAYERS = 2;          // bitta quyruq necha qavat qoʻsha oladi
+
+/* ============================================================
+   v15: QUYRUQ QAYERGA TUSHADI
+
+   v13 da quyruq pochkaning ENG USTIGA qoʻyilardi. Asos: «ustida hech narsa
+   yoʻq, demak egiladigan narsa ham yoʻq». Asos NOTOʻGʻRI edi — yetkazib
+   berishda pochkalar bir-birining ustiga teriladi, demak pastdagi pochkaning
+   tomi ustidagining butun ogʻirligini koʻtaradi. Ochiq tomda bu ogʻirlik bir
+   necha kichik detalga toʻplanadi: qirralar eziladi, tasma boʻshaydi.
+
+   Endi quyruq QOPQOQ OSTIGA suqiladi:
+
+       ████████████████   qopqoq  100 %   ← ustiga keyingi pochka tayanadi
+       ███░░░███░░░░░░░   quyruq   47 %   ← qoldiq detallar
+       ████████████████   qavat    98 %
+       ████████████████   TAG
+
+   Pochkaning tomi tegilmaydi. Qopqoq quyruq ustida osilib qoladi, lekin
+   koʻpi bilan BIR QAVAT (quyruq qalinligi, odatda 16 mm) pastga egiladi va
+   shundan keyin quyi qavatga tayanadi — egilish oʻzi cheklangan.
+
+   Nishon pochkaning tomi ochiq boʻlsa (qopqogʻi yoʻq), quyruq eskicha ustiga
+   tushadi va TOM shartidan oʻtishi shart — u yerda uni himoya qiladigan
+   qopqoq yoʻq.
+   ============================================================ */
+
+function tailParts(p){
+  if (p.odd) return (p.items || []).slice();     // v16: noodatiy bogʻ ham manba boʻla oladi
+  var out = [p.base];
+  p.layers.forEach(function(L){ L.items.forEach(function(q){ out.push(q.it); }); });
+  return out;
+}
+
+/* w pochkasining HAMMA detalini p ustiga qavat-qavat qoʻyib koʻradi.
+   Hammasi joylashsa — yangi qavatlar roʻyxati, aks holda null. */
+/* `kgLimit` — shu urinishda ruxsat etilgan YAKUNIY massa. absorbTails uni ikki
+   bosqichda beradi: avval zaxirasiz (packKgCap), keyin zaxira bilan (packKgAbs). */
+function tailFit(w, p, cap, kgLimit){
+  var parts = tailParts(w), rest = parts.slice(), out = [];
+  var budget = (kgLimit != null ? kgLimit : packKgAbs(p)) - p.kg;
+  for (var n = 0; n < cap && rest.length; n++){
+    /* v14: quyruq ham QAVAT — demak u ham bitta qalinlikdan boʻlishi shart.
+       `used` AVVAL tozalanadi: detallar hozircha w pochkasiga tegishli va
+       `used=true` turadi, poolThicks() esa faqat boʻshlarni sanaydi. */
+    parts.forEach(function(x){ x.used = false; });
+    var ths = poolThicks(rest), L = null;
+    for (var ti = 0; ti < ths.length; ti++){
+      if (!thickOKon(p.base, ths[ti].t)) continue;     // yupqa tag ustiga qalin detal yoʻq
+      parts.forEach(function(x){ x.used = false; });   // makeLayer `used` boʻyicha filtrlaydi
+      var Lc = makeLayer(rest, p.envL, p.envW, budget, p.base.L, p.base.W, 0, 1e9,
+                         (p.layers.length + n) % 2 === 1, null, ths[ti].t);
+      if (!Lc.items.length) continue;
+      if (!tailCoverOK(p, out.concat([Lc]))) continue;   // v14: paddon qamrovi buzilmasin
+      /* v15: quyruq — pochkaning ENG USTKI yuzasi, demak u ham TOM qoidasiga
+         boʻysunadi. Ilgari bu yerda istisno bor edi va natijada 27 % yopilgan
+         tom bilan pochka yopilib qolardi; ustiga boshqa pochka terilganda
+         ogʻirlik ikki kichik detalga tushardi. */
+      /* v16: quyruq HAR DOIM eng ustki qavat OSTIGA suqiladi — shuning uchun
+         pochkaning tomi hech qachon yomonlashmaydi va TOM sharti bu yerda
+         talab qilinmaydi. Yagona istisno: nishonda qavat umuman boʻlmasa
+         (yolgʻiz tag), quyruq oʻzi tom boʻlib qoladi — unda shart amal qiladi. */
+      if (!p.layers.length && !tomOK(Lc, p.base, p.off)) continue;
+      /* v20: quyruq ustidagi qavat tayanchsiz oʻtmasin. Bu `minFill` oʻrnini
+         bosadi: quyruq foiz boʻyicha ozod, lekin ORALIQ boʻyicha emas. */
+      if (S.tailGap && layerGap(Lc, p.base) > S.tailGap + 1e-9) continue;
+      /* v20: ... va tayanch TOR boʻlib qolmasin. Boʻshliq oʻlchovi markazdagi
+         yolgʻiz tor detalni oʻtkazib yuborardi (chetlarda boʻshliq kichik,
+         lekin qopqoq tor qirra ustida chayqaladi). */
+      if (S.tailSpan && layerSpan(Lc, p.base) < S.tailSpan/100 - 1e-9) continue;
+      if (S.maxH){                                       // v14: balandlik chegarasi
+        var hAdd = out.reduce(function(a, L2){ return a + L2.h; }, 0) + Lc.h;
+        if (packHeight(p, hAdd) > S.maxH + 1e-9) continue;
+      }
+      if (!L || Lc.items.length > L.items.length) L = Lc;
+    }
+    if (!L || !L.items.length) break;
+    // gʻolib variantning detallarini qayta belgilaymiz (oxirgi sinov boshqasi boʻlishi mumkin)
+    parts.forEach(function(x){ x.used = false; });
+    L.items.forEach(function(q){ q.it.used = true; });
+    L.tail = true;
+    out.push(L); budget -= L.kg;
+    var got = {};
+    L.items.forEach(function(q){ got[q.it.uid] = 1; });
+    rest = rest.filter(function(x){ return !got[x.uid]; });
+  }
+  // detallar qayerda boʻlmasin — w da yoki p da — baribir joylashgan
+  parts.forEach(function(x){ x.used = true; });
+  return rest.length ? null : out;
+}
+
+/* v14: quyruq qavati gabaritni kengaytirishi mumkin — paddon qamrovi qoidasi
+   (baseCover / baseInset) unda ham amal qiladi, aks holda quyruq tagdan
+   osilib chiqib pochkani beqaror qilardi. */
+function packHeight(p, extra){
+  return p.base.T + p.layers.reduce(function(s, L){ return s + L.h; }, 0) +
+         (extra || 0);
+}
+/* Nishon pochkaning tomi yopiqmi — quyruq qopqoq ostiga tushishi shu bilan
+   hal qilinadi (yuqoridagi izohga qarang). */
+function tailUnderLid(p){
+  return !!(p && p.layers && p.layers.length &&
+            p.layers[p.layers.length-1].tom);
+}
+function tailCoverOK(p, extra){
+  var gL = p.base.L, gW = p.base.W;
+  p.layers.concat(extra || []).forEach(function(L){
+    if (L && L.bb){ gL = Math.max(gL, L.bb.L); gW = Math.max(gW, L.bb.W); }
+  });
+  if (S.baseInset != null){
+    if ((gL - p.base.L)/2 > S.baseInset + 1e-9) return false;
+    if ((gW - p.base.W)/2 > S.baseInset + 1e-9) return false;
+  }
+  if (!S.baseCover) return true;
+  return ((p.base.L*p.base.W) / (gL*gW)) >= S.baseCover/100 - 1e-9;
+}
+
+/* `sameKey` — nishon manba bilan bir xil pochkalash guruhida boʻlishi shart.
+   packGroupGen ichida chaqirilganda kerak emas (u yerda hamma pochka bitta
+   guruhdan), YAKUNIY bosqichda esa shart: u butun buyurtma boʻylab ishlaydi.
+
+   v18: yakuniy bosqichda OQIM chegarasi ham qoʻshildi. v16 da bu yoʻq edi va
+   natijada standart detallar nostandart pochkaga qoʻshilib ketardi — ikki oqim
+   aralashib, uzun-tor detallar bogʻiga oddiy polka tushib qolardi.
+   Endi qoida bitta: nostandart detal faqat nostandart bilan, standart qoldiq
+   faqat standart pochka bilan birlashadi. */
+/* v20: QAVATDAGI ENG KATTA TAYANCHSIZ ORALIQ, mm.
+
+   Detallar ikki oʻqqa proyeksiya qilinadi va har oʻqda eng katta boʻsh oraliq
+   topiladi — chetdan birinchi detalgacha, detallar orasida va oxirgi detaldan
+   chetgacha. Ustidagi qavat aynan shu oraliq ustidan tayanchsiz oʻtadi.
+
+   Nega yuza foizi emas: 4 ta tor detal butun chuqurlik boʻylab tarqalsa 44 %
+   beradi va qopqoq bemalol tayanadi; oʻsha 44 % ikkita keng detal boʻlib
+   yigʻilsa qopqoq 681 mm boʻshliq ustidan oʻtadi. Foiz ikkalasini ajratmaydi,
+   oraliq ajratadi. */
+function layerGap(L, base){
+  function axis(lo, hi, span){
+    var iv = L.items.map(function(q){ return [lo(q), hi(q)]; })
+                    .sort(function(a,b){ return a[0]-b[0]; });
+    var g = 0, cur = 0;
+    for (var i = 0; i < iv.length; i++){
+      if (iv[i][0] > cur) g = Math.max(g, iv[i][0] - cur);
+      if (iv[i][1] > cur) cur = iv[i][1];
+    }
+    if (span > cur) g = Math.max(g, span - cur);
+    return g;
+  }
+  if (!L || !L.items || !L.items.length || !base) return Infinity;
+  return Math.max(
+    axis(function(q){ return q.x; }, function(q){ return q.x + q.a; }, base.L),
+    axis(function(q){ return q.y; }, function(q){ return q.y + q.b; }, base.W)
+  );
+}
+
+/* v20: QAVATNING TAYANCH KENGLIGI — har oʻq boʻyicha qoplangan ulush (0…1).
+
+   `layerGap` boʻshliqni oʻlchaydi, TAYANCH KENGLIGINI emas. Ikkovi boshqa-boshqa
+   nosozlikni ushlaydi:
+
+     boʻshliq  — ikkita keng detal bir chetga yigʻilib, oʻrtada katta teshik
+     kenglik  — bitta tor detal MARKAZDA: teshik yoʻq, lekin ustidagi qopqoq
+                tor qirraga tayanadi va chayqaladi
+
+   Ikkinchisi aynan sexda koʻrilgan nosozlik: 1910×300 li pochkaga 1720×160 li
+   quyruq markazga qoʻyilgan. Chetdagi boʻshliqlar atigi 70 va 102 mm — `tailGap`
+   (300 mm) bemalol oʻtkazadi. Lekin qopqoq 300 mm enli pochkada 160 mm enli
+   qirra ustida yotadi, yaʼni ARRA-KAMON boʻlib qoladi: ustiga pochka terilsa
+   ag'dariladi.
+
+   Shuning uchun qoplanish har oʻq boʻyicha ALOHIDA oʻlchanadi va kichigi
+   qaytariladi — bitta oʻq boʻyicha 90 % boʻlishi ikkinchisini oqlamaydi.
+   Chetdan chiqqan qismi hisobga olinmaydi (tagdan tashqarida tayanch yoʻq). */
+function layerSpan(L, base){
+  function axis(lo, hi, span){
+    if (span <= 0) return 0;
+    var iv = L.items.map(function(q){
+      return [Math.max(0, lo(q)), Math.min(span, hi(q))];
+    }).filter(function(v){ return v[1] > v[0]; })
+      .sort(function(a,b){ return a[0]-b[0]; });
+    var tot = 0, s = 0, cur = -1;
+    for (var i = 0; i < iv.length; i++){
+      if (cur < 0){ s = iv[i][0]; cur = iv[i][1]; continue; }
+      if (iv[i][0] > cur){ tot += cur - s; s = iv[i][0]; cur = iv[i][1]; }
+      else if (iv[i][1] > cur) cur = iv[i][1];
+    }
+    if (cur >= 0) tot += cur - s;
+    return tot / span;
+  }
+  if (!L || !L.items || !L.items.length || !base) return 0;
+  return Math.min(
+    axis(function(q){ return q.x; }, function(q){ return q.x + q.a; }, base.L),
+    axis(function(q){ return q.y; }, function(q){ return q.y + q.b; }, base.W)
+  );
+}
+
+/* v20: BITTA DETALNING TAYANCH ULUSHI — u ostidagi qavatga yuzasining qancha
+   qismi bilan tegadi (0…1).
+
+   Bir qavat ichidagi detallar bir-birining ustiga tushmaydi (audit USTMA_UST
+   invarianti buni kafolatlaydi), shuning uchun kesishmalar yigʻindisi = birlashma
+   bilan kesishma. Qoʻshimcha geometriya kerak emas. */
+function partSupport(q, below){
+  var A = q.a * q.b;
+  if (A <= 0) return 1;
+  var got = 0;
+  for (var i = 0; i < below.length; i++){
+    var r = below[i];
+    var ox = Math.min(q.x + q.a, r.x + r.a) - Math.max(q.x, r.x);
+    var oy = Math.min(q.y + q.b, r.y + r.b) - Math.max(q.y, r.y);
+    if (ox > 0 && oy > 0) got += ox * oy;
+  }
+  return Math.min(1, got / A);
+}
+
+/* Qavatdagi ENG YOMON tayanchli detalning ulushi.
+
+   Nega minimum, oʻrtacha emas: uchta tom detalining oʻrtachasi 70 % boʻlishi
+   mumkin, lekin chetdagi bittasi 0 % boʻlsa u baribir osilib turadi va ustiga
+   pochka terilganda sinadi. Oʻrtacha aynan shu nosozlikni yashiradi. */
+function layerSupp(above, below, base){
+  if (!above || !above.items || !above.items.length) return 1;
+  var bel = (below && below.length)
+    ? below
+    : (base ? [{ x:0, y:0, a:base.L, b:base.W }] : null);
+  if (!bel) return 1;
+  var mn = 1;
+  for (var i = 0; i < above.items.length; i++){
+    var v = partSupport(above.items[i], bel);
+    if (v < mn) mn = v;
+  }
+  return mn;
+}
+/* v20: TOʻSHAK chegarasi — amaldagi qiymat.
+
+   `minFill` dan qatʼiyroq boʻlolmaydi: oddiy qavat aynan `minFill` bilan qabul
+   qilinadi, undan koʻpini talab qilish bajarilmas shart boʻlardi va audit
+   hech qachon toza chiqmasdi. */
+function bedMin(){
+  var a = +S.lidBed || 0;
+  if (!a) return 0;
+  var b = +S.minFill || 0;
+  return b ? Math.min(a, b) : a;
+}
+/* Qavat toʻshak boʻla oladimi — ustiga TOM qoʻyish mumkinmi. */
+function bedOK(L){
+  var m = bedMin();
+  if (!m) return true;
+  return !!L && L.fill >= m/100 - 1e-9;
+}
+
+/* Qavat ostidagisiga yetarli tayanadimi. `below` — ostidagi qavat detallari
+   (yoki boʻsh: unda tag detal). */
+function stackSuppOK(above, below, base){
+  if (!S.lidSupp) return true;
+  return layerSupp(above, below, base) >= S.lidSupp/100 - 1e-9;
+}
+
+/* Nishon massa chegarasiga sigʻadimi — ikki bosqichli tanlovda ishlatiladi. */
+function p_fits(p, w, lim){ return p.kg + w.kg <= lim + 1e-9; }
+
+function absorbTails(packs, sameKey){
+  for (var round = 0; round < 4 && packs.length > 1; round++){
+    var did = false;
+    // eng yengildan boshlaymiz — kichigi kattaga singishi osonroq
+    var light = packs.filter(function(p){ return p.kg < packKgCap(p) * 0.5; })
+                     .sort(function(a,b){ return a.kg - b.kg || uidCmp(packUid(a), packUid(b)); });
+    for (var wi = 0; wi < light.length; wi++){
+      var w = light[wi];
+      if (packs.indexOf(w) < 0) continue;                 // shu roundda allaqachon singdirilgan
+      /* v16: nishon MASSA boʻyicha emas, MOSLIK boʻyicha tanlanadi.
+         Hamma nomzod sinaladi va quyruq qavati eng zich chiqqani gʻolib —
+         bu avtomatik ravishda BIR XIL OʻLCHAMLI detallarni birga toʻplaydi
+         (bir xil oʻlcham → 100 % toʻldirish → eng yuqori ball).
+         Teng boʻlsa ogʻirrogʻi, keyin uid — tartib qatʼiy, determinizm saqlanadi.
+
+         v19: IKKI BOSQICH. Ilgari nomzod filtri darhol `packKgAbs` (35+10=45 kg)
+         ni ruxsat berardi va eng zich joylashuv gʻolib boʻlardi. Natijada qoldiq
+         20 kg li pochkaga (35 ichida qolar edi) emas, 33 kg li pochkaga tushib
+         uni 41 kg ga koʻtarib yuborardi — zaxira ODDIY holatga aylanib qolgandi.
+         Namunada 45 pochkadan 11 tasi 35 kg dan ogʻir chiqardi.
+         Endi zaxira OXIRGI CHORA: avval chegara ichida joy qidiriladi, faqat
+         topilmasa zaxira ochiladi. */
+      var pool = packs.filter(function(p){
+        return p !== w && !p.odd &&                 // bogʻda tag yoʻq — nishon boʻlolmaydi
+               (!sameKey || p.key === w.key) &&     // guruh chegarasi buzilmasin
+               (!sameKey || !p.nst === !w.nst) &&   // v18: OQIM chegarasi
+               tailRoom(p) >= 1;
+      }).sort(function(a,b){ return b.kg - a.kg || uidCmp(packUid(a), packUid(b)); });
+
+      var best = null;
+      for (var stage = 0; stage < 2 && !best; stage++){
+        for (var ci = 0; ci < pool.length; ci++){
+          var pc = pool[ci];
+          // 0-bosqich: zaxirasiz · 1-bosqich: zaxira bilan
+          var lim = stage === 0 ? packKgCap(pc) : packKgAbs(pc);
+          if (stage === 1 && p_fits(pc, w, packKgCap(pc))) continue;   // 0-bosqichda sinalgan
+          if (!p_fits(pc, w, lim)) continue;
+          var Lc2 = tailFit(w, pc, Math.min(TAIL_LAYERS, tailRoom(pc)), lim);
+          if (!Lc2) continue;
+          /* v20: quyruq eng ustki qavat OSTIGA suqiladi, yaʼni u TOMNING YANGI
+             TAYANCHI boʻlib qoladi. Ilgari bu yerda hech narsa tekshirilmasdi
+             va izohda «koʻpi bilan bir qavat pastga egiladi» deb yozilgandi —
+             asos notoʻgʻri edi: tomning chetdagi detali quyruqdan butunlay
+             chiqib, havoda osilib qolishi mumkin ekan.
+             Endi butun taxlam tekshiriladi: quyruq ostidagisiga, keyingi quyruq
+             oldingisiga, tom esa eng ustki quyruqqa. */
+          if (!tailStackOK(pc, Lc2)) continue;
+          var fillSum = 0;
+          Lc2.forEach(function(L){ fillSum += L.fill; });
+          var cand2 = {
+            p: pc, Ls: Lc2,
+            /* Zaxiradan qancha yeyilishi. 0-bosqichda doim 0, demak tanlov
+               faqat zichlik boʻyicha ketadi. 1-bosqichda esa BIRINCHI mezon —
+               eng kam oshgan nishon: 33 kg li pochkani 41 ga koʻtargandan koʻra
+               20 kg li pochkani 28 ga koʻtargan yaxshiroq. */
+            over: Math.max(0, (pc.kg + w.kg) - packKgCap(pc)),
+            score: fillSum / Lc2.length
+          };
+          if (!best ||
+              cand2.over < best.over - 1e-9 ||
+              (Math.abs(cand2.over - best.over) < 1e-9 && cand2.score > best.score + 1e-9))
+            best = cand2;
+        }
+      }
+      if (best){
+        var p = best.p, Ls = best.Ls;
+        /* v20: quyruq QAYERGA suqilishi tomga qarab hal qilinadi.
+
+           Ilgari u har doim eng ustki qavat OSTIGA tushardi va izohda «ustki
+           qavat koʻpi bilan bir qavat pastga egiladi» deb yozilgandi. Asos
+           notoʻgʻri edi: tom uch tasmadan iborat boʻlsa, siyrak quyruq ustida
+           chetdagi ikki tasma qirraga tayanib DUMALAB ketadi.
+
+           Endi tom ostidagi qavat toʻldirish chegarasidan oʻtishi shart:
+             - quyruq oʻzi zich boʻlsa   → eskicha, tom ostiga;
+             - siyrak boʻlsa va pochkada zich qavat boʻlsa → BIR QAVAT PASTGA
+               (tom oʻsha zich qavat ustida qoladi, quyruq esa uning ostida);
+             - boshqa holatda nomzod tanlovda allaqachon rad etilgan. */
+        var ins = tailInsertAt(p, Ls);
+        if (ins < 0){ /* boʻlmasligi kerak — nomzod filtri ushlab qolgan */ }
+        else if (!p.layers.length){
+          Ls.forEach(function(L){ p.layers.push(L); p.kg += L.kg; });
+        } else {
+          var tailPart = p.layers.splice(ins, p.layers.length - ins);
+          Ls.forEach(function(L){ p.layers.push(L); p.kg += L.kg; });
+          tailPart.forEach(function(L){ p.layers.push(L); });
+        }
+        // v16: limitdan oshgan boʻlsa belgilaymiz — audit, chek va roʻyxat shunga qaraydi
+        if (p.kg > packKgBase(p) + 1e-9) p.overKg = true;
+        /* v15: eng ustki qavat oʻzgargan boʻlishi mumkin — bayroqlarni yangilaymiz.
+           Aks holda audit eski qopqoqning `tom` bayrogʻiga qarab qolardi. */
+        p.layers.forEach(function(L, li){
+          var top = (li === p.layers.length - 1);
+          var blL = li > 0 ? p.layers[li-1] : null;
+          var bl  = blL ? blL.items : null;
+          L.tom = top ? (tomOK(L, p.base, p.off) && stackSuppOK(L, bl, p.base) &&
+                         (!blL || bedOK(blL))) : false;
+          if (top){ L.supp = layerSupp(L, bl, p.base); L.bed = blL ? blL.fill : 1; }
+        });
+        packs.splice(packs.indexOf(w), 1);
+        did = true;
+      }
+    }
+    if (!did) break;
+  }
+  return packs;
+}
+
+/* v20: quyruq suqilgandan keyin taxlamning HAR bogʻlanishi tayanadimi.
+
+   Yangi tartib: [... eski qavatlar (tomsiz) ] + Ls + [ tom ]
+     Ls[0]   — pochkaning tomdan oldingi qavatiga (yoki tagga) tayanadi
+     Ls[i]   — Ls[i-1] ga
+     tom     — Ls[oxirgi] ga
+   Uchalasi ham bir xil chegara (`lidSupp`) bilan tekshiriladi. */
+/* v20: quyruq QAYSI OʻRINGA suqiladi.
+
+   Qaytaradi: `p.layers` dagi indeks — quyruq shu oʻrindan oldin qoʻyiladi,
+   yaʼni [0..ins-1] quyruq OSTIDA, [ins..] quyruq USTIDA qoladi.
+     -1 — joy yoʻq (singdirish bekor).
+
+   Uch holat:
+     1) pochkada qavat yoʻq        → quyruq oʻzi qavat boʻladi (ins = 0)
+     2) quyruq zich (toʻshak shartidan oʻtadi) → tom ostiga (ins = len-1)
+     3) quyruq siyrak              → tom va uning ostidagi ZICH qavat
+                                     tegilmaydi (ins = len-2), shunda tom
+                                     eski zich qavat ustida qoladi */
+function tailInsertAt(p, Ls){
+  var lay = p.layers || [];
+  if (!lay.length) return 0;
+  var lastT = Ls[Ls.length-1];
+  if (bedOK(lastT)) return lay.length - 1;           // tom ostiga
+  if (lay.length >= 2 && bedOK(lay[lay.length-2])) return lay.length - 2;
+  return -1;
+}
+
+/* Quyruq suqilgandan keyin taxlamning HAR bogʻlanishi tayanadimi.
+   `tailInsertAt` bergan oʻringa qarab tekshiriladi — quyruq tom ostiga
+   tushmasligi ham mumkin. */
+function tailStackOK(p, Ls){
+  if (!Ls || !Ls.length) return false;
+  var ins = tailInsertAt(p, Ls);
+  if (ins < 0) return false;
+  if (!S.lidSupp) return true;
+  var lay = p.layers || [];
+  // quyruqdan pastdagi oxirgi qavat (yoki tag)
+  var under = ins > 0 ? lay[ins-1].items : null;
+  if (!stackSuppOK(Ls[0], under, p.base)) return false;
+  for (var i = 1; i < Ls.length; i++)
+    if (!stackSuppOK(Ls[i], Ls[i-1].items, p.base)) return false;
+  // quyruq ustidagi qavatlar
+  var above = lay.slice(ins);
+  if (above.length && !stackSuppOK(above[0], Ls[Ls.length-1].items, p.base)) return false;
+  return true;
+}
+
+/* pochka yana nechta qavat koʻtara oladi: tag(1) + qavatlar <= S.maxLayers */
+function tailRoom(p){
+  return S.maxLayers > 0 ? (S.maxLayers - 1 - p.layers.length) : TAIL_LAYERS;
+}
+function uidCmp(a, b){
+  var x = (a && a.uid) || "", y = (b && b.uid) || "";
+  return x < y ? -1 : (x > y ? 1 : 0);
+}
+/* Pochkani tartiblash uchun barqaror kalit — noodatiy bogʻda `base` yoʻq,
+   shuning uchun birinchi detal olinadi. */
+function packUid(p){
+  if (!p) return null;
+  if (p.odd) return (p.items && p.items[0]) || null;
+  return p.base;
 }
 
 /* 3.6.8 POCHKALASH KALITI — detal qaysi guruhga tushishini hal qiladi.
@@ -1990,7 +3124,35 @@ function packKey(it, rule){
   // it.unit — birlik belgisi: proekt tuzilishidan yoki detal kodi prefiksidan (v11)
   if (rule.prod) mod = modGroupOf(it.unit) || it.unit;
   return mod + "/" + (rule.mat ? it.matId : "*") +
-         "/" + (S.byThick ? it.T : "*") + "/" + clsKeyOf(it.cls);
+         "/" + (S.byThick ? thickKey(it.T) : "*") + "/" + clsKeyOf(it.cls);
+}
+
+/* ---- v14: QALINLIK MATRITSASI -------------------------------------------
+   MAIN_T — buyurtmadagi ASOSIY qalinlik: detali eng koʻp boʻlgani. U
+   packAllGen() da bir marta hisoblanadi va butun terish davomida oʻzgarmaydi
+   (determinizm shunga tayanadi).
+
+   thickKey() qalinlikni POCHKALASH KALITIGA aylantiradi. S.thickMix da
+   belgilangan qalinlik asosiy qalinlikning kalitini oladi — yaʼni oʻsha
+   pochkaga tushadi. Lekin QAVAT darajasida ular baribir ajratilgan
+   (makeLayer `tOnly`), tag va qopqoq esa minBaseT bilan himoyalangan.
+   Demak «qoʻshish» degani: bitta pochkada, alohida qavatlarda. */
+var MAIN_T = null;
+function thickKey(T){
+  var k = String(T);
+  if (MAIN_T != null && S.thickMix && S.thickMix[k]) return String(MAIN_T);
+  return k;
+}
+/* Asosiy qalinlikni aniqlash — detal soni boʻyicha. Teng boʻlsa qalini gʻolib
+   (qalin detal tag boʻla oladi, yupqasi yoʻq). */
+function mainThick(items){
+  var cnt = {};
+  items.forEach(function(it){ cnt[it.T] = (cnt[it.T] || 0) + 1; });
+  var best = null;
+  Object.keys(cnt).forEach(function(k){
+    if (!best || cnt[k] > cnt[best] || (cnt[k] === cnt[best] && +k > +best)) best = k;
+  });
+  return best == null ? null : +best;
 }
 function clsKeyOf(cls){
   return clsGroupOf(cls) || ((S.sepCls && S.sepCls[cls]) ? cls : "*");
@@ -2009,7 +3171,8 @@ function keyWhy(it, other, rule){
   if (rule.mat && it.matId !== other.matId)
     return "material mos emas: " + ((it.mat && it.mat.name) || it.matId) +
            " / " + ((other.mat && other.mat.name) || other.matId);
-  if (S.byThick && it.T !== other.T)
+  // v14: matritsada qoʻshilgan qalinliklar bitta kalitga tushadi — «mos emas» emas
+  if (S.byThick && thickKey(it.T) !== thickKey(other.T))
     return "qalinlik mos emas: " + it.T + " mm / " + other.T + " mm";
   if (clsKeyOf(it.cls) !== clsKeyOf(other.cls))
     return "klass mos emas: " + it.cls + " / " + other.cls;
@@ -2050,16 +3213,182 @@ function groupSortKey(list){
          String(it.cls || "") + "|" + String(it.matId || "");
 }
 
+/* ============================================================
+   3.6.8.5 NOSTANDART OQIM (v14)
+
+   Ilgari tag oynasidan chiqqan detallar shunchaki bitta roʻyxatga tashlanardi
+   va massa boʻyicha boʻlinardi — geometriyasi ham, tartibi ham yoʻq edi.
+   Amalda esa ular buyurtmaning eng katta, eng ogʻir va eng noqulay qismi:
+   2,4 m li bok, uzun sokol, keng tom. Ular ham saralanadi.
+
+   Ikki yoʻl, tizim oʻzi tanlaydi:
+
+     TOʻLIQ POCHKA — detal TAG boʻla oladigan bo'lsa (eni ≥ minBase va
+       nostandart gabaritga sigʻsa). Oddiy pochkadagi butun mantiq ishlaydi:
+       tag → qavatlar → qopqoq, faqat massa va boʻyi chegarasi kattaroq
+       (oddKg, oddLMax, oddWMax).
+
+     BOGʻ — detal TOR (eni minBase dan kichik), yaʼni tag boʻlolmaydi va
+       ustiga qavat terib boʻlmaydi. Bunday detallar oʻlchami yaqinlari bilan
+       ustma-ust bogʻ qilinadi: 2 ta 2400×180 — bu tabiiy bogʻ. «Yaqin»
+       chegarasi — oddTol (mm).
+
+   Ikkala yoʻlda ham pochkalash kaliti (modul / material / qalinlik / klass)
+   buzilmaydi: guruhlash packKey() boʻyicha, oddiy oqimdagidek.
+   ============================================================ */
+
+/* Nostandart limitlarini vaqtincha oʻrnatib funksiyani chaqiradi.
+   Sabab: layoutPack/greedyPackGen limitlarni S dan oʻqiydi va ularni
+   parametrga chiqarish butun signaturani buzardi. Qaytarishda `finally` —
+   xato boʻlsa ham standart limitlar tiklanadi. */
+function oddLimitsOn(){
+  var sv = { maxKg:S.maxKg, maxLen:S.maxLen, baseWMax:S.baseWMax };
+  S.maxKg    = Math.max(S.maxKg,  +S.oddKg   || S.maxKg);
+  S.maxLen   = Math.max(S.maxLen, +S.oddLMax || S.maxLen);
+  S.baseWMax = Math.max(S.baseWMax || 0, +S.oddWMax || 0) || S.baseWMax;
+  return sv;
+}
+function oddLimitsOff(sv){
+  S.maxKg = sv.maxKg; S.maxLen = sv.maxLen; S.baseWMax = sv.baseWMax;
+}
+
+/* BOGʻ — tor detallarni oʻlchami yaqinlari bilan ustma-ust yigʻish.
+   Roʻyxat oʻlcham boʻyicha saralangani uchun yaqin detallar yonma-yon turadi;
+   shu sabab faqat OXIRGI bogʻ bilan solishtiriladi — natija qatʼiy va tez. */
+function oddBundles(list){
+  var out = [];
+  var tol = (S.oddTol != null ? +S.oddTol : 300);
+  var kgCap = (+S.oddKg || S.maxKg);
+  /* v20: BALANDLIK CHEGARASI BOGʻGA HAM.
+     Bogʻ — detallarning ustma-ust taxlami, demak balandligi qalinliklar
+     yigʻindisi. Ilgari bu yerda faqat massa, oʻlcham yaqinligi va gabarit
+     tekshirilardi; balandlik esa umuman qaralmasdi. Natijada `maxH = 160` mm
+     qoʻyilgan buyurtmada 12 ta 16 mm li detal bitta bogʻga tushib 192 mm
+     boʻlib chiqardi — chegara oddiy pochkalarda ishlar, bogʻda ishlamasdi.
+     Foydalanuvchi buni sexda koʻrdi: «massa yetib balandlik yetmasa ham
+     pochka qadoqlanadi».
+     Massa bilan balandlik endi TENG HUQUQLI: qaysi biri avval toʻlsa, bogʻ
+     shu yerda yopiladi. */
+  var hCap = (+S.maxH || 0);
+  /* v20: QAVAT SONI chegarasi bogʻga ham. Bogʻ — N ta detalning ustma-ust
+     taxlami, yaʼni N qavat. Ilgari bu chegara faqat oddiy pochkaga
+     qoʻllanardi va bogʻ undan oshib ketishi mumkin edi; roʻyxatda esa u
+     «12 qavat» boʻlib koʻrinardi va operator chegara ishlamayapti deb
+     oʻylardi. Massa, balandlik va qavat soni endi bogʻda ham amal qiladi. */
+  var nCap = (S.maxLayers > 0 ? S.maxLayers : 0);
+  list.slice().sort(function(a,b){
+    return b.L - a.L || b.W - a.W ||
+           (a.code < b.code ? -1 : (a.code > b.code ? 1 : 0));
+  }).forEach(function(it){
+    var b = out.length ? out[out.length-1] : null;
+    var fits = !!b &&
+      b.kg + it.kg <= kgCap + 1e-9 &&
+      (!hCap || b.h + it.T <= hCap + 1e-9) &&          // v20: balandlik
+      (!nCap || b.items.length < nCap) &&              // v20: qavat soni
+      Math.abs(it.L - b.L0) <= tol + 1e-9 &&
+      Math.abs(it.W - b.W0) <= tol + 1e-9 &&
+      Math.max(b.gabL, it.L) <= (+S.oddLMax || 1e9) + 1e-9 &&
+      Math.max(b.gabW, it.W) <= (+S.oddWMax || 1e9) + 1e-9 &&
+      (!S.byThick || Math.abs(b.t - it.T) < 1e-9);
+    if (!fits){
+      /* Yangi bogʻ. Detal YOLGʻIZ oʻzi chegaradan oshsa ham shu yerga tushadi —
+         detalni boʻlib boʻlmaydi. Audit buni XATO emas, ogohlantirish deb
+         koʻrsatadi (massa uchun MASSA_NOODATIY qanday boʻlsa, shunday). */
+      b = { odd:true, items:[], kg:0, h:0, t:it.T, L0:it.L, W0:it.W, gabL:0, gabW:0 };
+      out.push(b);
+    }
+    b.items.push(it); b.kg += it.kg; b.h += it.T;
+    b.gabL = Math.max(b.gabL, it.L);
+    b.gabW = Math.max(b.gabW, it.W);
+  });
+  out.forEach(function(b){ delete b.L0; delete b.W0; });   // faqat qurishda kerak edi
+  return out;
+}
+
+function* oddPackGen(list, rule){
+  var out = [];
+  if (!list || !list.length) return out;
+  /* v18: OQIM AJRATILADI. Bu oqimga ikki xil detal keladi:
+       nst = true  — HAQIQIY nostandart: oʻlcham yoki massa chegarasidan chiqqan
+       nst = false — standart guruhning QOLDIGʻI: tag boʻlolmagan tor detal
+     Ular bir-biriga aralashmasligi kerak. Nostandart detal oʻziga oʻxshagan
+     nostandart bilan bogʻlanadi, standart qoldiq esa oʻz oqimida qoladi va
+     keyin standart pochkaga singdirilishi mumkin (3.6.9 yakuniy bosqich). */
+  var groups = {};
+  list.forEach(function(it){
+    var k = (it.nst ? "NS/" : "ST/") + packKey(it, rule);
+    (groups[k] = groups[k] || []).push(it);
+  });
+  var gks = Object.keys(groups).sort();
+  for (var gi = 0; gi < gks.length; gi++){
+    var gk = gks[gi], g = groups[gk];
+    /* Prefiks («NS/» yoki «ST/») FAQAT shu yerda guruhlash uchun kerak edi.
+       Pochkaga esa TOZA pochkalash kaliti yoziladi — aks holda yakuniy
+       singdirish bosqichi kalitni standart pochkaniki bilan solishtira
+       olmaydi va standart qoldiq oʻz pochkasini topolmay qoladi. */
+    var pkey = packKey(g[0], rule);
+    // TAG boʻla oladiganlar — toʻliq pochka mantiqi
+    var wide = [], narrow = [];
+    g.forEach(function(it){
+      if (it.W >= S.minBase && it.L <= (+S.oddLMax || 1e9) && it.W <= (+S.oddWMax || 1e9))
+        wide.push(it);
+      else narrow.push(it);
+    });
+    /* Guruh nomi va xonasi — oddiy oqimdagidek. Ularsiz nostandart pochka
+       roʻyxatda «Umumiy» ostiga tushib, xona pochkalarini ikkiga boʻlib
+       yuborardi (ishchi bitta xonani ikki joydan qidirardi). */
+    var gl = groupLabel(g, rule), gr = groupRoom(g);
+    if (wide.length){
+      /* packGroupGen — greedyPackGen ustiga konsolidatsiya (3.6.7) va quyruq
+         (3.6.7.1) qoʻshadi. Nostandart oqimga ular ayniqsa kerak: u yerda
+         detal kam, demak yarim boʻsh pochka ehtimoli yuqori. */
+      var sv = oddLimitsOn();
+      var res = yield* packGroupGen(wide, mulberry(4242));
+      oddLimitsOff(sv);
+      for (var pi = 0; pi < res.packs.length; pi++){
+        var pk = res.packs[pi];
+        pk.key = pkey; pk.gname = gl; pk.room = gr;
+        pk.oddSrc = true;                   // «nostandart oqimdan chiqqan» belgisi
+        pk.nst = !!g[0].nst;                // v18: qaysi oqim — aralashmasin
+        out.push(pk);
+      }
+      narrow = narrow.concat(res.odd);
+    }
+    oddBundles(narrow).forEach(function(b){
+      b.key = pkey; b.gname = gl; b.room = gr;
+      b.nst = !!(b.items[0] && b.items[0].nst);   // v18
+      out.push(b);
+    });
+  }
+  return out;
+}
+
 /* 3.6.9 PACKALL — butun buyurtma: qalinlik/modul/material guruhlash, noodatiylar */
 function* packAllGen(){
   var items = buildItems();
   var rule = S.split || { prod:true, mat:false };   // v12: bitta umumiy qoida
+  MAIN_T = mainThick(items);        // v14: qalinlik matritsasining asosi
   var oddPre = [], main = [];
+  /* v14: NOSTANDART FILTRI. Detal tag oynasining YUQORI chegarasidan chiqsa
+     nostandart oqimga oʻtadi — chunki u hech qanday tagga sigʻmaydi.
+     Oynaning PAST chegarasi (minBase, baseLMin) bu yerda tekshirilmaydi:
+     kichik detal tag boʻlolmaydi, lekin qavatga bemalol tushadi. */
   items.forEach(function(it){
-    if (it.L > S.maxLen || it.kg > S.maxKg){
-      it.why = it.L>S.maxLen ? (it.L+" mm > "+S.maxLen+" mm") : (it.kg.toFixed(1)+" kg > "+S.maxKg+" kg");
+    var why = null;
+    if (it.L > S.maxLen)               why = it.L + " mm > " + S.maxLen + " mm (tag boʻyi)";
+    else if (it.W > (S.baseWMax||1e9)) why = it.W + " mm > " + S.baseWMax + " mm (tag eni)";
+    else if (it.kg > S.maxKg)          why = it.kg.toFixed(1) + " kg > " + S.maxKg + " kg";
+    // v18: pastki chegara — mayda detal ham nostandart oqimga oʻtishi mumkin
+    else if (S.minPartW && it.W < S.minPartW)
+      why = it.W + " mm < " + S.minPartW + " mm (min eni)";
+    else if (S.minPartL && it.L < S.minPartL)
+      why = it.L + " mm < " + S.minPartL + " mm (min boʻyi)";
+    if (why){
+      it.why = why;
+      it.nst = true;       // v18: HAQIQIY nostandart — oqimlar shunga qarab ajraladi
       oddPre.push(it);
-    } else main.push(it);
+    }
+    else { it.nst = false; main.push(it); }
   });
   var groups = {};
   main.forEach(function(it){
@@ -2095,26 +3424,57 @@ function* packAllGen(){
       // yashardi, natijada qoʻlda tahrirlash (moveDetail) qaysi pochka qaysi guruhga
       // tegishli ekanini BILMASDI va material yoki modulni aralashtirib yuborardi.
       // Kalit endi pochka bilan birga yashaydi. room — xona nomi (chek va roʻyxat).
-      r.packs.forEach(function(p){ p.gname = gl; p.key = gks[gi]; p.room = gr; });
+      r.packs.forEach(function(p){ p.gname = gl; p.key = gks[gi]; p.room = gr; p.nst = false; });
       all = all.concat(r.packs); odd = odd.concat(r.odd);
     }
     var wFill = all.length ? all.reduce(function(s,p){ return s+p.kg; },0)/(all.length*S.maxKg) : 0;
     var lFill = 0, nL = 0;
     all.forEach(function(p){ p.layers.forEach(function(L){ lFill += Math.min(1.3,L.fill); nL++; }); });
     lFill = nL ? lFill/nL : 0;
-    var noLid = all.filter(function(p){ return !p.layers.some(function(L){ return L.lid; }); }).length;
-    var score = all.length*1000 + odd.length*300 + noLid*140 - wFill*260 - lFill*120;
+    // v15: «qopqoq bormi» emas, «tom yopiqmi» — pastdagi izohga qarang
+    var noTom = all.filter(function(p){
+      return !p.layers.length || !p.layers[p.layers.length-1].tom;
+    }).length;
+    var score = all.length*1000 + odd.length*300 + noTom*140 - wFill*260 - lFill*120;
     if (!best || score < best.score) best = { score:score, packs:all, odd:odd };
   }
 
   var out = best.packs;
-  var buckets = {};
-  best.odd.sort(function(a,b){ return b.kg-a.kg; }).forEach(function(it){
-    var k = (S.byThick ? String(it.T) : "*") + "/" + clsKeyOf(it.cls);
-    var b = buckets[k];
-    if (!b || b.kg + it.kg > S.maxKg){ b = { odd:true, items:[], kg:0, t:it.T }; buckets[k]=b; out.push(b); }
-    b.items.push(it); b.kg += it.kg;
+  // v14: nostandartlar endi saralanadi — 3.6.8.5 ga qarang
+  var oddOut = yield* oddPackGen(best.odd, rule);
+  for (var oi = 0; oi < oddOut.length; oi++) out.push(oddOut[oi]);
+
+  /* v16: YAKUNIY SINGDIRISH — butun buyurtma boʻylab.
+     packGroupGen ichidagi singdirish faqat OʻZ guruhi bilan ishlaydi va
+     nostandart oqim undan keyin quriladi. Natijada yolgʻiz qolgan bogʻ
+     (masalan bitta 438×100 detal) standart pochkada xuddi shu oʻlchamdagi
+     detallar turgani holda alohida qolib ketardi.
+     Shu bosqich buni tuzatadi: bogʻ ham, yengil pochka ham SHU GURUHDAGI
+     standart pochkaga singdiriladi — gabarit, qalinlik, qavat, balandlik va
+     paddon qamrovi shartlari bilan, massa zaxirasi doirasida. */
+  absorbTails(out, true);
+
+  /* v14: nostandart pochka OʻZ GURUHINING ORQASIGA qoʻyiladi.
+     Ilgari ular roʻyxat oxiriga tushardi va bitta xona ikki joyda —
+     boshida va oxirida — sarlavha olardi; ishchi xonani ikki marta
+     qidirardi. Tartib qatʼiy: guruh navbati → standart, keyin nostandart →
+     guruh ichidagi asl tartib. Determinizm buzilmaydi. */
+  var rank = {};
+  gks.forEach(function(k, i){ rank[k] = i; });
+  out.forEach(function(p, i){ p.__i = i; });
+  function rankOf(p){ return (rank[p.key] != null) ? rank[p.key] : 1e6; }
+  out.sort(function(a, b){
+    var d = rankOf(a) - rankOf(b);
+    if (d) return d;
+    if (rankOf(a) >= 1e6){                      // ikkalasi ham yangi guruh — kalit boʻyicha
+      var ka = a.key || "", kb = b.key || "";
+      if (ka !== kb) return ka < kb ? -1 : 1;
+    }
+    var oa = (a.odd || a.oddSrc) ? 1 : 0, ob = (b.odd || b.oddSrc) ? 1 : 0;
+    if (oa !== ob) return oa - ob;
+    return a.__i - b.__i;
   });
+  out.forEach(function(p){ delete p.__i; });
   // TERISH REVIZIYASI: har qayta pochkalashda +1. Chekdagi QR ichiga yoziladi, shuning uchun
   // eski terishdan chop etilgan chek skanerlanganda tizim buni darhol aniqlaydi.
   P.rev = (P.rev || 0) + 1;
@@ -2196,7 +3556,10 @@ function packSeq(p){
     L.items.forEach(function(q,qi){
       /* weak — qavat toʻliq toʻlmagan holat. Ilgari u qadamga koʻchirilmasdi va
          10-ui.js dagi «· toʻliq emas» yozuvi hech qachon chiqmasdi. */
-      s.push({it:q.it, layer:li+1, pos:q, role:L.lid?"ust":"qavat",
+      /* v13: quyruq qavat qopqoqning USTIGA tushadi, shuning uchun «ust» roli
+         faqat haqiqatan eng tepadagi qopqoqqa beriladi. */
+      s.push({it:q.it, layer:li+1, pos:q,
+              role: L.tail ? "quyruq" : (L.lid && li === p.layers.length-1 ? "ust" : "qavat"),
               n:qi+1, of:L.items.length, fill:L.fill, weak:!!L.weak});
     });
   });
@@ -2221,6 +3584,33 @@ function qrText(p, step){
          "|" + it.code + "|" + it.L + "x" + it.W + "x" + it.T;
 }
 function pad2(n){ return (n<10?"0":"")+n; }
+
+/* v14: pochkaning massa chegarasi. Nostandart oqimdan chiqqan pochka (oddSrc)
+   kattaroq limit bilan terilgan — audit ham, qoʻlda tahrirlash ham shu bilan
+   oʻlchashi kerak, aks holda toʻgʻri terilgan pochka «limitdan ogʻir» boʻlib
+   qizarardi. */
+/* Pochkaning ASOSIY massa chegarasi — zaxirasiz. */
+function packKgBase(p){
+  return (p && p.oddSrc) ? Math.max(+S.maxKg || 0, +S.oddKg || 0) : (+S.maxKg || 0);
+}
+/* JORIY chegara: zaxiradan foydalangan pochkada u kengaygan. Audit, chek va
+   qoʻlda tahrirlash shu bilan oʻlchaydi. */
+function packKgCap(p){
+  return packKgBase(p) + ((p && p.overKg) ? (+S.tailKgOver || 0) : 0);
+}
+/* MUTLAQ shift — singdirish qayergacha borishi mumkin.
+
+   `packKgCap` dan ALOHIDA: aks holda ikkinchi singdirishda zaxira ikki marta
+   qoʻshilib ketardi (44,9 kg oʻrniga 54,9 kg) va audit MASSA xatosi berardi.
+
+   v19: zaxira NOSTANDART limit ustiga QOʻSHILMAYDI. Ilgari nostandart pochka
+   40 + 10 = 50 kg gacha koʻtarilardi — bu ikki kishi uchun ham ogʻir va
+   buyurtmachi bunday narsani soʻramagan edi. Endi mutlaq shift bitta:
+   standart limit + zaxira (35 + 10 = 45). Nostandartning oʻz 40 kg i shundan
+   past turadi va oʻzgarishsiz qoladi. */
+function packKgAbs(p){
+  return Math.max(packKgBase(p), (+S.maxKg || 0) + (+S.tailKgOver || 0));
+}
 
 /* 3.6.11 BRUTTO — detallar massasi + qadoq materiali (tara).
    Tara pochkalash hisobiga KIRMAYDI (u sof detal massasi bilan ishlaydi),
@@ -2249,10 +3639,19 @@ function audCfg(){
     maxKg:     audNum(c.maxKg, 35),
     ovh:       audNum(c.ovh, 0),
     minBase:   audNum(c.minBase, 0),
+    oddLMax:   audNum(c.oddLMax, 0),      // v14: nostandart oqim tag oynasi
     maxLen:    audNum(c.maxLen, 1e9),
     minFill:   audNum(c.minFill, 0),
+    lidFill:   audNum(c.lidFill, 0),      // v15: TOM tekshiruvi
+    lidN:      audNum(c.lidN, 0),
     maxLayers: audNum(c.maxLayers, 0),
+    maxH:      audNum(c.maxH, 0),         // v20: balandlik chegarasi (0 = oʻchiq)
+    lidBal:    audNum(c.lidBal, 0),       // v20: tom ulushlari muvozanati
+    lidSupp:   audNum(c.lidSupp, 0),      // v20: tom detalining tayanch ulushi
+    lidBed:    audNum(c.lidBed, 0),       // v20: tom ostidagi qavat (toʻshak)
     byThick:   !!c.byThick,
+    oddKg:     audNum(c.oddKg, 0),        // v14: nostandart oqim limiti
+    tailOver:  audNum(c.tailKgOver, 0),   // v16: qoldiq zaxirasi
     // v12: pochkalash qoidasi — qaysi oʻq boʻyicha ajratilgani. GURUH tekshiruvi
     // shunga tayanadi. Rejim yoʻq, qoida bitta.
     rule:      (c.split && typeof c.split === "object") ? c.split : { prod:true, mat:false }
@@ -2310,6 +3709,14 @@ function auditPacks(packs, items){
     placedN++;
   }
 
+  /* guruh boʻyicha jami massa — YENGIL ogohlantirishi shunga qaraydi (pastda) */
+  var grpKg = audMap();
+  list.forEach(function(p){
+    if (!p || p.odd) return;
+    var gk = p.key || "*";
+    grpKg[gk] = (grpKg[gk] || 0) + audNum(p.kg, 0);
+  });
+
   list.forEach(function(p, pi){
     if (!p) return;
     var lab = audPno(p, pi), kg = audNum(p.kg, 0);
@@ -2324,20 +3731,45 @@ function auditPacks(packs, items){
         if (it && audNum(it.kg, 0) > cfg.maxKg + 0.001 &&
             (!heavy || audNum(it.kg, 0) > audNum(heavy.kg, 0))) heavy = it;
       });
-      if (kg > cfg.maxKg + 0.001){
+      var oCap = Math.max(cfg.maxKg, cfg.oddKg);
+      if (kg > oCap + 0.001){
         // bitta detalning oʻzi limitdan ogʻir boʻlsa — buni boʻlib boʻlmaydi, xato emas
         if (heavy){
           wrn("MASSA_NOODATIY", lab, audCode(heavy) + " bitta oʻzi " +
-              audNum(heavy.kg, 0).toFixed(1) + " kg — " + cfg.maxKg + " kg limitidan ogʻir, boʻlinmaydi");
+              audNum(heavy.kg, 0).toFixed(1) + " kg — " + oCap + " kg limitidan ogʻir, boʻlinmaydi");
           // AMMO ogʻir detalni chiqarib tashlaganda ham qolgani limitdan oshsa —
           // bu boshqa detallar shu pochkaga notoʻgʻri qoʻshilgani, yaʼni haqiqiy xato
           var rest = kg - audNum(heavy.kg, 0);
-          if (rest > cfg.maxKg + 0.001)
+          if (rest > oCap + 0.001)
             err("MASSA", lab, "ogʻir detaldan tashqari yana " + rest.toFixed(2) +
-                " kg — " + cfg.maxKg + " kg limitidan oshdi");
+                " kg — " + oCap + " kg limitidan oshdi");
         }
-        else err("MASSA", lab, kg.toFixed(2) + " kg > " + cfg.maxKg + " kg limit");
+        else err("MASSA", lab, kg.toFixed(2) + " kg > " + oCap + " kg limit");
       }
+      /* BALANDLIK — v20. Bogʻ detallarning ustma-ust taxlami; balandligi
+         qalinliklar yigʻindisi. Chegara ilgari FAQAT oddiy pochkalarga
+         qoʻllanardi va bogʻ undan bemalol oshib ketardi.
+         Bitta detalning oʻzi chegaradan qalin boʻlsa — bu xato emas
+         (detalni boʻlib boʻlmaydi), ogohlantirish. */
+      if (cfg.maxH > 0){
+        var hO = its.reduce(function(a, x){ return a + audNum(x && x.T, 0); }, 0);
+        if (hO > cfg.maxH + 0.001){
+          var tallest = 0;
+          its.forEach(function(x){ var t = audNum(x && x.T, 0); if (t > tallest) tallest = t; });
+          if (its.length === 1 && tallest > cfg.maxH + 0.001)
+            wrn("BALANDLIK_NOODATIY", lab, "bitta detalning oʻzi " + Math.round(tallest) +
+                " mm — " + cfg.maxH + " mm limitidan qalin, boʻlinmaydi");
+          else
+            err("BALANDLIK", lab, Math.round(hO) + " mm > " + cfg.maxH +
+                " mm limit (" + its.length + " detal ustma-ust)");
+        }
+      }
+      /* QAVAT — v20: bogʻda ham. Bogʻ N ta detalning taxlami, yaʼni N qavat.
+         Ilgari bu tekshiruv faqat oddiy pochkaga qoʻllanardi va bogʻ chegaradan
+         oshib ketsa hech kim koʻrmasdi. Bitta detalning oʻzi bilan bogʻ
+         hech qachon chegaradan oshmaydi, shuning uchun istisno kerak emas. */
+      if (cfg.maxLayers > 0 && its.length > cfg.maxLayers)
+        err("QAVAT", lab, its.length + " detal ustma-ust > " + cfg.maxLayers + " limit");
       var sqO = p.seq ? p.seq.length : 0;
       if (sqO !== its.length)
         err("SEQ", lab, "yigʻish ketma-ketligi " + sqO + " ta, detal " + its.length + " ta");
@@ -2378,6 +3810,27 @@ function auditPacks(packs, items){
     layers.forEach(function(L, li){
       var qs = (L && L.items) ? L.items : [];
       nLay += qs.length;
+
+      /* QALINLIK — v14: tekshiruv QAVAT ICHIGA koʻchdi.
+         Ilgari har qavat detali TAG bilan solishtirilardi, yaʼni butun pochka
+         bitta qalinlikdan boʻlishi talab qilinardi. Qalinlik matritsasi
+         (04-packer 3.6.8.5) esa bitta pochkada bir necha qalinlikka ATAYIN
+         ruxsat beradi — 3 mm orqa devorlar 16 mm pochkasining oʻz qavatida
+         yotadi. Buzilmasligi kerak boʻlgan invariant boshqa: BITTA QAVAT
+         ichida ikki xil qalinlik boʻlmasin, aks holda qavat qiyshayadi. */
+      if (cfg.byThick && qs.length > 1){
+        var t0 = null, tBad = null;
+        for (var ti = 0; ti < qs.length; ti++){
+          var qt = qs[ti] && qs[ti].it ? audNum(qs[ti].it.T, 0) : null;
+          if (qt === null) continue;
+          if (t0 === null) t0 = qt;
+          else if (Math.abs(qt - t0) > 0.001){ tBad = qt; break; }
+        }
+        if (tBad !== null)
+          err("QALINLIK", lab, (li + 1) + "-qavatda ikki xil qalinlik: " +
+              t0 + " mm va " + tBad + " mm");
+      }
+
       qs.forEach(function(q, qi){
         var it = q ? q.it : null;
         // buzilgan slot: joylashuv bor, detal yoʻq — jimgina oʻtkazib yuborsak detal
@@ -2400,11 +3853,6 @@ function auditPacks(packs, items){
             err("CHEGARA", lab, (li + 1) + "-qavat · " + audCode(it) + " konvertdan chiqdi: " +
                 bad.join(", ") + " (tag " + bL + "×" + bW + ", ruxsat etilgan chiqish " + off + " mm)");
 
-          /* QALINLIK — qavat detali tag detal bilan bir xil qalinlikda boʻlishi shart */
-          if (cfg.byThick && it && Math.abs(audNum(it.T, 0) - bT) > 0.001)
-            err("QALINLIK", lab, (li + 1) + "-qavat · " + audCode(it) + " " + audNum(it.T, 0) +
-                " mm — tag detal " + bT + " mm");
-
           /* GURUH — modul / material / klass chegarasi buzilganmi */
           var gw = grpWhy(it);
           if (gw) err("GURUH", lab, (li + 1) + "-qavat · " + audCode(it) + " " + gw);
@@ -2420,8 +3868,12 @@ function auditPacks(packs, items){
         }
       });
 
-      /* TOLDIRISH — qopqoq va toʻliqsizga ruxsat berilgan (weak) qavatlar tekshirilmaydi */
-      if (L && qs.length && !L.lid && !L.weak && audNum(L.fill, 0) < cfg.minFill / 100 - 0.005)
+      /* TOLDIRISH — qopqoq va toʻliqsizga ruxsat berilgan (weak) qavatlar tekshirilmaydi.
+         v13: QUYRUQ qavat ham tekshirilmaydi. `minFill` mazmuni «ustidagi qavat
+         egilmasin» — quyruqning ustida hech narsa yoʻq (u pochkaning eng tepasi),
+         shuning uchun boʻsh joy bu yerda zarar keltirmaydi. */
+      if (L && qs.length && !L.lid && !L.weak && !L.tail &&
+          audNum(L.fill, 0) < cfg.minFill / 100 - 0.005)
         wrn("TOLDIRISH", lab, (li + 1) + "-qavat toʻldirish " +
             Math.round(audNum(L.fill, 0) * 100) + "% < " + cfg.minFill + "%");
       // oʻrtachaga faqat detal turgan qavatlar kiradi — boʻsh qavat oʻrtachani soxta pasaytiradi
@@ -2429,24 +3881,135 @@ function auditPacks(packs, items){
     });
 
     /* MASSA / QAVAT / SEQ */
-    if (kg > cfg.maxKg + 0.001)
-      err("MASSA", lab, kg.toFixed(2) + " kg > " + cfg.maxKg + " kg limit");
+    /* v14: nostandart oqimdan chiqqan pochka oʻz (kattaroq) limiti bilan
+       terilgan — uni standart limit bilan oʻlchash notoʻgʻri boʻlardi. */
+    var kgCap = (p.oddSrc ? Math.max(cfg.maxKg, cfg.oddKg) : cfg.maxKg) +
+                (p.overKg ? cfg.tailOver : 0);      // v16: singdirish zaxirasi
+    if (kg > kgCap + 0.001)
+      err("MASSA", lab, kg.toFixed(2) + " kg > " + kgCap + " kg limit");
     if (cfg.maxLayers > 0 && (layers.length + 1) > cfg.maxLayers)
       err("QAVAT", lab, (layers.length + 1) + " qavat (tag + " + layers.length + ") > " +
           cfg.maxLayers + " limit");
+    /* BALANDLIK — v20. Qavat soni va balandlik IKKI ALOHIDA chegara: 12 ta 3 mm
+       detal 36 mm, 12 ta 16 mm detal 192 mm beradi. Qaysi biri avval toʻlsa,
+       qavat qoʻshish shu yerda toʻxtashi kerak. Ilgari audit faqat qavat sonini
+       tekshirardi va balandlik chegarasi buzilsa hech kim koʻrmasdi. */
+    if (cfg.maxH > 0 && base){
+      var hP = audNum(base.T, 0) +
+               layers.reduce(function(a, L){ return a + audNum(L && L.h, 0); }, 0);
+      if (hP > cfg.maxH + 0.001){
+        if (!layers.length && audNum(base.T, 0) > cfg.maxH + 0.001)
+          wrn("BALANDLIK_NOODATIY", lab, "tag detalning oʻzi " + Math.round(audNum(base.T, 0)) +
+              " mm — " + cfg.maxH + " mm limitidan qalin, boʻlinmaydi");
+        else
+          err("BALANDLIK", lab, Math.round(hP) + " mm > " + cfg.maxH +
+              " mm limit (tag " + Math.round(audNum(base.T, 0)) + " + " +
+              layers.length + " qavat)");
+      }
+    }
     var sqN = p.seq ? p.seq.length : 0;
     if (sqN !== 1 + nLay)
       err("SEQ", lab, "yigʻish ketma-ketligi " + sqN + " ta, kutilgan " + (1 + nLay) +
           " ta (tag + " + nLay + " qavat detali)");
 
+    /* TOʻSHAK — v20: tom ostidagi qavat.
+
+       Bu OGOHLANTIRISH emas, XATO. Tom uch tasmadan iborat boʻlib ostidagi
+       qavat faqat oʻrtani egallasa, chetdagi tasmalar qirraga tayanib
+       DUMALAB ketadi — pochka omborgacha yetib bormaydi. Sexning talabi:
+       bunday terish xato hisoblanadi.
+
+       Chegara `minFill` dan qatʼiyroq boʻlolmaydi: oddiy qavat aynan `minFill`
+       bilan qabul qilinadi, undan koʻpini talab qilish bajarilmas shart
+       boʻlardi. Amalda cheklov QUYRUQqa tegishli — u `minFill` dan ozod. */
+    if (base && layers.length >= 2 && cfg.lidBed > 0){
+      var bedNeed = cfg.minFill ? Math.min(cfg.lidBed, cfg.minFill) : cfg.lidBed;
+      var bedL = layers[layers.length - 2];
+      var bedF = Math.round(audNum(bedL && bedL.fill, 0) * 100);
+      if (bedF < bedNeed - 0.001)
+        err("TOM_TAGI", lab, "tom ostidagi qavat " + bedF + "% toʻlgan — meʼyor ≥ " +
+            bedNeed + "% (tom detallari qirraga tayanib dumalab ketadi)");
+    }
+
+    /* TOM — v15: pochkaning eng ustki yuzasi.
+       Yetkazib berishda pochkalar bir-birining ustiga teriladi, demak pastdagi
+       pochkaning tomi ustidagi pochkaning butun ogʻirligini koʻtaradi. Tom ochiq
+       qolsa ogʻirlik bir necha kichik detalga tushadi va ular ezilib sinadi.
+       Bu XATO emas, OGOHLANTIRISH: baʼzi pochkada (masalan tag + bitta kichik
+       detal) toza tom yasashning imkoni yoʻq — lekin P/M buni koʻrishi shart. */
+    /* v20: ogohlantirish endi QAYSI SHART buzilganini aytadi.
+       Ilgari matn har doim bir xil edi: «≥ 90 %, ≤ 3 detal». Natijada 100 %
+       yopilgan, 2 detalli tom uchun ham oʻsha matn chiqardi va P/M nima
+       notoʻgʻri ekanini topolmasdi — asl sabab 82/18 nisbat edi.
+       Endi sabablar sanab oʻtiladi. */
+    if (base && layers.length){
+      var topL = layers[layers.length - 1];
+      var tItems = (topL && topL.items) ? topL.items : [];
+      var tf = Math.round(audNum(topL && topL.fill, 0) * 100);
+      var tn = tItems.length;
+
+      /* TAYANCH — v20. Tom yuzasi toʻgʻri, nisbatlari toʻgʻri boʻlishi mumkin,
+         lekin chetdagi detali ostidagi qavatdan chiqib osilib qolsa u baribir
+         sinadi. Audit buni PACKER bayrogʻiga ishonmasdan, geometriyadan oʻzi
+         hisoblaydi: bir qavat ichidagi detallar kesishmaydi (USTMA_UST
+         invarianti), shuning uchun kesishmalar yigʻindisi yetarli. */
+      var belItems = layers.length > 1 ? (layers[layers.length-2].items || [])
+                                       : [{ x:0, y:0, a:bL, b:bW }];
+      var suppMin = 1;
+      tItems.forEach(function(q){
+        var A = audNum(q.a, 0) * audNum(q.b, 0);
+        if (A <= 0) return;
+        var got = 0;
+        belItems.forEach(function(r){
+          var ox = Math.min(q.x + q.a, r.x + r.a) - Math.max(q.x, r.x);
+          var oy = Math.min(q.y + q.b, r.y + r.b) - Math.max(q.y, r.y);
+          if (ox > 0 && oy > 0) got += ox * oy;
+        });
+        var v = Math.min(1, got / A);
+        if (v < suppMin) suppMin = v;
+      });
+
+      var why = [];
+      if (cfg.lidFill && tf < cfg.lidFill) why.push("yuza " + tf + "% < " + cfg.lidFill + "%");
+      if (cfg.lidN && tn > cfg.lidN)       why.push(tn + " detal > " + cfg.lidN);
+      if (cfg.lidSupp && tn && suppMin < cfg.lidSupp/100 - 1e-9)
+        why.push("tayanch " + Math.round(suppMin*100) + "% < " + cfg.lidSupp +
+                 "% (detal ostidagi qavatdan chiqib turibdi)");
+      if (tn > 1 && cfg.lidBal){
+        var tot = 0, mnA = Infinity;
+        tItems.forEach(function(q){ var a = audNum(q.a,0)*audNum(q.b,0); tot += a; if (a < mnA) mnA = a; });
+        var need = (cfg.lidBal/100) - 0.10*(tn - 2);
+        if (tot > 0 && need > 0 && (mnA/tot) < need - 1e-9)
+          why.push("nisbat " + Math.round(mnA/tot*100) + "% < " + Math.round(need*100) + "%");
+      }
+      if (!topL || !topL.tom){
+        if (!why.length) why.push("gabarit yoki qalinlik sharti");
+        wrn("TOM", lab, "eng ustki yuza — " + why.join("; ") +
+            " (ustiga pochka terilganda ogʻirlik notekis tushadi)");
+      }
+      else if (cfg.lidSupp && tn && suppMin < cfg.lidSupp/100 - 1e-9)
+        wrn("TOM_TAYANCH", lab, "tom " + Math.round(suppMin*100) +
+            "% tayanchda — meʼyor ≥ " + cfg.lidSupp + "%");
+    }
+
     /* ogohlantirishlar */
-    if (base && (bW < cfg.minBase || bL > cfg.maxLen))
+    /* v14: nostandart oqimdan chiqqan pochka oʻz (kengaytirilgan) tag oynasi
+       bilan terilgan — uni standart oyna bilan oʻlchash notoʻgʻri ogohlantirish
+       berardi («2188 mm > 2100» — holbuki u ataylab shunday terilgan). */
+    var lenCap = p.oddSrc ? Math.max(cfg.maxLen, cfg.oddLMax) : cfg.maxLen;
+    if (base && (bW < cfg.minBase || bL > lenCap))
       wrn("TAG_OLCHAM", lab, "tag " + bL + "×" + bW + " mm — meʼyor: eni ≥ " + cfg.minBase +
-          ", uzunlik ≤ " + cfg.maxLen);
+          ", uzunlik ≤ " + lenCap);
     if (!layers.length)
       wrn("BOSH_POCHKA", lab, "faqat tag detaldan iborat — ustida qavat yoʻq");
-    if (kg < cfg.maxKg * 0.5)
-      wrn("YENGIL", lab, kg.toFixed(1) + " kg — limitning yarmidan kam (" + cfg.maxKg + " kg)");
+    /* YENGIL — v13: guruhning OʻZIDA massa qolmagan boʻlsa, bu kamchilik emas.
+       3 mm orqa devorlar butun modulda 15 kg boʻlsa, ular 35 kg li pochka yasay
+       olmaydi va boshqa qalinlik bilan aralasha ham olmaydi — ogohlantirish
+       ishchiga hech narsa bermaydi, faqat toza auditni ifloslantiradi.
+       Shuning uchun ogohlantirish faqat guruhda haqiqatan zaxira bor boʻlsa
+       chiqadi: guruh jami massasi bitta pochka limitidan katta. */
+    if (kg < kgCap * 0.5 && grpKg[p.key || "*"] > kgCap + 0.001)
+      wrn("YENGIL", lab, kg.toFixed(1) + " kg — limitning yarmidan kam (" + kgCap + " kg)");
 
     if (layers.length + 1 > maxLayerUsed) maxLayerUsed = layers.length + 1;
   });
@@ -2962,7 +4525,7 @@ function draw2D(){
   }
   var L = p.layers[lay-1]; if (!L) return;
   document.getElementById("lgLayer").textContent =
-    (L.lid ? "qopqoq: " : lay+"-qavat: ") + L.items.length+" detal · "+
+    (L.tail ? "quyruq (qopqoq ostida): " : L.lid ? "qopqoq: " : lay+"-qavat: ") + L.items.length+" detal · "+
     Math.round(L.fill*100)+"%"+(L.weak?" (toʻliq emas)":"")+" · "+L.kg.toFixed(1)+" kg";
   L.items.forEach(function(q){
     var idx = p.seq.indexOf(p.seq.filter(function(s){ return s.it===q.it && s.layer===lay; })[0]);
@@ -3081,8 +4644,179 @@ function packLabelHTML(p, id){
       '<div style="text-align:center"><canvas id="'+id+'"></canvas>'+
         '<div style="font-size:7.5px;margin-top:2px;word-break:break-all">'+esc(packQR(p))+'</div></div>'+
     '</div>'+
-    '<div class="pf">'+esc(cut(p.seq.map(function(s){ return s.it.code; }).join(" · "), 300))+'</div>'+
+    '<div class="pf">'+packListHTML(p)+'</div>'+
   '</div>';
+}
+
+/* v20: POCHKA ICHIDAGI DETALLAR — chekning etagida.
+   Ilgari bu yerda kodlar « · » bilan ulangan bitta uzun qator turardi va 300
+   belgida kesilardi: ishchi qaysi detal yoʻqligini koʻrolmasdi.
+   Endi har detal — kod + oʻlcham, alohida katakcha.
+
+   Kesish chek oʻlchamiga qarab: 80×60 da 12 tadan, boshqa chekda 20 tadan koʻpi
+   sigʻmaydi. A4 da chegara yoʻq — u yerda joy bor. Kesilgan boʻlsa oxirida
+   «+N ta» turadi, ya'ni roʻyxat toʻliq emasligi YOZIB qoʻyiladi. */
+function packListHTML(p){
+  var mm  = (typeof labelMM === "function") ? labelMM() : null;
+  var cap = !mm ? 0 : (mm.h < 62 ? 12 : 20);
+  var seq = p.seq, n = seq.length;
+  var show = (cap && n > cap) ? cap : n;
+  var out = "";
+  for (var i = 0; i < show; i++){
+    var it = seq[i].it;
+    out += '<span><b>' + esc(it.code) + '</b> ' + it.L + '×' + it.W + '</span>';
+  }
+  if (show < n) out += '<span class="more">+' + (n - show) + ' ta</span>';
+  return out;
+}
+
+/* ============================================================
+   v20: BUYURTMA HUJJATI — A4, toʻliq tarkib
+
+   Nima uchun: pochka cheki bitta pochkani tavsiflaydi, lekin buyurtma
+   yopilayotganda kimdir «hammasi shumi?» degan savolga javob berishi kerak.
+   Hujjat aynan shu javob: har pochka, har detal, jami massa va imzo joylari.
+
+   Qachon: FAQAT hamma pochka yigʻilib boʻlgandan keyin (orderStatus().ready).
+   Yarim yigʻilgan buyurtmaga hujjat berilsa u yolgʻon hujjat boʻladi.
+   ============================================================ */
+function orderStatus(){
+  var doneP = 0, leftParts = 0, left = [], seqTot = 0;
+  PACKS.forEach(function(p){
+    var n = p.seq.length, d = Math.max(0, Math.min(p.done || 0, n));
+    seqTot += n;
+    if (d >= n) doneP++;
+    else { leftParts += (n - d); left.push({ no:p.no, done:d, of:n }); }
+  });
+  return {
+    packs: PACKS.length, donePacks: doneP,
+    parts: seqTot, leftParts: leftParts, left: left,
+    ready: PACKS.length > 0 && doneP === PACKS.length
+  };
+}
+
+function orderDocHTML(){
+  var st = orderStatus();
+  var netto = 0, brutto = 0;
+  PACKS.forEach(function(p){ netto += p.kg; brutto += packBrutto(p); });
+  var rooms = {}, mods = {}, mats = {};
+  PACKS.forEach(function(p){
+    var r = (typeof packRoom === "function") ? packRoom(p) : (p.room || "");
+    if (r) rooms[r] = 1;
+    p.seq.forEach(function(s){
+      mods[unitLabel(s.it.unit, s.it.unitName || s.it.prod)] = 1;
+      if (s.it.mat) mats[s.it.mat.name] = (mats[s.it.mat.name] || 0) + 1;
+    });
+  });
+  var d = new Date();
+  function p2(v){ return (v < 10 ? "0" : "") + v; }
+  var sana = d.getFullYear() + "-" + p2(d.getMonth()+1) + "-" + p2(d.getDate());
+
+  var h = '<div class="odoc">';
+
+  h += '<div class="oh"><div><b>' + esc(P.name || "Buyurtma") + '</b>' +
+       '<div class="sub">toʻliq tarkib · R' + (P.rev || 1) + ' · ' + sana + '</div></div>' +
+       '<div class="sub" style="text-align:right">id ' + esc(P.uuid || "—") + '<br>UPK v' +
+       (typeof APP_VER !== "undefined" ? APP_VER : "?") + '</div></div>';
+
+  // ---- umumiy koʻrsatkichlar
+  h += '<table class="osum"><tr>' +
+       '<td><u>Pochka</u><b>' + st.packs + ' ta</b></td>' +
+       '<td><u>Detal</u><b>' + st.parts + ' dona</b></td>' +
+       '<td><u>Xona</u><b>' + (Object.keys(rooms).length || "—") + '</b></td>' +
+       '<td><u>Modul</u><b>' + Object.keys(mods).length + '</b></td>' +
+       '<td><u>Netto</u><b>' + netto.toFixed(1) + ' kg</b></td>' +
+       '<td><u>Brutto</u><b>' + brutto.toFixed(1) + ' kg</b></td>' +
+       '</tr></table>';
+
+  // ---- pochkalar
+  h += '<h4>Pochkalar</h4><table class="otab"><thead><tr>' +
+       '<th>№</th><th>Xona / modul</th><th>Qalinlik</th><th>Qavat</th>' +
+       '<th>Detal</th><th>Gabarit, mm</th><th>Netto</th><th>Brutto</th></tr></thead><tbody>';
+  PACKS.forEach(function(p){
+    var r = (typeof packRoom === "function") ? packRoom(p) : (p.room || "");
+    var mm = {}; p.seq.forEach(function(s){ mm[unitLabel(s.it.unit, s.it.unitName)] = 1; });
+    h += '<tr><td class="mono">P' + pad2(p.no) + '</td>' +
+         '<td>' + esc(cut((r ? r + " · " : "") + Object.keys(mm).join(", "), 60)) + '</td>' +
+         '<td class="mono">' + (p.t || "—") + '</td>' +
+         '<td class="mono">' + (p.odd ? "bogʻ" : (p.layers.length + 1)) + '</td>' +
+         '<td class="mono">' + p.seq.length + '</td>' +
+         '<td class="mono">' + (p.odd ? "—" : p.gabL + "×" + p.gabW + "×" + Math.round(p.h)) + '</td>' +
+         '<td class="mono">' + p.kg.toFixed(1) + '</td>' +
+         '<td class="mono">' + packBrutto(p).toFixed(1) + '</td></tr>';
+  });
+  h += '</tbody></table>';
+
+  // ---- toʻliq detal roʻyxati
+  h += '<h4>Toʻliq detal roʻyxati</h4>';
+  PACKS.forEach(function(p){
+    h += '<div class="opk">P' + pad2(p.no) + ' — ' + p.seq.length + ' detal · ' +
+         p.kg.toFixed(1) + ' kg</div>';
+    h += '<table class="otab sm"><thead><tr><th>#</th><th>Kod</th><th>Nomi</th>' +
+         '<th>Oʻlcham, mm</th><th>Material</th><th>Kant</th><th>kg</th></tr></thead><tbody>';
+    p.seq.forEach(function(s, i){
+      var it = s.it;
+      h += '<tr><td class="mono">' + (i+1) + '</td>' +
+           '<td class="mono">' + esc(it.code) + '</td>' +
+           '<td>' + esc(cut(it.name, 46)) + '</td>' +
+           '<td class="mono">' + it.L + '×' + it.W + '×' + it.T + '</td>' +
+           '<td>' + esc(cut(it.mat ? it.mat.name : "—", 24)) + '</td>' +
+           '<td class="mono">' + esc(typeof edgeText === "function" ? edgeText(it.edges) : (it.edges || "—")) + '</td>' +
+           '<td class="mono">' + it.kg.toFixed(2) + '</td></tr>';
+    });
+    h += '</tbody></table>';
+  });
+
+  // ---- materiallar kesimi
+  h += '<h4>Material kesimi</h4><table class="otab"><thead><tr><th>Material</th><th>Detal</th></tr></thead><tbody>';
+  Object.keys(mats).sort().forEach(function(k){
+    h += '<tr><td>' + esc(k) + '</td><td class="mono">' + mats[k] + '</td></tr>';
+  });
+  h += '</tbody></table>';
+
+  /* ---- FURNITURA.
+     `.project` faylida furnitura maʼlumoti YOʻQ — 205 fayl tekshirildi, XML da
+     atigi project/good/material/operation/part teglari bor va `good` turlari
+     product/sheet/band/CS/XNC/EL/LB. Petlya, tortma, ruchka, shurup — hech biri
+     yozilmagan. Shuning uchun hujjat bu yerda YOLGʻON yozmaydi, balki maʼlumot
+     manbasi yoʻqligini ochiq aytadi. */
+  h += '<h4>Furnitura va aksesuarlar</h4>' +
+       '<div class="onote">Roʻyxat kiritilmagan. Raskroy faylida (<span class="mono">.project</span>) ' +
+       'furnitura maʼlumoti saqlanmaydi — unda faqat plita, kant va CNC operatsiyalari bor. ' +
+       'Furnitura alohida hujjat boʻyicha topshiriladi.</div>';
+
+  // ---- pochkalanmagan obyektlar
+  var sk = (typeof DIAG !== "undefined" && DIAG.skipped) ? DIAG.skipped : [];
+  if (sk.length){
+    h += '<h4>Pochkalanmagan obyektlar — ' + sk.length + ' ta</h4>' +
+         '<table class="otab"><thead><tr><th>Kod</th><th>Nomi</th><th>Sabab</th></tr></thead><tbody>';
+    sk.forEach(function(x){
+      h += '<tr><td class="mono">' + esc(x.code || "—") + '</td><td>' + esc(cut(x.name || "—", 50)) +
+           '</td><td>' + esc(x.why || "—") + '</td></tr>';
+    });
+    h += '</tbody></table>' +
+         '<div class="onote">Bular xona obyektlari (devor, pol, shift) — mebel detali emas, ' +
+         'shuning uchun pochkaga kirmaydi va massaga qoʻshilmaydi.</div>';
+  }
+
+  // ---- yigʻilmagan (hujjat chop etilmaydi, lekin holat yozilib qoladi)
+  if (!st.ready){
+    h += '<h4 class="bad">Yigʻilmagan — ' + st.leftParts + ' detal</h4>' +
+         '<table class="otab"><thead><tr><th>Pochka</th><th>Yigʻildi</th><th>Qoldi</th></tr></thead><tbody>';
+    st.left.forEach(function(x){
+      h += '<tr><td class="mono">P' + pad2(x.no) + '</td><td class="mono">' + x.done + '/' + x.of +
+           '</td><td class="mono">' + (x.of - x.done) + '</td></tr>';
+    });
+    h += '</tbody></table>';
+  }
+
+  // ---- imzo
+  h += '<div class="osign"><div>Topshirdi<br><span></span></div>' +
+       '<div>Qabul qildi<br><span></span></div>' +
+       '<div>Sana<br><span>' + sana + '</span></div></div>';
+
+  h += '</div>';
+  return h;
 }
 function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
 /* Matnni kesish — v10: ilgari .slice() belgisiz kesardi va chekda «LDSP Oq gly»
@@ -3393,7 +5127,16 @@ function snapPacks(packs){
     /* gname — pochkalash guruhining nomi (v11). Qayta hisoblanmaydi, chunki u
        S.modGroups holatiga bogʻliq; saqlanmasa birlashgan pochka tiklangandan
        keyin roʻyxatda faqat bitta modul nomi bilan chiqib qolardi. */
-    var o = { no:p.no, odd:!!p.odd, t:p.t, done:p.done || 0, rev:p.rev, gname:p.gname };
+    /* v13: key va room ham saqlanadi. Ilgari saqlanmasdi va shu sabab seans
+       tiklangandan keyin: (1) moveDetail dagi GURUH himoyasi (`if (dst.key && ...)`)
+       jimgina ishlamay qolardi — brauzer yangilangach material yoki modulni
+       aralashtirib yuborish mumkin edi; (2) xona nomi chekdan va roʻyxat
+       sarlavhasidan yoʻqolardi; (3) audit YENGIL ogohlantirishi guruhni koʻrmasdi. */
+    var o = { no:p.no, odd:!!p.odd, t:p.t, done:p.done || 0, rev:p.rev,
+              gname:p.gname, key:p.key, room:p.room,
+              oddSrc:!!p.oddSrc,     // v14: nostandart oqim limitlari shunga bogʻliq
+              overKg:!!p.overKg,     // v16: qoldiq zaxirasidan foydalangan
+              nst:!!p.nst };         // v18: qaysi oqim (standart / nostandart)
     if (p.odd){
       o.itemUids = (p.items || []).map(function(it){ return it.uid; });
       return o;
@@ -3406,6 +5149,9 @@ function snapPacks(packs){
         lid:     !!L.lid,
         soft:    !!L.soft,
         weak:    !!L.weak,
+        tail:    !!L.tail,        // v13: quyruq qavat — auditda toʻldirish talabidan ozod
+        impl:    !!L.impl,        // v14: koʻtarilgan qopqoq (makeLid dan oʻtmagan)
+        tom:     !!L.tom,         // v15: TOM shartidan oʻtganmi (audit shunga qaraydi)
         flipped: !!L.flipped,
         its: (L.items || []).map(function(q){
           return { u:q.it.uid, x:Math.round(q.x), y:Math.round(q.y),
@@ -3575,8 +5321,16 @@ function restoreSnapshot(snap){
         if (bad) break;
         p = { odd:true, items:lst, no:(s.no || i+1),
               kg: lst.reduce(function(a,x){ return a + x.kg; }, 0),
-              t: (s.t != null ? s.t : (lst[0] ? lst[0].T : 0)) };
+              t: (s.t != null ? s.t : (lst[0] ? lst[0].T : 0)),
+              /* v14: bogʻ ham guruhga tegishli — nomi va xonasi boʻlmasa
+                 roʻyxatda oʻz moduli ostidan chiqib ketadi */
+              gname: (typeof s.gname === "string" ? s.gname : null),
+              key:   (typeof s.key   === "string" ? s.key   : null),
+              room:  (typeof s.room  === "string" ? s.room  : null),
+              nst:   !!s.nst };
         p.h = lst.reduce(function(a,x){ return a + x.T; }, 0);
+        p.gabL = lst.reduce(function(a,x){ return Math.max(a, x.L); }, 0);
+        p.gabW = lst.reduce(function(a,x){ return Math.max(a, x.W); }, 0);
         p.seq = packSeq(p);
         p.done = Math.max(0, Math.min(isFinite(+s.done) ? Math.round(+s.done) : 0, p.seq.length));
         p.rev = (s.rev != null) ? s.rev : (P.rev || 1);
@@ -3618,6 +5372,9 @@ function restoreSnapshot(snap){
         if (ls.lid)  L.lid  = true;
         if (ls.soft) L.soft = true;
         if (ls.weak) L.weak = true;
+        if (ls.tail) L.tail = true;
+        if (ls.impl) L.impl = true;
+        if (ls.tom)  L.tom  = true;
         layers.push(L);
       }
       if (bad) break;
@@ -3628,7 +5385,12 @@ function restoreSnapshot(snap){
             envL: base.L + 2*off, envW: base.W + 2*off, off:off,
             allowOvh: !!s.allowOvh, left: [], no:(s.no || i+1),
             t: (s.t != null ? s.t : base.T),
-            gname: (typeof s.gname === "string" ? s.gname : null) };   // v11
+            gname: (typeof s.gname === "string" ? s.gname : null),      // v11
+            key:   (typeof s.key   === "string" ? s.key   : null),      // v13
+            room:  (typeof s.room  === "string" ? s.room  : null),      // v13
+            oddSrc: !!s.oddSrc,                                         // v14
+            overKg: !!s.overKg,                                         // v16
+            nst:    !!s.nst };                                          // v18
       p.h = base.T + layers.reduce(function(a,L){ return a + L.h; }, 0);
       var gL = base.L, gW = base.W;
       layers.forEach(function(L){ if (L.bb){ gL = Math.max(gL, L.bb.L); gW = Math.max(gW, L.bb.W); } });
@@ -3775,14 +5537,20 @@ function edgeText(e){
    shuning uchun birlashgan pochkada ikkinchi modul nomi yoʻqolib ketardi.
    Sarlavha va uning ostidagi hisoblagich AYNAN shu funksiyadan foydalanishi shart —
    ilgari sarlavha gname, hisoblagich esa base.prod boʻyicha yurib «0 pochka» chiqarardi. */
+/* v14: noodatiy pochka ham endi GURUHGA tegishli — nostandart oqim (3.6.8.5)
+   unga modul/material/klass kalitini, nomini va xonasini yozadi. Ilgari bu
+   yerda qatʼiy «Noodatiy» qaytarilardi va bogʻlar roʻyxatda oʻz moduli ostidan
+   chiqib ketardi. Nomi boʻlmasa — eskicha. Qatorning oʻzi baribir «noodatiy»
+   deb yozilgani uchun belgi yoʻqolmaydi. */
 function packGrpName(p){
-  return p.odd ? "Noodatiy" : (p.gname || p.base.prod || "Pochka");
+  if (p.odd) return p.gname || "Noodatiy";
+  return p.gname || p.base.prod || "Pochka";
 }
 /* v12: pochka qaysi XONAGA tegishli. Pochkalashda yozilgan p.room ishlatiladi;
    seansdan tiklangan eski pochkada u boʻlmasligi mumkin — tag detaldan olinadi. */
 function packRoom(p){
-  if (p.odd) return "";
   if (typeof p.room === "string") return p.room;
+  if (p.odd) return "";
   var r = p.base ? roomOf(p.base.unit) : null;
   return r ? r.name : "";
 }
@@ -3831,7 +5599,8 @@ function renderPacks(){
     }
     // sarlavha — GABARIT: 55 pochkadan 51 tasi shu bilan farq qiladi va ishchi
     // stoldagi pochkani aynan oʻlchamidan tanib oladi
-    var ttl = p.odd ? ("noodatiy" + cls) : (p.gabL+"×"+p.gabW+"×"+Math.round(p.h));
+    var ttl = p.odd ? ("noodatiy" + cls)
+                    : (p.gabL+"×"+p.gabW+"×"+Math.round(p.h) + (p.oddSrc ? " · NS" : ""));
     var weak = !p.odd && p.layers.some(function(L){ return L.weak; });
     // v10: har satr <s> ichida — CSS uni kesadi, shuning uchun matn hech qachon
     // "3 qavat ·" / "98%" boʻlib ikkiga boʻlinib ketmaydi
@@ -3905,6 +5674,9 @@ function renderPacks(){
     if (sr.top < br.top + head)      box.scrollTop += sr.top - br.top - head;
     else if (sr.bottom > br.bottom)  box.scrollTop += sr.bottom - br.bottom;
   }
+  /* v20: yigʻish progressi har qadamda oʻzgaradi — buyurtma hujjatining holati
+     ham shu yerda yangilanadi (stats() har qadamda chaqirilmaydi). */
+  if (typeof orderNote === "function") { try { orderNote(); } catch(e){} }
 }
 
 function selectPack(i){
@@ -3940,7 +5712,9 @@ function selectPack(i){
      ikki xil raqam. Endi ikkalasi ham yozilgan va nomlangan. */
   $("stageKg").textContent = (p.odd ? "" : "gabarit "+p.gabL+"×"+p.gabW+"×"+Math.round(p.h)+" mm · qavat "+
     (p.layers.length+1)+(S.maxLayers>0?"/"+S.maxLayers:"")+" · ")+
-    "toza "+p.kg.toFixed(1)+"/"+S.maxKg+" kg · brutto "+packBrutto(p).toFixed(1)+" kg";
+    // v16: chegara pochkaga qarab oʻzgaradi (nostandart oqim, qoldiq zaxirasi)
+    "toza "+p.kg.toFixed(1)+"/"+packKgCap(p)+" kg"+(p.overKg?" (zaxira)":"")+
+    " · brutto "+packBrutto(p).toFixed(1)+" kg";
   var t = $("pkOvh"); if (t) t.onchange = function(){ togglePackOvh(p, t.checked); };
   renderPacks(); renderStep();
 }
@@ -4015,6 +5789,7 @@ function renderStep(){
     var it = step.it;
     var role = step.role==="tag" ? "eng tag — yaxlit detal"
              : step.role==="ust" ? "eng ust — qopqoq"+(step.of>1?" ("+step.n+"/"+step.of+")":"")+(step.weak?" · toʻliq emas":"")
+             : step.role==="quyruq" ? "quyruq — qopqoq ostiga"+(step.of>1?" ("+step.n+"/"+step.of+")":"")
              : step.role==="noodatiy" ? "noodatiy — alohida"
              : step.layer+"-qavat"+(step.of>1?" ("+step.n+"/"+step.of+")":"");
     function axis(v, inWord, outWord){
@@ -4055,9 +5830,16 @@ function renderStep(){
 }
 function advance(){ var p=PACKS[CUR]; if (!p) return;
   flashClear();                       // eski xabar yangi qadamga oʻtmasin
+  var was = STEP;
   if (STEP<p.seq.length) setStep(STEP+1);
+  /* v20: pochka AYNAN SHU QADAMDA tugadimi. Shart `STEP>=seq.length` emas,
+     OʻTISH boʻyicha: aks holda tayyor pochkada har Enter bosilganda chek qayta
+     chiqib ketardi. */
+  var justDone = (was < p.seq.length && STEP >= p.seq.length);
   if (STEP>=p.seq.length && !p.odd) WRAP = true;
-  renderStep(); renderPacks(); }
+  renderStep(); renderPacks();
+  if (justDone && S.autoLbl) printPackLabel(p);
+}
 /* XABAR (flash).
    v10: ilgari xabar PEND da qolib, keyingi qadamda QAYTA chiqardi — ishchi toʻgʻri
    ishlayotgan boʻlsa ham ekranda eski qizil xato turaverardi va unga ishonmay qoʻyardi.
@@ -4135,6 +5917,10 @@ function stats(){
   $("sPacks").textContent = PACKS.length;
   $("sOdd").textContent = PACKS.filter(function(p){ return p.odd; }).length;
   $("sOdd").style.color = PACKS.some(function(p){ return p.odd; }) ? "var(--alert)" : "";
+
+  /* v20: buyurtma hujjatining holati sozlamalarda doim yangi turadi —
+     boshqaruvchi «Holatni tekshirish» ni bosmasdan ham nima qolganini koʻradi. */
+  if (typeof orderNote === "function") { try { orderNote(); } catch(e){} }
 
   // AUDIT: har qayta hisobdan keyin invariantlar tekshiriladi va shapkada koʻrsatiladi
   var bd = $("auditBadge");
@@ -4240,15 +6026,33 @@ function addMaterial(){
 /* 3.9.6 chop etish va CSV eksport
    v10: chek oʻlchami sozlanadi. A4 — 2 ustun (oddiy printer); 100×70 va 58×40 — termal
    printer, har chek alohida varaqda. @page oʻlchami chop etishdan oldin joylashtiriladi. */
-function applyPageSize(){
+/* v20: chek oʻlchami endi QOʻLDA ham beriladi. Tayyor uch oʻlcham sexdagi har
+   xil rulonga yetmasdi. `labelSize` qiymatlari:
+     a4 | 100x70 | 80x60 | 58x40 | custom   (custom → S.labelW × S.labelH, mm)
+
+   CSS sinflari: A4 uchun `sz-a4`, qolgan hammasi uchun `sz-lbl` (har chek alohida
+   varaqda). Chek boʻyi 62 mm dan past boʻlsa qoʻshimcha `tiny` — shrift kichrayadi
+   va detallar roʻyxati qisqaradi. Ilgari har oʻlcham uchun alohida CSS bloki bor
+   edi va qoʻlda oʻlcham qoʻshilishi bilan ular yaroqsiz boʻlib qolardi. */
+function labelMM(){
   var sz = S.labelSize || "a4";
+  if (sz === "a4") return null;
+  if (sz === "custom"){
+    var w = +S.labelW || 80, h = +S.labelH || 60;
+    return { w: Math.max(20, Math.min(300, w)), h: Math.max(20, Math.min(300, h)) };
+  }
+  var m = /^(\d+)x(\d+)$/.exec(sz);
+  return m ? { w:+m[1], h:+m[2] } : null;
+}
+function applyPageSize(){
+  var mm = labelMM();
   var sheet = $("sheet");
-  sheet.className = "sz-" + sz;
+  sheet.className = mm ? ("sz-lbl" + (mm.h < 62 ? " tiny" : "")) : "sz-a4";
   var st = document.getElementById("pageStyle");
   if (!st){ st = document.createElement("style"); st.id = "pageStyle"; document.head.appendChild(st); }
-  st.textContent = sz === "100x70" ? "@media print{@page{size:100mm 70mm;margin:3mm}}"
-                 : sz === "58x40"  ? "@media print{@page{size:58mm 40mm;margin:2mm}}"
-                 : "@media print{@page{size:A4;margin:8mm}}";
+  st.textContent = mm
+    ? "@media print{@page{size:" + mm.w + "mm " + mm.h + "mm;margin:" + (mm.h < 62 ? 2 : 3) + "mm}}"
+    : "@media print{@page{size:A4;margin:8mm}}";
 }
 function printSteps(list, title){
   if (!list || !list.length) return;
@@ -4267,6 +6071,23 @@ function printSteps(list, title){
   }, 60);
 }
 function allSteps(){ var a=[]; PACKS.forEach(function(p){ p.seq.forEach(function(s){ a.push({p:p,s:s}); }); }); return a; }
+
+/* v20: POCHKA CHEKI — yasash va chop etish AJRATILDI.
+   Ajratilgani testga kerak: chek toʻgʻri yasalganini window.print() ni
+   chaqirmasdan tekshirib boʻladi. */
+function packLabelSheet(p){
+  if (!p) return "";
+  applyPageSize();
+  var html = '<div class="lbls">' + packLabelHTML(p, "qpk") + '</div>';
+  $("sheet").innerHTML = html;
+  drawQR($("qpk"), packQR(p));
+  return html;
+}
+function printPackLabel(p){
+  if (!p) return;
+  packLabelSheet(p);
+  setTimeout(function(){ window.print(); }, 60);
+}
 
 function csv(){
   var rows = [["pochka","pochka_qalinlik","qavat","tartib","kod","nomi","mahsulot","uzunlik","eni","qalinlik","massa_kg","material","kant","qavat_toldirish_%","pochka_brutto_kg","pochka_gabarit","reviziya"]];
@@ -4312,17 +6133,48 @@ function packMids(p){
   var arr=[]; p.layers.forEach(function(L){ L.items.forEach(function(q){ arr.push(q.it); }); });
   return arr;
 }
+/* v13: pochkaning qayta teriladigan holatini nusxalash/tiklash.
+   `layoutPack()` yangi obyektlar yasaydi va eskilariga tegmaydi, shuning uchun
+   yuzaki nusxa yetarli — eski qavatlar oʻz `items` massivi bilan butun qoladi. */
+var PACK_FIELDS = ["layers","kg","envL","envW","off","left","seq","t","h",
+                   "fillAvg","gabL","gabW","done"];
+function packSave(p){
+  var b = {};
+  PACK_FIELDS.forEach(function(k){ b[k] = p[k]; });
+  return b;
+}
+function packLoad(p, b){
+  PACK_FIELDS.forEach(function(k){ p[k] = b[k]; });
+}
+
+/* ATOMIK qayta terish (v13). Ilgari `layoutPack()` sigʻdirolmagan detallar
+   `np.left` ga tushib pochkadan chiqib ketardi, chaqiruvchi esa uni eʼtiborsiz
+   qoldirardi — yaʼni qoʻlda koʻchirishda detal buyurtmadan JIMGINA yoʻqolishi
+   mumkin edi (auditda keyin YOQOLGAN boʻlib chiqardi). Bu ayniqsa QUYRUQLI
+   pochkada tez yuz beradi: quyruq qavati `minFill` dan oʻtmaydi, demak qayta
+   terishda u albatta «ortiqcha» boʻlib qoladi.
+   Endi qoida bitta: hammasi joylashsa — pochka yangilanadi; birortasi
+   joylashmasa — pochka BUTUNLAY tegilmagan holda qoladi va qoldiq qaytariladi. */
 function refreshPack(p, mids){
+  var bak = packSave(p);
+  // v14: nostandart oqimdan chiqqan pochka oʻz limitlari bilan qayta teriladi
+  var sv = p.oddSrc ? oddLimitsOn() : null;
   var np = layoutPack(p.base, mids, p.allowOvh, 0, 0);
+  if (sv) oddLimitsOff(sv);
+  if (np.left.length){ packLoad(p, bak); return np.left; }
   p.layers=np.layers; p.kg=np.kg; p.envL=np.envL; p.envW=np.envW; p.off=np.off; p.left=[];
   p.seq=packSeq(p); p.t=p.base.T;
+  // v15: qayta terilgach eng ustki qavat oʻzgaradi — TOM bayrogʻi yangilanadi
+  p.layers.forEach(function(L, li){
+    L.tom = (li === p.layers.length - 1) ? tomOK(L, p.base, p.off) : false;
+  });
   p.h=p.base.T+p.layers.reduce(function(s,L){ return s+L.h; },0);
   p.fillAvg=p.layers.length?p.layers.reduce(function(s,L){ return s+L.fill; },0)/p.layers.length:0;
   var gL=p.base.L,gW=p.base.W;
   p.layers.forEach(function(L){ if(L.bb){ gL=Math.max(gL,L.bb.L); gW=Math.max(gW,L.bb.W); } });
   p.gabL=Math.round(gL); p.gabW=Math.round(gW);
   p.done = 0;      // v10: qayta terilgan pochkaning ketma-ketligi oʻzgardi — progress nolga
-  return np.left;
+  return [];
 }
 function moveDetail(fromIdx, uid, toIdx){
   var src = PACKS[fromIdx];
@@ -4339,8 +6191,14 @@ function moveDetail(fromIdx, uid, toIdx){
   if (!it) return "detal topilmadi";
 
   if (toIdx === "new"){
-    if (it.W < S.minBase || it.L > S.maxLen) return "bu detal yangi pochkaga tag boʻlolmaydi ("+it.L+"×"+it.W+")";
-    refreshPack(src, packMids(src).filter(function(x){ return x.uid!==uid; }));
+    // v14: tag oynasi — toʻrt chegara birdan
+    if (it.W < S.minBase || it.W > (S.baseWMax||1e9) ||
+        it.L < (S.baseLMin||0) || it.L > S.maxLen || it.T < (S.minBaseT||0))
+      return "bu detal yangi pochkaga tag boʻlolmaydi ("+it.L+"×"+it.W+"×"+it.T+" mm)";
+    // v13: manba pochka detalsiz qayta terilmasa — koʻchirish umuman boshlanmaydi
+    var nLeft = refreshPack(src, packMids(src).filter(function(x){ return x.uid!==uid; }));
+    if (nLeft.length)
+      return "P"+pad2(src.no)+" bu detalsiz qayta terilmadi — "+nLeft.length+" detal joysiz qolardi";
     var np = layoutPack(it, [], S.ovhOn, 0, 0);
     np.no = PACKS.length+1; np.rev = P.rev || 1; np.t=it.T; np.seq=packSeq(np);
     np.h=it.T+np.layers.reduce(function(s,L){ return s+L.h; },0);
@@ -4365,13 +6223,22 @@ function moveDetail(fromIdx, uid, toIdx){
   if (dst.key && packKey(it, rule) !== dst.key)
     return keyWhy(it, dst.base, rule) || "boshqa guruhga tegishli detal";
   if (S.byThick && dst.t !== it.T) return "qalinlik mos emas: pochka "+dst.t+" mm, detal "+it.T+" mm";
-  if (dst.kg + it.kg > S.maxKg + 1e-9) return "sigʻmaydi: "+(dst.kg+it.kg).toFixed(1)+" kg > "+S.maxKg+" kg";
+  // v14: yupqa tag ustiga qalin detal qoʻyib boʻlmaydi (04-packer thickOKon)
+  if (!thickOKon(dst.base, it.T))
+    return "tag " + dst.base.T + " mm — " + it.T + " mm detal ustiga qoʻyilmaydi";
+  var cap = packKgCap(dst);        // v14: nostandart pochkada limit boshqa
+  if (dst.kg + it.kg > cap + 1e-9) return "sigʻmaydi: "+(dst.kg+it.kg).toFixed(1)+" kg > "+cap+" kg";
+  // v13: ikkala pochka ham atomik yangilanadi. Nishonga qoʻshib boʻlmasa — u
+  // tegilmagan qoladi; manba qayta terilmasa — nishon ham eski holatiga qaytadi.
+  var dstBak = packSave(dst);
   var left = refreshPack(dst, packMids(dst).concat([it]));
-  if (left.length){                      // geometrik sigʻmadi — orqaga qaytaramiz
-    refreshPack(dst, packMids(dst).filter(function(x){ return x.uid!==uid; }));
+  if (left.length)
     return "geometrik sigʻmadi: detal "+dst.base.L+"×"+dst.base.W+" tag ustiga tushmaydi";
+  var srcLeft = refreshPack(src, packMids(src).filter(function(x){ return x.uid!==uid; }));
+  if (srcLeft.length){
+    packLoad(dst, dstBak);
+    return "P"+pad2(src.no)+" bu detalsiz qayta terilmadi — "+srcLeft.length+" detal joysiz qolardi";
   }
-  refreshPack(src, packMids(src).filter(function(x){ return x.uid!==uid; }));
   return null;
 }
 /* v12: QOʻLDA TAHRIRLASH ENDI FAQAT P/M DA.
@@ -4411,7 +6278,7 @@ function renderMgrEdit(){
       L.items.forEach(function(q){
         rows += '<div class="edrow"><div><span class="mono">'+esc(q.it.code)+'</span> · '+
           q.it.L+'×'+q.it.W+' · '+q.it.kg.toFixed(2)+' kg'+
-          '<small>'+(L.lid?"qopqoq":(li+1)+"-qavat")+' · '+esc(unitLabel(q.it.unit, q.it.unitName))+'</small></div>'+
+          '<small>'+(L.tail?"quyruq":L.lid?"qopqoq":(li+1)+"-qavat")+' · '+esc(unitLabel(q.it.unit, q.it.unitName))+'</small></div>'+
           '<div style="display:flex;gap:5px"><select data-uid="'+esc(q.it.uid)+'">'+opts+'</select>'+
           '<button class="btn" data-mv="'+esc(q.it.uid)+'">→</button></div></div>';
       });
@@ -4949,6 +6816,29 @@ function diagWarnHTML(){
   return h + diagTbl(rows);
 }
 
+/* (b2) v17: POCHKALANMAYDIGAN OBYEKTLAR — xona devori, pol, shift.
+   Haqiqiy proyekt fayllarida ular ham «part» boʻlib keladi. Tizim ularni
+   pochkalamaydi (03-parser `partSkipWhy`), lekin JIMGINA tashlab yubormaydi:
+   P/M nima chiqarib tashlanganini va nima uchun ekanini shu yerda koʻradi. */
+function diagSkipHTML(){
+  var sk = (DIAG && DIAG.skipped) ? DIAG.skipped : [];
+  if (!sk.length) return "";
+  var n = sk.reduce(function(a, x){ return a + (x.q || 1); }, 0);
+  var h = '<h3>Pochkalanmagan obyektlar · ' + n + '</h3>' +
+    '<div class="note" style="border-left-color:var(--mark)">' +
+    'Bular mebel detali emas — proyekt faylida xona obyektlari (devor, pol, shift) ' +
+    'ham «detal» boʻlib keladi. Ular pochkalanmaydi va buyurtma massasiga kirmaydi. ' +
+    'Chegara: <b>Sozlamalar → Detal maks. qalinligi</b>.</div>';
+  var rows = '<tr><th>Kod</th><th>Nom</th><th>Soni</th><th>Sabab</th></tr>';
+  sk.forEach(function(x){
+    rows += '<tr><td class="m">' + esc(x.code || "—") + '</td>' +
+      '<td style="white-space:normal">' + esc(x.name || "—") + '</td>' +
+      '<td class="m">' + (x.q || 1) + '</td>' +
+      '<td style="white-space:normal">' + esc(x.why || "") + '</td></tr>';
+  });
+  return h + diagTbl(rows);
+}
+
 /* (c) audit — 05-audit.js boʻlmasa jim oʻtkazadi */
 function diagAuditHTML(){
   if (typeof auditPacks !== "function") return "";
@@ -5095,6 +6985,7 @@ function renderDiag(){
   if (!box) return;
   var h = diagSafe(diagFileHTML,    "Fayl") +
           diagSafe(diagWarnHTML,    "Parser ogohlantirishlari") +
+          diagSafe(diagSkipHTML,    "Pochkalanmagan obyektlar") +
           diagSafe(diagAuditHTML,   "Audit") +
           diagSafe(diagProjectHTML, "Loyiha tarkibi") +
           diagSafe(diagXmlHTML,     "XML tuzilishi");
@@ -5943,15 +7834,53 @@ if (document.readyState === "loading"){
 /* --- 3.14.1 SOZLAMANI SAQLASH (localStorage) ---
    Diqqat: bu yerda faqat MEʼYORLAR saqlanadi. Yuklangan loyiha, hisoblangan pochkalar va
    yigʻish progressi IndexedDB da (09-storage.js) — ular hajmi katta va tez-tez oʻzgaradi. */
-var CONF_IDS = ["cMaxKg","cOvh","cMinBase","cMaxLen","cBaseT","cFill","cLidFill","cLidN","cLidTol",
-                "cOneMan","cTare","cMaxLay","cTries","cPrefix","cLabel","cOvhOn","cThick",
-                "cRackN","cCellN",
-                /* v12: yacheykaning fizik oʻlchamlari. Bular ham SHU roʻyxatda boʻlishi SHART —
-                   aks holda operator sexdagi haqiqiy oʻlchamni kiritadi, tizim esa uni
-                   saqlamay har ochilishda standartga qaytarib yuboradi. */
-                "cBigN","cCellW","cCellD","cCellH","cBigW","cBigD",
-                /* v12: «mode»/«mgrMode» olib tashlandi — rejim yoʻq, qoida bitta */
-                "mgrByRoom","mgrByMat"];
+/* v20: SOZLAMA MAYDONLARI ROʻYXATI ENDI DOM DAN OLINADI.
+
+   Ilgari bu qoʻlda yozilgan roʻyxat edi. Har yangi meʼyor qoʻshilganda uni
+   yangilash unutilardi va oqibati JIM boʻlardi: maydon interfeysda turadi,
+   operator qiymat kiritadi — lekin u saqlanmaydi va qayta hisobni ham
+   chaqirmaydi. Yaʼni sozlama shunchaki YOZUV boʻlib qolardi.
+
+   Sexda bu shunday koʻrindi: «Pochka maks. balandligi» ga 160 mm qoʻyilgan,
+   tizim esa 12–14 qavat terib yuborgan. Balandlik mantigʻi toʻgʻri edi —
+   maydon shunchaki packerga yetib bormasdi.
+
+   Oxirgi tekshiruvda 46 maydondan 21 tasi roʻyxatdan tashqarida qolgan edi:
+   cBaseWMax, cBaseLMin, cBaseCover, cBaseInset, cMaxH, cMaxPartT, cLidBal,
+   cOddKg, cOddLMax, cOddWMax, cOddTol, cTailOver, cTailGap, cTailSpan,
+   cLidSupp, cLidBed, cMinPartW, cMinPartL, cLabelW, cLabelH, cAutoLbl.
+
+   Endi roʻyxat DOM dan yigʻiladi — unutish mumkin emas. */
+var CONF_IDS = (function(){
+  var out = [], box = document.getElementById("v-conf");
+  if (box){
+    var els = box.querySelectorAll("input,select");
+    for (var i = 0; i < els.length; i++){
+      var e = els[i];
+      if (!e.id) continue;
+      if (e.type === "file" || e.type === "button" || e.type === "submit") continue;
+      out.push(e.id);
+    }
+  }
+  /* Pochkalash qoidasi P/M ekranida turadi, lekin u ham meʼyor —
+     saqlanishi va tiklanishi shart. */
+  ["mgrByRoom","mgrByMat"].forEach(function(id){
+    if (document.getElementById(id)) out.push(id);
+  });
+  return out;
+})();
+
+/* Qaysi sozlama QAYTA TERISHNI talab qilmaydi — faqat koʻrinishga taʼsir qiladi.
+   Standart YOʻQ: roʻyxatda boʻlmagan har maydon qayta hisobga tushadi. Bu ataylab
+   shunday — yangi maydon qoʻshilganda eng yomoni ortiqcha qayta hisob boʻladi,
+   eng yaxshisi ishlaydi. Teskarisi (standart «taʼsir qilmaydi») aynan yuqoridagi
+   jim nosozlikni qaytarardi. */
+var CONF_VIEW_ONLY = {
+  cTare:1, cOneMan:1,                                    // chek va ogohlantirish
+  cPrefix:1, cLabel:1, cLabelW:1, cLabelH:1, cAutoLbl:1, // chek chop etish
+  cRackN:1, cCellN:1, cCellW:1, cCellD:1, cCellH:1,      // saralash posti
+  cBigN:1, cBigW:1, cBigD:1
+};
 
 /* standart qiymatlar HTML dan oʻqib olinadi — «Standartga qaytarish» shularni tiklaydi */
 var CONF_DEFAULTS = {};
@@ -5976,6 +7905,7 @@ function saveConf(){
   o._unitNames = S.unitNames;   // v12: modul nomlari
   o._split = S.split;           // v12: bitta pochkalash qoidasi (rejim oʻrniga)
   o._cellOff = S.cellOff;       // yopiq yacheykalar — sexning fizik holati
+  o._thickMix = S.thickMix;     // v20: qalinlik matritsasi ham meʼyor edi, saqlanmasdi
   try {
     localStorage.setItem("upk_conf", JSON.stringify(o));
     var n = $("saveNote"); n.style.display = "block";
@@ -6011,6 +7941,7 @@ function restoreConf(){
        emas — tozalanadi, aks holda hamma modul oʻchirilgandek koʻrinardi. */
     if (o._modSrc === "code"){ S.rooms = {}; S.modGroups = []; }
     if (o._cellOff && typeof o._cellOff === "object") S.cellOff = o._cellOff;
+    if (o._thickMix && typeof o._thickMix === "object") S.thickMix = o._thickMix;   // v20
     return true;
   } catch(e){ return false; }
 }
@@ -6036,6 +7967,28 @@ function readConf(){
   S.minBase  = +$("cMinBase").value || 190;
   S.maxLen   = +$("cMaxLen").value || 2100;
   S.minBaseT = +$("cBaseT").value || 0;
+  /* v14: TAG OYNASI — qolgan ikki chegara. baseLMin 0 boʻlishi MUMKIN
+     («cheklovsiz»), shuning uchun `|| N` shakli ishlatilmaydi. */
+  S.baseWMax  = numOr($("cBaseWMax"),  1900, 100, 4000);
+  S.baseLMin  = numOr($("cBaseLMin"),     0,   0, 4000);
+  S.baseCover = numOr($("cBaseCover"),   90,  50,  100);
+  S.baseInset = numOr($("cBaseInset"),   40,   0,  500);
+  S.maxH      = numOr($("cMaxH"),         0,   0, 5000);
+  S.lidBal    = numOr($("cLidBal"),      40,   0,  100);
+  S.maxPartT  = numOr($("cMaxPartT"),    60,   0, 5000);
+  // v14: nostandart oqim
+  S.oddKg     = numOr($("cOddKg"),       40,   1,  500);
+  S.oddLMax   = numOr($("cOddLMax"),   3200, 100, 9000);
+  S.oddWMax   = numOr($("cOddWMax"),   1900, 100, 4000);
+  S.oddTol    = numOr($("cOddTol"),     300,   0, 2000);
+  S.tailKgOver = numOr($("cTailOver"),   10,   0,  100);   // v16
+  S.tailGap    = numOr($("cTailGap"),    300,   0, 4000);   // v20
+  S.tailSpan   = numOr($("cTailSpan"),    70,   0,  100);   // v20
+  S.lidSupp    = numOr($("cLidSupp"),     65,   0,  100);   // v20
+  S.lidBed     = numOr($("cLidBed"),      85,   0,  100);   // v20
+  S.minPartW   = numOr($("cMinPartW"),    0,   0, 4000);   // v18
+  S.minPartL   = numOr($("cMinPartL"),    0,   0, 9000);
+  readThickMix();
   S.tries    = Math.max(1, Math.min(40, +$("cTries").value || 4));
   S.prefix   = $("cPrefix").value || "SM";
   S.ovhOn    = $("cOvhOn").checked;
@@ -6050,12 +8003,16 @@ function readConf(){
   if (bm) S.split.mat  = bm.checked;
 
   S.minFill   = Math.max(10, Math.min(130, +$("cFill").value || 85));
-  S.lidFill   = Math.max(10, Math.min(100, +$("cLidFill").value || 80));
+  S.lidFill   = Math.max(10, Math.min(100, +$("cLidFill").value || 90));
   S.lidN      = Math.max(1, Math.min(4, +$("cLidN").value || 3));
   S.lidTol    = Math.max(0, +$("cLidTol").value || 0);
   S.oneMan    = Math.max(0, +$("cOneMan").value || 25);
   S.tare      = Math.max(0, +$("cTare").value || 0);
   S.labelSize = $("cLabel") ? $("cLabel").value : "a4";
+  // v20: qoʻlda chek oʻlchami — faqat labelSize="custom" da ishlatiladi
+  S.labelW    = numOr($("cLabelW"),  80,  20, 300);
+  S.labelH    = numOr($("cLabelH"),  60,  20, 300);
+  if ($("cAutoLbl")) S.autoLbl = $("cAutoLbl").checked;
   S.maxLayers = Math.max(0, parseInt($("cMaxLay").value,10) || 0);
   /* terish logikasi (doimiy Avto) va variantlar soni endi 04-packer.js dagi
      PACK_TRIES konstantasida — ular sozlama emas, shuning uchun S da turmaydi */
@@ -6088,7 +8045,16 @@ function showCellTot(){
 function writeConf(){
   var m = { cMaxKg:S.maxKg, cOvh:S.ovh, cMinBase:S.minBase, cMaxLen:S.maxLen, cBaseT:S.minBaseT,
             cFill:S.minFill, cLidFill:S.lidFill, cLidN:S.lidN, cLidTol:S.lidTol, cOneMan:S.oneMan,
-            cTare:S.tare, cMaxLay:S.maxLayers, cTries:S.tries, cPrefix:S.prefix, cLabel:S.labelSize };
+            cTare:S.tare, cMaxLay:S.maxLayers, cTries:S.tries, cPrefix:S.prefix, cLabel:S.labelSize,
+            // v14
+            cBaseWMax:S.baseWMax, cBaseLMin:S.baseLMin, cBaseCover:S.baseCover,
+            cBaseInset:S.baseInset, cMaxH:S.maxH, cLidBal:S.lidBal, cMaxPartT:S.maxPartT,
+            cOddKg:S.oddKg, cOddLMax:S.oddLMax, cOddWMax:S.oddWMax, cOddTol:S.oddTol,
+            cTailOver:S.tailKgOver, cTailGap:S.tailGap, cTailSpan:S.tailSpan,
+            cLidSupp:S.lidSupp, cLidBed:S.lidBed,
+            cMinPartW:S.minPartW, cMinPartL:S.minPartL,
+            // v20
+            cLabelW:S.labelW, cLabelH:S.labelH };
   Object.keys(m).forEach(function(id){ var e = $(id); if (e) e.value = m[id]; });
   if ($("cRackN")) $("cRackN").value = S.rackN || 5;
   if ($("cCellN")) $("cCellN").value = S.cellN || 6;
@@ -6100,10 +8066,73 @@ function writeConf(){
   showCellTot();
   if ($("cOvhOn")) $("cOvhOn").checked = !!S.ovhOn;
   if ($("cThick")) $("cThick").checked = !!S.byThick;
+  if ($("cAutoLbl")) $("cAutoLbl").checked = !!S.autoLbl;
   var sp = S.split || { prod:true, mat:false };
   if ($("mgrByRoom")) $("mgrByRoom").checked = !!sp.prod;
   if ($("mgrByMat"))  $("mgrByMat").checked  = !!sp.mat;
+  renderThickMix();
   $("lgOv").textContent = S.ovh;
+}
+
+/* v14: raqamli maydonni chegaralar bilan oʻqish. `+v || N` shaklidan farqi —
+   NOL QIYMATNI saqlaydi: «cheklovsiz» degani aynan 0 bilan yoziladi
+   (baseLMin, maxH), `|| N` esa uni jimgina standartga qaytarib yuborardi. */
+function numOr(el, def, lo, hi){
+  if (!el) return def;
+  var v = parseFloat(el.value);
+  if (!isFinite(v)) return def;
+  return Math.max(lo, Math.min(hi, v));
+}
+
+/* ---- v14: QALINLIK MATRITSASI ------------------------------------------
+   Buyurtmadagi har qalinlik uchun bitta katak: «asosiy pochkaga qoʻshilsin».
+   Asosiy qalinlik — detali eng koʻp boʻlgani; u katakcha olmaydi, chunki
+   uning oʻzi asos. Ruʻyxat LOYIHADAN chiqadi, sozlamadan emas — shuning uchun
+   yangi fayl yuklanganda oʻzi yangilanadi. */
+function thickList(){
+  var out = [], cnt = {};
+  if (typeof P !== "object" || !P || !P.parts) return out;
+  try {
+    buildItems().forEach(function(it){
+      var k = String(it.T);
+      cnt[k] = (cnt[k] || 0) + 1;
+    });
+  } catch(e){ return out; }
+  Object.keys(cnt).forEach(function(k){ out.push({ t:k, n:cnt[k] }); });
+  out.sort(function(a,b){ return b.n - a.n || (+a.t) - (+b.t); });
+  return out;
+}
+function renderThickMix(){
+  var box = $("thickMix"); if (!box) return;
+  var list = thickList();
+  if (!list.length){ box.innerHTML = '<span style="color:var(--ink3)">Loyiha yuklanmagan.</span>'; return; }
+  if (!S.thickMix || typeof S.thickMix !== "object") S.thickMix = {};
+  var main = list[0].t;
+  box.innerHTML = list.map(function(r, i){
+    if (i === 0)
+      return '<div style="display:inline-block;margin:0 18px 6px 0">' +
+             '<b style="font-family:var(--mono)">' + esc(r.t) + ' mm</b> ' +
+             '<span style="color:var(--ok)">— ASOSIY</span> ' +
+             '<span style="color:var(--ink3)">· ' + r.n + ' detal</span></div>';
+    return '<label class="chk" style="display:inline-flex;margin:0 18px 6px 0">' +
+           '<input type="checkbox" data-tmix="' + esc(r.t) + '"' +
+           (S.thickMix[r.t] ? " checked" : "") + '>' +
+           '<span><b style="font-family:var(--mono)">' + esc(r.t) + ' mm</b> → ' + esc(main) +
+           ' mm pochkasiga · <span style="color:var(--ink3)">' + r.n + ' detal</span></span></label>';
+  }).join("");
+  box.querySelectorAll("[data-tmix]").forEach(function(el){
+    el.onchange = function(){
+      S.thickMix[el.getAttribute("data-tmix")] = el.checked;
+      recomputeSoon();
+    };
+  });
+}
+function readThickMix(){
+  var box = $("thickMix"); if (!box) return;
+  if (!S.thickMix || typeof S.thickMix !== "object") S.thickMix = {};
+  box.querySelectorAll("[data-tmix]").forEach(function(el){
+    S.thickMix[el.getAttribute("data-tmix")] = el.checked;
+  });
 }
 
 /* --- 3.14.3 JARAYON KOʻRSATKICHI ---
@@ -6149,6 +8178,8 @@ function recompute(){
        qoladi). Shu sabab saralash nolga tushadi. */
     if (typeof sortReset === "function") sortReset();
     if (typeof showCellTot === "function") showCellTot();
+    // v14: qalinlik matritsasi LOYIHADAN chiqadi — yangi fayl yuklangach yangilanadi
+    if (typeof renderThickMix === "function") renderThickMix();
     if (typeof autosave === "function") autosave();
     return res;
   }).catch(function(e){
@@ -6276,13 +8307,28 @@ if ($("btnClsGrp")) $("btnClsGrp").onclick = makeClsGroup;
 /* v12: «Modul belgisi qayerdan» tanlovi va uning bogʻlanishlari olib tashlandi —
    birlik har doim proekt tuzilishidan olinadi (unitOf, 02-state.js). */
 
-["cMaxKg","cOvh","cMinBase","cMaxLen","cBaseT","cTries","cOvhOn","cThick","cFill","cLidFill",
- "cLidN","cLidTol","cOneMan","cMaxLay"].forEach(function(id){
-  var e = $(id); if (e) e.onchange = function(){ recompute(); };
+/* v20: HAR SOZLAMA TIZIMGA BOGʻLANADI.
+
+   Ilgari bu yerda 14 ta id li qoʻlda yozilgan roʻyxat turardi va faqat oʻshalar
+   `recompute()` ni chaqirardi. Qolgan 30 dan ortiq maydon — balandlik, paddon
+   qamrovi, nostandart limitlar, quyruq qoidalari, chek oʻlchami — hech nimaga
+   bogʻlanmagan edi: operator qiymat kiritardi, tizim esa eski natijani
+   koʻrsatib turaverardi.
+
+   Endi bogʻlash CONF_IDS boʻyicha avtomatik. Yangi maydon qoʻshilsa u oʻzi
+   bogʻlanadi — `smoke.ps1` buni qoʻriqlaydi. */
+CONF_IDS.forEach(function(id){
+  var e = $(id); if (!e) return;
+  if (id === "mgrByRoom" || id === "mgrByMat") return;   // ularning oʻz ishlovchisi bor
+  e.onchange = CONF_VIEW_ONLY[id]
+    ? function(){
+        readConf();
+        if (typeof showCellTot === "function") showCellTot();
+        if (typeof renderPacks === "function") renderPacks();
+        if (typeof renderStep === "function") renderStep();
+      }
+    : function(){ recompute(); };
 });
-$("cTare").onchange  = function(){ readConf(); renderPacks(); renderStep(); };
-$("cLabel").onchange = function(){ readConf(); };
-$("cPrefix").onchange = function(){ readConf(); renderStep(); };
 
 $("btnRepack").onclick   = function(){ recompute(); };
 $("btnSave").onclick     = function(){ readConf(); saveConf(); };
@@ -6312,10 +8358,51 @@ $("btnPrint1").onclick    = function(){ var p=PACKS[CUR]; if(!p) return;
   printSteps([{p:p,s:p.seq[Math.min(STEP,p.seq.length-1)]}], "P"+pad2(p.no)); };
 $("btnPrintPack").onclick = function(){ var p=PACKS[CUR]; if(!p) return;
   printSteps(p.seq.map(function(s){ return {p:p,s:s}; }), "Pochka P"+pad2(p.no)); };
-$("btnPackLbl").onclick   = function(){ var p=PACKS[CUR]; if(!p) return;
-  applyPageSize();
-  $("sheet").innerHTML = '<div class="lbls">'+packLabelHTML(p,"qpk")+'</div>';
-  drawQR($("qpk"), packQR(p)); setTimeout(function(){ window.print(); },60); };
+$("btnPackLbl").onclick   = function(){ printPackLabel(PACKS[CUR]); };
+
+/* ---- v20: BUYURTMA HUJJATI (A4, toʻliq tarkib) ----
+   Hujjat FAQAT hamma pochka yigʻilgandan keyin chop etiladi. Yarim yigʻilgan
+   buyurtmaga «toʻliq tarkib» berilsa u yolgʻon hujjat boʻladi: omborga
+   yoʻqolgan detal bilan qabul qilinadi.
+   Tayyor boʻlmasa tugma nima qolganini yozadi va chop etmaydi. */
+function orderNote(){
+  var n = $("orderDocNote"); if (!n) return null;
+  var st = orderStatus();
+  if (!PACKS.length){
+    n.style.borderLeftColor = "var(--line)";
+    n.textContent = "Loyiha yuklanmagan.";
+    return st;
+  }
+  if (st.ready){
+    n.style.borderLeftColor = "var(--ok)";
+    n.textContent = "TAYYOR — " + st.packs + " pochka, " + st.parts +
+                    " detal yigʻildi. Hujjat chop etishga tayyor.";
+  } else {
+    n.style.borderLeftColor = "var(--alert)";
+    var kim = st.left.slice(0, 8).map(function(x){
+      return "P" + pad2(x.no) + " (" + x.done + "/" + x.of + ")";
+    }).join(", ");
+    n.textContent = "TAYYOR EMAS — " + (st.packs - st.donePacks) + "/" + st.packs +
+                    " pochka yigʻilmagan, " + st.leftParts + " detal qoldi: " + kim +
+                    (st.left.length > 8 ? " …" : "");
+  }
+  return st;
+}
+$("btnOrderChk").onclick = function(){ orderNote(); };
+$("btnOrderDoc").onclick = function(){
+  var st = orderNote();
+  if (!st || !st.ready) return;          // tayyor emas — chop etilmaydi
+  applyPageSize();                       // hujjat har doim A4
+  var sh = $("sheet");
+  sh.className = "sz-a4";
+  var pst = document.getElementById("pageStyle");
+  if (pst) pst.textContent = "@media print{@page{size:A4;margin:10mm}}";
+  sh.innerHTML = orderDocHTML();
+  setTimeout(function(){
+    window.print();
+    setTimeout(function(){ sh.innerHTML = ""; }, 1000);
+  }, 60);
+};
 
 /* v12: «Tahrirlash» tugmasi Qadoqlash ekranidan olib tashlandi — TZ-v2 §1:
    pochkalash posti ishchisi hech narsani oʻzgartira olmaydi. Tahrirlash P/M

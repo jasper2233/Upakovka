@@ -69,7 +69,7 @@ function draw2D(){
   }
   var L = p.layers[lay-1]; if (!L) return;
   document.getElementById("lgLayer").textContent =
-    (L.lid ? "qopqoq: " : lay+"-qavat: ") + L.items.length+" detal · "+
+    (L.tail ? "quyruq (qopqoq ostida): " : L.lid ? "qopqoq: " : lay+"-qavat: ") + L.items.length+" detal · "+
     Math.round(L.fill*100)+"%"+(L.weak?" (toʻliq emas)":"")+" · "+L.kg.toFixed(1)+" kg";
   L.items.forEach(function(q){
     var idx = p.seq.indexOf(p.seq.filter(function(s){ return s.it===q.it && s.layer===lay; })[0]);

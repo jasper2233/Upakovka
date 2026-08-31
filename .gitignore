@@ -1,14 +1,32 @@
 # --- MAXFIY: repoga hech qachon tushmasin ---
 # Haqiqiy mijoz buyurtmalari, sex fotolari va eski v9 arxivi shu yerda turadi.
-# Repo OCHIQ, shuning uchun bu papka git uchun umuman mavjud emas.
+# Repo YOPIQ bo'lsa ham bu papka git uchun umuman mavjud emas:
+# mijoz ma'lumoti hamkorlarga ham, kelajakdagi ochilishga ham tegishli emas.
 # Ichidagilar mahalliy ish uchun kerak, repoda esa ularning sun'iy nusxasi bor.
 _maxfiy/
+
+# --- MIJOZ BUYURTMALARI: repoga hech qachon tushmasin ---
+# Bu papkada haqiqiy mijoz buyurtmalari turadi —
+# ism-familiya, o'lchamlar, mahsulot tarkibi. Ular FAQAT mahalliy sinov uchun.
+# Repoda ularning o'rniga sun'iy namuna fayllar qoladi (namuna\*.project).
+namuna/Project/
+namuna/image.png
+
+# --- KORPUS NATIJALARI: repoga hech qachon tushmasin ---
+# corpus.ps1 har fayl uchun bitta qator yozadi va qator KALITI - fayl yo'li,
+# ya'ni MIJOZ PAPKASINING NOMI. Ichida raqamlar bo'lsa ham, birinchi ustunning
+# o'zi 205 ta mijoz ismini oshkor qiladi.
+# Vositaning o'zi (corpus.ps1) repoda qoladi - u xavfsiz.
+tests/corpus-*.csv
 
 # --- test qoldiqlari ---
 # smoke.ps1 sahifani nishon yoniga vaqtincha yozadi (-Keep bilan qoladi)
 _smoke-run.html
 # shot.ps1 chiqargan skrinshotlar — kerak bo'lsa qayta yasaladi (.\tests\shot.ps1)
 tests/shot-*.png
+# chop etish ko'rinishini tekshirish uchun yasalgan fayllar
+tests/prev-*.png
+tests/out-*.pdf
 
 # --- OS va muharrir ---
 Thumbs.db

@@ -297,7 +297,16 @@ function snapPacks(packs){
     /* gname — pochkalash guruhining nomi (v11). Qayta hisoblanmaydi, chunki u
        S.modGroups holatiga bogʻliq; saqlanmasa birlashgan pochka tiklangandan
        keyin roʻyxatda faqat bitta modul nomi bilan chiqib qolardi. */
-    var o = { no:p.no, odd:!!p.odd, t:p.t, done:p.done || 0, rev:p.rev, gname:p.gname };
+    /* v13: key va room ham saqlanadi. Ilgari saqlanmasdi va shu sabab seans
+       tiklangandan keyin: (1) moveDetail dagi GURUH himoyasi (`if (dst.key && ...)`)
+       jimgina ishlamay qolardi — brauzer yangilangach material yoki modulni
+       aralashtirib yuborish mumkin edi; (2) xona nomi chekdan va roʻyxat
+       sarlavhasidan yoʻqolardi; (3) audit YENGIL ogohlantirishi guruhni koʻrmasdi. */
+    var o = { no:p.no, odd:!!p.odd, t:p.t, done:p.done || 0, rev:p.rev,
+              gname:p.gname, key:p.key, room:p.room,
+              oddSrc:!!p.oddSrc,     // v14: nostandart oqim limitlari shunga bogʻliq
+              overKg:!!p.overKg,     // v16: qoldiq zaxirasidan foydalangan
+              nst:!!p.nst };         // v18: qaysi oqim (standart / nostandart)
     if (p.odd){
       o.itemUids = (p.items || []).map(function(it){ return it.uid; });
       return o;
@@ -310,6 +319,9 @@ function snapPacks(packs){
         lid:     !!L.lid,
         soft:    !!L.soft,
         weak:    !!L.weak,
+        tail:    !!L.tail,        // v13: quyruq qavat — auditda toʻldirish talabidan ozod
+        impl:    !!L.impl,        // v14: koʻtarilgan qopqoq (makeLid dan oʻtmagan)
+        tom:     !!L.tom,         // v15: TOM shartidan oʻtganmi (audit shunga qaraydi)
         flipped: !!L.flipped,
         its: (L.items || []).map(function(q){
           return { u:q.it.uid, x:Math.round(q.x), y:Math.round(q.y),
@@ -479,8 +491,16 @@ function restoreSnapshot(snap){
         if (bad) break;
         p = { odd:true, items:lst, no:(s.no || i+1),
               kg: lst.reduce(function(a,x){ return a + x.kg; }, 0),
-              t: (s.t != null ? s.t : (lst[0] ? lst[0].T : 0)) };
+              t: (s.t != null ? s.t : (lst[0] ? lst[0].T : 0)),
+              /* v14: bogʻ ham guruhga tegishli — nomi va xonasi boʻlmasa
+                 roʻyxatda oʻz moduli ostidan chiqib ketadi */
+              gname: (typeof s.gname === "string" ? s.gname : null),
+              key:   (typeof s.key   === "string" ? s.key   : null),
+              room:  (typeof s.room  === "string" ? s.room  : null),
+              nst:   !!s.nst };
         p.h = lst.reduce(function(a,x){ return a + x.T; }, 0);
+        p.gabL = lst.reduce(function(a,x){ return Math.max(a, x.L); }, 0);
+        p.gabW = lst.reduce(function(a,x){ return Math.max(a, x.W); }, 0);
         p.seq = packSeq(p);
         p.done = Math.max(0, Math.min(isFinite(+s.done) ? Math.round(+s.done) : 0, p.seq.length));
         p.rev = (s.rev != null) ? s.rev : (P.rev || 1);
@@ -522,6 +542,9 @@ function restoreSnapshot(snap){
         if (ls.lid)  L.lid  = true;
         if (ls.soft) L.soft = true;
         if (ls.weak) L.weak = true;
+        if (ls.tail) L.tail = true;
+        if (ls.impl) L.impl = true;
+        if (ls.tom)  L.tom  = true;
         layers.push(L);
       }
       if (bad) break;
@@ -532,7 +555,12 @@ function restoreSnapshot(snap){
             envL: base.L + 2*off, envW: base.W + 2*off, off:off,
             allowOvh: !!s.allowOvh, left: [], no:(s.no || i+1),
             t: (s.t != null ? s.t : base.T),
-            gname: (typeof s.gname === "string" ? s.gname : null) };   // v11
+            gname: (typeof s.gname === "string" ? s.gname : null),      // v11
+            key:   (typeof s.key   === "string" ? s.key   : null),      // v13
+            room:  (typeof s.room  === "string" ? s.room  : null),      // v13
+            oddSrc: !!s.oddSrc,                                         // v14
+            overKg: !!s.overKg,                                         // v16
+            nst:    !!s.nst };                                          // v18
       p.h = base.T + layers.reduce(function(a,L){ return a + L.h; }, 0);
       var gL = base.L, gW = base.W;
       layers.forEach(function(L){ if (L.bb){ gL = Math.max(gL, L.bb.L); gW = Math.max(gW, L.bb.W); } });

@@ -206,14 +206,42 @@ function matOf(id){
   return P.materials[0];
 }
 
+/* v17: POCHKALANMAYDIGAN OBYEKTLAR.
+   Haqiqiy proyekt fayllarida mebel detallari bilan bir qatorda XONA
+   obyektlari ham keladi — devor, pol, shift. Ular ham `part` boʻlib yoziladi
+   va oʻz materialiga ega («Devor», 350 mm, 245 kg/m²). Tizim ularni sodda
+   pochkalab 2,4 tonnalik «pochka» yasab qoʻyardi.
+
+   Chegara QALINLIK boʻyicha, oʻlcham boʻyicha EMAS. Sabab tajribadan:
+     - «listga sigʻmaydi» qoidasi ishlamaydi — faylda koʻpincha QOLDIQ list
+       oʻlchami yoziladi (960×1830), haqiqiy 2428 mm li bok esa toʻgʻri detal;
+     - yumshoq mebel qoplamasi («MATO», 50 mm) haqiqiy mahsulot va oʻtishi kerak.
+   Chegara 205 ta haqiqiy faylda oʻlchandi: 30 mm dan qalin materiallar ikki
+   guruhga aniq boʻlinadi — HAQIQIY 32…50 mm (stolishnitsa 40, MATO 50) va
+   SOXTA 100…350 mm (Devor, Pol). Oraligʻi boʻsh, shuning uchun 60 mm.
+
+   Chiqarib tashlangani YOʻQOLMAYDI: roʻyxati DIAG.skipped ga yoziladi va
+   Diagnostikada koʻrinadi. */
+function partSkipWhy(p, m){
+  var t = m ? +m.t : 16;
+  var lim = +S.maxPartT || 0;
+  if (lim && t > lim)
+    return t + " mm qalinlik — " + lim + " mm dan qalin (" +
+           ((m && m.name) ? m.name : "material") + ")";
+  return null;
+}
+
 function buildItems(){
   var out = [];
   if (!P || !P.parts) return out;
+  var skipped = [];
   P.parts.forEach(function(p){
     // v11: birlik belgisi «good» kodidan yoki detal kodining prefiksidan olinadi
     var u = unitOf(p);
     if (S.rooms && S.rooms[u] === false) return;      // oʻchirilgan birlik
     var m = matOf(p.m);
+    var why = partSkipWhy(p, m);
+    if (why){ skipped.push({ code:p.c, name:p.n, q:Math.max(1, p.q|0), why:why }); return; }
     var L = Math.max(p.l, p.w), W = Math.min(p.l, p.w);
     var area = (L*W)/1e6;                 // mm² -> m²
     var kg = area * (m ? m.kgm2 : KGM2_FALLBACK);  // m² × kg/m² -> kg
@@ -227,5 +255,8 @@ function buildItems(){
         kg:kg, of:q });
     }
   });
+  /* Tashxis uchun: qaysi obyekt nega chiqarib tashlangani. buildItems() sof
+     funksiya boʻlib qolishi uchun DIAG ga faqat YOZADI, undan oʻqimaydi. */
+  if (typeof DIAG === "object" && DIAG) DIAG.skipped = skipped;
   return out;
 }

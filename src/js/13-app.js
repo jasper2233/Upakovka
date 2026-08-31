@@ -5,15 +5,53 @@
 /* --- 3.14.1 SOZLAMANI SAQLASH (localStorage) ---
    Diqqat: bu yerda faqat MEʼYORLAR saqlanadi. Yuklangan loyiha, hisoblangan pochkalar va
    yigʻish progressi IndexedDB da (09-storage.js) — ular hajmi katta va tez-tez oʻzgaradi. */
-var CONF_IDS = ["cMaxKg","cOvh","cMinBase","cMaxLen","cBaseT","cFill","cLidFill","cLidN","cLidTol",
-                "cOneMan","cTare","cMaxLay","cTries","cPrefix","cLabel","cOvhOn","cThick",
-                "cRackN","cCellN",
-                /* v12: yacheykaning fizik oʻlchamlari. Bular ham SHU roʻyxatda boʻlishi SHART —
-                   aks holda operator sexdagi haqiqiy oʻlchamni kiritadi, tizim esa uni
-                   saqlamay har ochilishda standartga qaytarib yuboradi. */
-                "cBigN","cCellW","cCellD","cCellH","cBigW","cBigD",
-                /* v12: «mode»/«mgrMode» olib tashlandi — rejim yoʻq, qoida bitta */
-                "mgrByRoom","mgrByMat"];
+/* v20: SOZLAMA MAYDONLARI ROʻYXATI ENDI DOM DAN OLINADI.
+
+   Ilgari bu qoʻlda yozilgan roʻyxat edi. Har yangi meʼyor qoʻshilganda uni
+   yangilash unutilardi va oqibati JIM boʻlardi: maydon interfeysda turadi,
+   operator qiymat kiritadi — lekin u saqlanmaydi va qayta hisobni ham
+   chaqirmaydi. Yaʼni sozlama shunchaki YOZUV boʻlib qolardi.
+
+   Sexda bu shunday koʻrindi: «Pochka maks. balandligi» ga 160 mm qoʻyilgan,
+   tizim esa 12–14 qavat terib yuborgan. Balandlik mantigʻi toʻgʻri edi —
+   maydon shunchaki packerga yetib bormasdi.
+
+   Oxirgi tekshiruvda 46 maydondan 21 tasi roʻyxatdan tashqarida qolgan edi:
+   cBaseWMax, cBaseLMin, cBaseCover, cBaseInset, cMaxH, cMaxPartT, cLidBal,
+   cOddKg, cOddLMax, cOddWMax, cOddTol, cTailOver, cTailGap, cTailSpan,
+   cLidSupp, cLidBed, cMinPartW, cMinPartL, cLabelW, cLabelH, cAutoLbl.
+
+   Endi roʻyxat DOM dan yigʻiladi — unutish mumkin emas. */
+var CONF_IDS = (function(){
+  var out = [], box = document.getElementById("v-conf");
+  if (box){
+    var els = box.querySelectorAll("input,select");
+    for (var i = 0; i < els.length; i++){
+      var e = els[i];
+      if (!e.id) continue;
+      if (e.type === "file" || e.type === "button" || e.type === "submit") continue;
+      out.push(e.id);
+    }
+  }
+  /* Pochkalash qoidasi P/M ekranida turadi, lekin u ham meʼyor —
+     saqlanishi va tiklanishi shart. */
+  ["mgrByRoom","mgrByMat"].forEach(function(id){
+    if (document.getElementById(id)) out.push(id);
+  });
+  return out;
+})();
+
+/* Qaysi sozlama QAYTA TERISHNI talab qilmaydi — faqat koʻrinishga taʼsir qiladi.
+   Standart YOʻQ: roʻyxatda boʻlmagan har maydon qayta hisobga tushadi. Bu ataylab
+   shunday — yangi maydon qoʻshilganda eng yomoni ortiqcha qayta hisob boʻladi,
+   eng yaxshisi ishlaydi. Teskarisi (standart «taʼsir qilmaydi») aynan yuqoridagi
+   jim nosozlikni qaytarardi. */
+var CONF_VIEW_ONLY = {
+  cTare:1, cOneMan:1,                                    // chek va ogohlantirish
+  cPrefix:1, cLabel:1, cLabelW:1, cLabelH:1, cAutoLbl:1, // chek chop etish
+  cRackN:1, cCellN:1, cCellW:1, cCellD:1, cCellH:1,      // saralash posti
+  cBigN:1, cBigW:1, cBigD:1
+};
 
 /* standart qiymatlar HTML dan oʻqib olinadi — «Standartga qaytarish» shularni tiklaydi */
 var CONF_DEFAULTS = {};
@@ -38,6 +76,7 @@ function saveConf(){
   o._unitNames = S.unitNames;   // v12: modul nomlari
   o._split = S.split;           // v12: bitta pochkalash qoidasi (rejim oʻrniga)
   o._cellOff = S.cellOff;       // yopiq yacheykalar — sexning fizik holati
+  o._thickMix = S.thickMix;     // v20: qalinlik matritsasi ham meʼyor edi, saqlanmasdi
   try {
     localStorage.setItem("upk_conf", JSON.stringify(o));
     var n = $("saveNote"); n.style.display = "block";
@@ -73,6 +112,7 @@ function restoreConf(){
        emas — tozalanadi, aks holda hamma modul oʻchirilgandek koʻrinardi. */
     if (o._modSrc === "code"){ S.rooms = {}; S.modGroups = []; }
     if (o._cellOff && typeof o._cellOff === "object") S.cellOff = o._cellOff;
+    if (o._thickMix && typeof o._thickMix === "object") S.thickMix = o._thickMix;   // v20
     return true;
   } catch(e){ return false; }
 }
@@ -98,6 +138,28 @@ function readConf(){
   S.minBase  = +$("cMinBase").value || 190;
   S.maxLen   = +$("cMaxLen").value || 2100;
   S.minBaseT = +$("cBaseT").value || 0;
+  /* v14: TAG OYNASI — qolgan ikki chegara. baseLMin 0 boʻlishi MUMKIN
+     («cheklovsiz»), shuning uchun `|| N` shakli ishlatilmaydi. */
+  S.baseWMax  = numOr($("cBaseWMax"),  1900, 100, 4000);
+  S.baseLMin  = numOr($("cBaseLMin"),     0,   0, 4000);
+  S.baseCover = numOr($("cBaseCover"),   90,  50,  100);
+  S.baseInset = numOr($("cBaseInset"),   40,   0,  500);
+  S.maxH      = numOr($("cMaxH"),         0,   0, 5000);
+  S.lidBal    = numOr($("cLidBal"),      40,   0,  100);
+  S.maxPartT  = numOr($("cMaxPartT"),    60,   0, 5000);
+  // v14: nostandart oqim
+  S.oddKg     = numOr($("cOddKg"),       40,   1,  500);
+  S.oddLMax   = numOr($("cOddLMax"),   3200, 100, 9000);
+  S.oddWMax   = numOr($("cOddWMax"),   1900, 100, 4000);
+  S.oddTol    = numOr($("cOddTol"),     300,   0, 2000);
+  S.tailKgOver = numOr($("cTailOver"),   10,   0,  100);   // v16
+  S.tailGap    = numOr($("cTailGap"),    300,   0, 4000);   // v20
+  S.tailSpan   = numOr($("cTailSpan"),    70,   0,  100);   // v20
+  S.lidSupp    = numOr($("cLidSupp"),     65,   0,  100);   // v20
+  S.lidBed     = numOr($("cLidBed"),      85,   0,  100);   // v20
+  S.minPartW   = numOr($("cMinPartW"),    0,   0, 4000);   // v18
+  S.minPartL   = numOr($("cMinPartL"),    0,   0, 9000);
+  readThickMix();
   S.tries    = Math.max(1, Math.min(40, +$("cTries").value || 4));
   S.prefix   = $("cPrefix").value || "SM";
   S.ovhOn    = $("cOvhOn").checked;
@@ -112,12 +174,16 @@ function readConf(){
   if (bm) S.split.mat  = bm.checked;
 
   S.minFill   = Math.max(10, Math.min(130, +$("cFill").value || 85));
-  S.lidFill   = Math.max(10, Math.min(100, +$("cLidFill").value || 80));
+  S.lidFill   = Math.max(10, Math.min(100, +$("cLidFill").value || 90));
   S.lidN      = Math.max(1, Math.min(4, +$("cLidN").value || 3));
   S.lidTol    = Math.max(0, +$("cLidTol").value || 0);
   S.oneMan    = Math.max(0, +$("cOneMan").value || 25);
   S.tare      = Math.max(0, +$("cTare").value || 0);
   S.labelSize = $("cLabel") ? $("cLabel").value : "a4";
+  // v20: qoʻlda chek oʻlchami — faqat labelSize="custom" da ishlatiladi
+  S.labelW    = numOr($("cLabelW"),  80,  20, 300);
+  S.labelH    = numOr($("cLabelH"),  60,  20, 300);
+  if ($("cAutoLbl")) S.autoLbl = $("cAutoLbl").checked;
   S.maxLayers = Math.max(0, parseInt($("cMaxLay").value,10) || 0);
   /* terish logikasi (doimiy Avto) va variantlar soni endi 04-packer.js dagi
      PACK_TRIES konstantasida — ular sozlama emas, shuning uchun S da turmaydi */
@@ -150,7 +216,16 @@ function showCellTot(){
 function writeConf(){
   var m = { cMaxKg:S.maxKg, cOvh:S.ovh, cMinBase:S.minBase, cMaxLen:S.maxLen, cBaseT:S.minBaseT,
             cFill:S.minFill, cLidFill:S.lidFill, cLidN:S.lidN, cLidTol:S.lidTol, cOneMan:S.oneMan,
-            cTare:S.tare, cMaxLay:S.maxLayers, cTries:S.tries, cPrefix:S.prefix, cLabel:S.labelSize };
+            cTare:S.tare, cMaxLay:S.maxLayers, cTries:S.tries, cPrefix:S.prefix, cLabel:S.labelSize,
+            // v14
+            cBaseWMax:S.baseWMax, cBaseLMin:S.baseLMin, cBaseCover:S.baseCover,
+            cBaseInset:S.baseInset, cMaxH:S.maxH, cLidBal:S.lidBal, cMaxPartT:S.maxPartT,
+            cOddKg:S.oddKg, cOddLMax:S.oddLMax, cOddWMax:S.oddWMax, cOddTol:S.oddTol,
+            cTailOver:S.tailKgOver, cTailGap:S.tailGap, cTailSpan:S.tailSpan,
+            cLidSupp:S.lidSupp, cLidBed:S.lidBed,
+            cMinPartW:S.minPartW, cMinPartL:S.minPartL,
+            // v20
+            cLabelW:S.labelW, cLabelH:S.labelH };
   Object.keys(m).forEach(function(id){ var e = $(id); if (e) e.value = m[id]; });
   if ($("cRackN")) $("cRackN").value = S.rackN || 5;
   if ($("cCellN")) $("cCellN").value = S.cellN || 6;
@@ -162,10 +237,73 @@ function writeConf(){
   showCellTot();
   if ($("cOvhOn")) $("cOvhOn").checked = !!S.ovhOn;
   if ($("cThick")) $("cThick").checked = !!S.byThick;
+  if ($("cAutoLbl")) $("cAutoLbl").checked = !!S.autoLbl;
   var sp = S.split || { prod:true, mat:false };
   if ($("mgrByRoom")) $("mgrByRoom").checked = !!sp.prod;
   if ($("mgrByMat"))  $("mgrByMat").checked  = !!sp.mat;
+  renderThickMix();
   $("lgOv").textContent = S.ovh;
+}
+
+/* v14: raqamli maydonni chegaralar bilan oʻqish. `+v || N` shaklidan farqi —
+   NOL QIYMATNI saqlaydi: «cheklovsiz» degani aynan 0 bilan yoziladi
+   (baseLMin, maxH), `|| N` esa uni jimgina standartga qaytarib yuborardi. */
+function numOr(el, def, lo, hi){
+  if (!el) return def;
+  var v = parseFloat(el.value);
+  if (!isFinite(v)) return def;
+  return Math.max(lo, Math.min(hi, v));
+}
+
+/* ---- v14: QALINLIK MATRITSASI ------------------------------------------
+   Buyurtmadagi har qalinlik uchun bitta katak: «asosiy pochkaga qoʻshilsin».
+   Asosiy qalinlik — detali eng koʻp boʻlgani; u katakcha olmaydi, chunki
+   uning oʻzi asos. Ruʻyxat LOYIHADAN chiqadi, sozlamadan emas — shuning uchun
+   yangi fayl yuklanganda oʻzi yangilanadi. */
+function thickList(){
+  var out = [], cnt = {};
+  if (typeof P !== "object" || !P || !P.parts) return out;
+  try {
+    buildItems().forEach(function(it){
+      var k = String(it.T);
+      cnt[k] = (cnt[k] || 0) + 1;
+    });
+  } catch(e){ return out; }
+  Object.keys(cnt).forEach(function(k){ out.push({ t:k, n:cnt[k] }); });
+  out.sort(function(a,b){ return b.n - a.n || (+a.t) - (+b.t); });
+  return out;
+}
+function renderThickMix(){
+  var box = $("thickMix"); if (!box) return;
+  var list = thickList();
+  if (!list.length){ box.innerHTML = '<span style="color:var(--ink3)">Loyiha yuklanmagan.</span>'; return; }
+  if (!S.thickMix || typeof S.thickMix !== "object") S.thickMix = {};
+  var main = list[0].t;
+  box.innerHTML = list.map(function(r, i){
+    if (i === 0)
+      return '<div style="display:inline-block;margin:0 18px 6px 0">' +
+             '<b style="font-family:var(--mono)">' + esc(r.t) + ' mm</b> ' +
+             '<span style="color:var(--ok)">— ASOSIY</span> ' +
+             '<span style="color:var(--ink3)">· ' + r.n + ' detal</span></div>';
+    return '<label class="chk" style="display:inline-flex;margin:0 18px 6px 0">' +
+           '<input type="checkbox" data-tmix="' + esc(r.t) + '"' +
+           (S.thickMix[r.t] ? " checked" : "") + '>' +
+           '<span><b style="font-family:var(--mono)">' + esc(r.t) + ' mm</b> → ' + esc(main) +
+           ' mm pochkasiga · <span style="color:var(--ink3)">' + r.n + ' detal</span></span></label>';
+  }).join("");
+  box.querySelectorAll("[data-tmix]").forEach(function(el){
+    el.onchange = function(){
+      S.thickMix[el.getAttribute("data-tmix")] = el.checked;
+      recomputeSoon();
+    };
+  });
+}
+function readThickMix(){
+  var box = $("thickMix"); if (!box) return;
+  if (!S.thickMix || typeof S.thickMix !== "object") S.thickMix = {};
+  box.querySelectorAll("[data-tmix]").forEach(function(el){
+    S.thickMix[el.getAttribute("data-tmix")] = el.checked;
+  });
 }
 
 /* --- 3.14.3 JARAYON KOʻRSATKICHI ---
@@ -211,6 +349,8 @@ function recompute(){
        qoladi). Shu sabab saralash nolga tushadi. */
     if (typeof sortReset === "function") sortReset();
     if (typeof showCellTot === "function") showCellTot();
+    // v14: qalinlik matritsasi LOYIHADAN chiqadi — yangi fayl yuklangach yangilanadi
+    if (typeof renderThickMix === "function") renderThickMix();
     if (typeof autosave === "function") autosave();
     return res;
   }).catch(function(e){
@@ -338,13 +478,28 @@ if ($("btnClsGrp")) $("btnClsGrp").onclick = makeClsGroup;
 /* v12: «Modul belgisi qayerdan» tanlovi va uning bogʻlanishlari olib tashlandi —
    birlik har doim proekt tuzilishidan olinadi (unitOf, 02-state.js). */
 
-["cMaxKg","cOvh","cMinBase","cMaxLen","cBaseT","cTries","cOvhOn","cThick","cFill","cLidFill",
- "cLidN","cLidTol","cOneMan","cMaxLay"].forEach(function(id){
-  var e = $(id); if (e) e.onchange = function(){ recompute(); };
+/* v20: HAR SOZLAMA TIZIMGA BOGʻLANADI.
+
+   Ilgari bu yerda 14 ta id li qoʻlda yozilgan roʻyxat turardi va faqat oʻshalar
+   `recompute()` ni chaqirardi. Qolgan 30 dan ortiq maydon — balandlik, paddon
+   qamrovi, nostandart limitlar, quyruq qoidalari, chek oʻlchami — hech nimaga
+   bogʻlanmagan edi: operator qiymat kiritardi, tizim esa eski natijani
+   koʻrsatib turaverardi.
+
+   Endi bogʻlash CONF_IDS boʻyicha avtomatik. Yangi maydon qoʻshilsa u oʻzi
+   bogʻlanadi — `smoke.ps1` buni qoʻriqlaydi. */
+CONF_IDS.forEach(function(id){
+  var e = $(id); if (!e) return;
+  if (id === "mgrByRoom" || id === "mgrByMat") return;   // ularning oʻz ishlovchisi bor
+  e.onchange = CONF_VIEW_ONLY[id]
+    ? function(){
+        readConf();
+        if (typeof showCellTot === "function") showCellTot();
+        if (typeof renderPacks === "function") renderPacks();
+        if (typeof renderStep === "function") renderStep();
+      }
+    : function(){ recompute(); };
 });
-$("cTare").onchange  = function(){ readConf(); renderPacks(); renderStep(); };
-$("cLabel").onchange = function(){ readConf(); };
-$("cPrefix").onchange = function(){ readConf(); renderStep(); };
 
 $("btnRepack").onclick   = function(){ recompute(); };
 $("btnSave").onclick     = function(){ readConf(); saveConf(); };
@@ -374,10 +529,51 @@ $("btnPrint1").onclick    = function(){ var p=PACKS[CUR]; if(!p) return;
   printSteps([{p:p,s:p.seq[Math.min(STEP,p.seq.length-1)]}], "P"+pad2(p.no)); };
 $("btnPrintPack").onclick = function(){ var p=PACKS[CUR]; if(!p) return;
   printSteps(p.seq.map(function(s){ return {p:p,s:s}; }), "Pochka P"+pad2(p.no)); };
-$("btnPackLbl").onclick   = function(){ var p=PACKS[CUR]; if(!p) return;
-  applyPageSize();
-  $("sheet").innerHTML = '<div class="lbls">'+packLabelHTML(p,"qpk")+'</div>';
-  drawQR($("qpk"), packQR(p)); setTimeout(function(){ window.print(); },60); };
+$("btnPackLbl").onclick   = function(){ printPackLabel(PACKS[CUR]); };
+
+/* ---- v20: BUYURTMA HUJJATI (A4, toʻliq tarkib) ----
+   Hujjat FAQAT hamma pochka yigʻilgandan keyin chop etiladi. Yarim yigʻilgan
+   buyurtmaga «toʻliq tarkib» berilsa u yolgʻon hujjat boʻladi: omborga
+   yoʻqolgan detal bilan qabul qilinadi.
+   Tayyor boʻlmasa tugma nima qolganini yozadi va chop etmaydi. */
+function orderNote(){
+  var n = $("orderDocNote"); if (!n) return null;
+  var st = orderStatus();
+  if (!PACKS.length){
+    n.style.borderLeftColor = "var(--line)";
+    n.textContent = "Loyiha yuklanmagan.";
+    return st;
+  }
+  if (st.ready){
+    n.style.borderLeftColor = "var(--ok)";
+    n.textContent = "TAYYOR — " + st.packs + " pochka, " + st.parts +
+                    " detal yigʻildi. Hujjat chop etishga tayyor.";
+  } else {
+    n.style.borderLeftColor = "var(--alert)";
+    var kim = st.left.slice(0, 8).map(function(x){
+      return "P" + pad2(x.no) + " (" + x.done + "/" + x.of + ")";
+    }).join(", ");
+    n.textContent = "TAYYOR EMAS — " + (st.packs - st.donePacks) + "/" + st.packs +
+                    " pochka yigʻilmagan, " + st.leftParts + " detal qoldi: " + kim +
+                    (st.left.length > 8 ? " …" : "");
+  }
+  return st;
+}
+$("btnOrderChk").onclick = function(){ orderNote(); };
+$("btnOrderDoc").onclick = function(){
+  var st = orderNote();
+  if (!st || !st.ready) return;          // tayyor emas — chop etilmaydi
+  applyPageSize();                       // hujjat har doim A4
+  var sh = $("sheet");
+  sh.className = "sz-a4";
+  var pst = document.getElementById("pageStyle");
+  if (pst) pst.textContent = "@media print{@page{size:A4;margin:10mm}}";
+  sh.innerHTML = orderDocHTML();
+  setTimeout(function(){
+    window.print();
+    setTimeout(function(){ sh.innerHTML = ""; }, 1000);
+  }, 60);
+};
 
 /* v12: «Tahrirlash» tugmasi Qadoqlash ekranidan olib tashlandi — TZ-v2 §1:
    pochkalash posti ishchisi hech narsani oʻzgartira olmaydi. Tahrirlash P/M
