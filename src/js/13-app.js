@@ -107,9 +107,10 @@ function restoreConf(){
     if (isArr(o._modGroups)) S.modGroups = o._modGroups;
     if (isArr(o._clsGroups)) S.clsGroups = o._clsGroups;
     if (o._unitNames && typeof o._unitNames === "object") S.unitNames = o._unitNames;
-    /* v12: modul belgisi manbai tanlovi olib tashlandi. Eski sozlama kod
-       prefiksi rejimida saqlangan boʻlsa, undagi modul kalitlari endi mavjud
-       emas — tozalanadi, aks holda hamma modul oʻchirilgandek koʻrinardi. */
+    /* v12: manbani QOʻLDA tanlash olib tashlandi — u endi avtomatik
+       (02-state.js `unitSrc()`). Eski sozlama «kod» rejimida saqlangan boʻlsa,
+       undagi modul kalitlari boshqacha boʻlishi mumkin — tozalanadi, aks holda
+       hamma modul oʻchirilgandek koʻrinardi. */
     if (o._modSrc === "code"){ S.rooms = {}; S.modGroups = []; }
     if (o._cellOff && typeof o._cellOff === "object") S.cellOff = o._cellOff;
     if (o._thickMix && typeof o._thickMix === "object") S.thickMix = o._thickMix;   // v20
@@ -127,7 +128,12 @@ function resetConf(){
   S.matCat = JSON.parse(JSON.stringify(MATCAT_DEFAULT));
   S.sepCls = {}; S.modGroups = []; S.clsGroups = []; S.unitNames = {};
   S.split = { prod:true, mat:false };                  // v12
+  /* v21: qalinlik matritsasi ham standartga qaytadi. U `_thickMix` boʻlib
+     saqlanadi, lekin bu yerda tozalanmasdi — «Standartga qaytarish» dan
+     keyin ham 3 mm detallar 16 mm pochkasiga qoʻshilib turaverardi. */
+  S.thickMix = {};
   if (typeof renderCat === "function") renderCat();
+  renderThickMix();                                    // shu faylda — tekshiruv shart emas
   if (P) recompute();
 }
 
@@ -142,7 +148,10 @@ function readConf(){
      («cheklovsiz»), shuning uchun `|| N` shakli ishlatilmaydi. */
   S.baseWMax  = numOr($("cBaseWMax"),  1900, 100, 4000);
   S.baseLMin  = numOr($("cBaseLMin"),     0,   0, 4000);
-  S.baseCover = numOr($("cBaseCover"),   90,  50,  100);
+  /* Quyi chegara 80: maydonning `min="80"` atributi, yorligʻi va podskaskasi
+     ham «80…100» deydi. Ilgari bu yerda 50 turardi — yagona haqiqiy chegara
+     shu funksiyada, yaʼni interfeys yolgʻon gapirardi. */
+  S.baseCover = numOr($("cBaseCover"),   90,  80,  100);
   S.baseInset = numOr($("cBaseInset"),   40,   0,  500);
   S.maxH      = numOr($("cMaxH"),         0,   0, 5000);
   S.lidBal    = numOr($("cLidBal"),      40,   0,  100);
@@ -334,13 +343,13 @@ function recompute(){
   readConf();
   BUSY = true;
   progShow();
-  var t0 = (window.performance && performance.now) ? performance.now() : Date.now();
+  var t0 = nowMs();
   // packAllAsync ichida run-token bor: yangi chaqiruv boshlansa eskisi oʻzi toʻxtaydi
   return packAllAsync(progUpdate).then(function(res){
     if (res && res.superseded) return res;      // yangi hisob ishlayapti — ekranga tegmaymiz
     BUSY = false; progHide();
     if (typeof DIAG === "object" && DIAG)
-      DIAG.packMs = ((window.performance && performance.now) ? performance.now() : Date.now()) - t0;
+      DIAG.packMs = nowMs() - t0;
     if (res && res.cancelled) return res;
     renderPacks(); renderParts(); stats();
     selectPack(PACKS.length ? Math.min(Math.max(CUR,0), PACKS.length-1) : -1);
@@ -488,9 +497,13 @@ if ($("btnClsGrp")) $("btnClsGrp").onclick = makeClsGroup;
 
    Endi bogʻlash CONF_IDS boʻyicha avtomatik. Yangi maydon qoʻshilsa u oʻzi
    bogʻlanadi — `smoke.ps1` buni qoʻriqlaydi. */
+/* v21: `mgrByRoom` / `mgrByMat` ham shu roʻyxatda. Ilgari ular «oʻz
+   ishlovchisi bor» degan izoh bilan chetlab oʻtilardi — lekin ishlovchi
+   yoʻq edi. Natijasi jim: katak belgilanadi, hech narsa boʻlmaydi, soʻng
+   `renderMgr()` uni `S.split` dan qayta chizib belgini OLIB TASHLAYDI.
+   Endi ular ham boshqa har qanday meʼyor kabi qayta terishni chaqiradi. */
 CONF_IDS.forEach(function(id){
   var e = $(id); if (!e) return;
-  if (id === "mgrByRoom" || id === "mgrByMat") return;   // ularning oʻz ishlovchisi bor
   e.onchange = CONF_VIEW_ONLY[id]
     ? function(){
         readConf();
@@ -507,7 +520,8 @@ $("btnReset").onclick    = resetConf;
 $("btnCsv").onclick      = csv;
 $("btnAddMat").onclick   = function(){ if (typeof addMaterial === "function") addMaterial(); };
 $("btnAddCat").onclick   = function(){
-  S.matCat.push({ key:"YANGI", t:16, l:2750, w:1830, kgm2:11.20 });
+  S.matCat.push({ key:"YANGI", t:SHEET_DEFAULT.t, l:SHEET_DEFAULT.l,
+                  w:SHEET_DEFAULT.w, kgm2:SHEET_DEFAULT.kgm2 });
   renderCat();
 };
 $("btnClearSes").onclick = function(){
@@ -567,7 +581,8 @@ $("btnOrderDoc").onclick = function(){
   var sh = $("sheet");
   sh.className = "sz-a4";
   var pst = document.getElementById("pageStyle");
-  if (pst) pst.textContent = "@media print{@page{size:A4;margin:10mm}}";
+  // hujjat chekdan kengroq chet oladi — A4 da toʻliq jadval sigʻishi kerak
+  if (pst) pst.textContent = "@media print{@page{size:A4;margin:" + (A4_MARGIN + 2) + "mm}}";
   sh.innerHTML = orderDocHTML();
   setTimeout(function(){
     window.print();

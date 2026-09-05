@@ -86,7 +86,9 @@ $bargs = @(
   ("file:///" + $tmp.Replace("\", "/"))
 )
 $p = Start-Process -FilePath $Browser -ArgumentList $bargs -NoNewWindow -PassThru
-$p | Wait-Process -Timeout 90
+# Vaqt tugashi kutilgan holat; usiz $ErrorActionPreference="Stop" skriptni
+# to'xtatib, _shot-run.html ni loyiha ildizida qoldirardi.
+$p | Wait-Process -Timeout 90 -ErrorAction SilentlyContinue
 if (-not $p.HasExited) { $p | Stop-Process -Force }
 
 Remove-Item $tmp -Force -ErrorAction SilentlyContinue

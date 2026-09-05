@@ -248,9 +248,14 @@ function auditPacks(packs, items){
       });
 
       /* TOLDIRISH — qopqoq va toʻliqsizga ruxsat berilgan (weak) qavatlar tekshirilmaydi.
-         v13: QUYRUQ qavat ham tekshirilmaydi. `minFill` mazmuni «ustidagi qavat
-         egilmasin» — quyruqning ustida hech narsa yoʻq (u pochkaning eng tepasi),
-         shuning uchun boʻsh joy bu yerda zarar keltirmaydi. */
+         QUYRUQ qavat ham tekshirilmaydi — u ataylab `minFill` dan ozod
+         (04-packer 3.6.7.1): guruh oxirida qolgan 2–4 detalni sigʻdirish
+         uchun bor. Uning oʻrnini boshqa uch oʻlchov bosadi va ular quyruqni
+         qabul qilishda tekshiriladi: `tailGap` (boʻshliq), `tailSpan`
+         (tayanch kengligi) va `lidBed` (tom ostidagi qavat — TOM_TAGI xatosi).
+         v21: ilgari bu yerda «quyruqning ustida hech narsa yoʻq» deb
+         yozilgandi — u v15/v16 da eskirgan asos: quyruq endi qopqoq OSTIGA
+         suqiladi va ustida tom turadi. */
       if (L && qs.length && !L.lid && !L.weak && !L.tail &&
           audNum(L.fill, 0) < cfg.minFill / 100 - 0.005)
         wrn("TOLDIRISH", lab, (li + 1) + "-qavat toʻldirish " +
@@ -338,18 +343,26 @@ function auditPacks(packs, items){
       tItems.forEach(function(q){
         var A = audNum(q.a, 0) * audNum(q.b, 0);
         if (A <= 0) return;
+        /* Bir qavat ichidagi detallar kesishmaydi (USTMA_UST invarianti),
+           shuning uchun kesishmalar yigʻindisi = tegish yuzasi.
+           v21: kesishma hisobi shu faylning oʻz `audOverlap()` i bilan —
+           ilgari u shu yerda ikkinchi marta qoʻlda yozilgan edi. */
         var got = 0;
         belItems.forEach(function(r){
-          var ox = Math.min(q.x + q.a, r.x + r.a) - Math.max(q.x, r.x);
-          var oy = Math.min(q.y + q.b, r.y + r.b) - Math.max(q.y, r.y);
-          if (ox > 0 && oy > 0) got += ox * oy;
+          var o = audOverlap(q, r);
+          if (o) got += o.area;
         });
         var v = Math.min(1, got / A);
         if (v < suppMin) suppMin = v;
       });
 
       var why = [];
-      if (cfg.lidFill && tf < cfg.lidFill) why.push("yuza " + tf + "% < " + cfg.lidFill + "%");
+      /* Solishtirish YAXLITLANMAGAN qiymat boʻyicha: 89,7 % yaxlitlanganda
+         90 boʻlib qoladi va «yuza yetmadi» sababi roʻyxatga tushmasdi —
+         natijada ogohlantirish «gabarit yoki qalinlik sharti» deb yolgʻon
+         sabab koʻrsatardi. Koʻrsatiladigan raqam baribir yaxlitlangan. */
+      if (cfg.lidFill && audNum(topL && topL.fill, 0) < cfg.lidFill/100 - 1e-9)
+        why.push("yuza " + tf + "% < " + cfg.lidFill + "%");
       if (cfg.lidN && tn > cfg.lidN)       why.push(tn + " detal > " + cfg.lidN);
       if (cfg.lidSupp && tn && suppMin < cfg.lidSupp/100 - 1e-9)
         why.push("tayanch " + Math.round(suppMin*100) + "% < " + cfg.lidSupp +

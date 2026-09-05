@@ -72,7 +72,9 @@ function draw2D(){
     (L.tail ? "quyruq (qopqoq ostida): " : L.lid ? "qopqoq: " : lay+"-qavat: ") + L.items.length+" detal · "+
     Math.round(L.fill*100)+"%"+(L.weak?" (toʻliq emas)":"")+" · "+L.kg.toFixed(1)+" kg";
   L.items.forEach(function(q){
-    var idx = p.seq.indexOf(p.seq.filter(function(s){ return s.it===q.it && s.layer===lay; })[0]);
+    // v21: ilgari bu `indexOf(filter(...)[0])` edi — bir xil natija, lekin har
+    // detal uchun butun ketma-ketlik ikki marta aylanardi (har kadrda).
+    var idx = p.seq.findIndex(function(s){ return s.it===q.it && s.layer===lay; });
     var r = R(q.x, q.y, q.a, q.b);
     if (idx>=0 && idx < STEP){
       G2.fillStyle="rgba(79,174,138,.45)"; G2.fillRect(r[0],r[1],r[2],r[3]);

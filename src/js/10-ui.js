@@ -257,27 +257,29 @@ function togglePackOvh(p, on){
                  "chiqish rejimini oʻzgartirish uchun avval boshiga qaytaring");
     return;
   }
-  var mids = [];
-  p.layers.forEach(function(L){ L.items.forEach(function(q){ mids.push(q.it); }); });
-  p.left && p.left.forEach(function(x){ mids.push(x); });
+  /* v21: FAQAT shu pochkaning oʻz detallari qayta teriladi.
+     Ilgari bu yerga `p.left` ham qoʻshilardi. `left` esa layoutPack ning
+     ishchi maydoni — «shu tagga sigʻmaganlar» — va ular terish davomida
+     BOSHQA pochkalarga ketgan edi. Natijada katakni bir marta bosish oʻsha
+     detallarni ikkinchi marta shu pochkaga tiqib, auditda TAKROR xatosini
+     berardi. Endi manba `packMids(p)` — refreshPack va moveDetail bilan bir xil. */
+  var mids = packMids(p);
   /* strat=0 ATAYIN yozilgan: usiz strat undefined boʻlib qopqoq zaxirasi
      (04-packer.js:193) ishlamas va qavat limiti boshqacha hisoblanardi — yaʼni
      «chiqishga ruxsat» katagi bitta pochkani refreshPack/moveDetail dan BOSHQA
      qoida bilan qayta terardi. Uchalasi endi bir xil. */
   var np = layoutPack(p.base, mids, on, 0, 0);
   p.layers = np.layers; p.kg = np.kg; p.envL = np.envL; p.envW = np.envW;
-  p.off = np.off; p.allowOvh = on; p.left = np.left;
-  p.seq = packSeq(p);
-  p.h = p.base.T + p.layers.reduce(function(s,L){ return s+L.h; },0);
-  p.t = p.base.T;
-  p.fillAvg = p.layers.length ? p.layers.reduce(function(s,L){ return s+L.fill; },0)/p.layers.length : 0;
-  var gL2 = p.base.L, gW2 = p.base.W;
-  p.layers.forEach(function(L){ if (L.bb){ gL2=Math.max(gL2,L.bb.L); gW2=Math.max(gW2,L.bb.W); } });
-  p.gabL = Math.round(gL2); p.gabW = Math.round(gW2);
+  p.off = np.off; p.allowOvh = on; p.left = [];
+  packDerive(p);
   p.done = 0;                      // terish oʻzgardi — progress nolga
   if (np.left.length){
+    /* v21: bogʻ manba pochkaning GURUHINI meros oladi (moveDetail dagi
+       «+ yangi pochka» kabi). Ilgari u kalitsiz chiqardi va roʻyxatda oʻz
+       xonasidan uzilib, «Noodatiy» sarlavhasi ostiga tushib qolardi. */
     var b = { odd:true, items:np.left, kg:np.left.reduce(function(s,x){ return s+x.kg; },0),
-              no:PACKS.length+1, rev:P.rev||1, t:np.left[0].T, done:0 };
+              no:PACKS.length+1, rev:P.rev||1, t:np.left[0].T, done:0,
+              gname:p.gname, key:p.key, room:p.room, nst:!!p.nst };
     b.seq = packSeq(b); b.h = np.left.reduce(function(s,x){ return s+x.T; },0);
     PACKS.push(b);
     flash("err", np.left.length+" detal sigʻmadi — noodatiy pochkaga oʻtdi");
@@ -320,7 +322,7 @@ function renderStep(){
              : step.role==="quyruq" ? "quyruq — qopqoq ostiga"+(step.of>1?" ("+step.n+"/"+step.of+")":"")
              : step.role==="noodatiy" ? "noodatiy — alohida"
              : step.layer+"-qavat"+(step.of>1?" ("+step.n+"/"+step.of+")":"");
-    function axis(v, inWord, outWord){
+    function axis(v, inWord){
       v = Math.round(v);
       if (v === 0) return inWord+" chetga tekis";
       if (v < 0)  return inWord+"ga "+(-v)+" mm chiqadi";
@@ -547,7 +549,8 @@ function renderMats(){
 function addMaterial(){
   if (!P) return;
   var id = "m" + (Date.now() % 100000);
-  P.materials.push({ id:id, name:"Yangi material", l:2750, w:1830, t:16, kgm2:11.20, cat:null, sheets:0 });
+  P.materials.push({ id:id, name:"Yangi material", cat:null, sheets:0,
+    l:SHEET_DEFAULT.l, w:SHEET_DEFAULT.w, t:SHEET_DEFAULT.t, kgm2:SHEET_DEFAULT.kgm2 });
   renderMats();
 }
 
@@ -572,6 +575,11 @@ function labelMM(){
   var m = /^(\d+)x(\d+)$/.exec(sz);
   return m ? { w:+m[1], h:+m[2] } : null;
 }
+/* Chop etish chetlari, mm. `@page` faqat shu yerdan beriladi (style.css da
+   ikkinchi nusxa yoʻq). Buyurtma hujjati kengroq chet oladi — u A4 da toʻliq
+   jadval, ustunlar chetga tegib ketmasligi kerak (13-app.js `btnOrderDoc`). */
+var A4_MARGIN = 8, LBL_MARGIN = 3, LBL_MARGIN_TINY = 2;
+
 function applyPageSize(){
   var mm = labelMM();
   var sheet = $("sheet");
@@ -579,8 +587,9 @@ function applyPageSize(){
   var st = document.getElementById("pageStyle");
   if (!st){ st = document.createElement("style"); st.id = "pageStyle"; document.head.appendChild(st); }
   st.textContent = mm
-    ? "@media print{@page{size:" + mm.w + "mm " + mm.h + "mm;margin:" + (mm.h < 62 ? 2 : 3) + "mm}}"
-    : "@media print{@page{size:A4;margin:8mm}}";
+    ? "@media print{@page{size:" + mm.w + "mm " + mm.h + "mm;margin:" +
+      (mm.h < 62 ? LBL_MARGIN_TINY : LBL_MARGIN) + "mm}}"
+    : "@media print{@page{size:A4;margin:" + A4_MARGIN + "mm}}";
 }
 function printSteps(list, title){
   if (!list || !list.length) return;
@@ -651,9 +660,18 @@ function dlCsv(rows, fname){
     return r.map(function(c){ return '"'+String(c==null?"":c).replace(/"/g,'""')+'"'; }).join(";");
   }).join("\n");
   var a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob(["﻿"+txt], {type:"text/csv;charset=utf-8"}));
-  a.download = fname; a.click();
-  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+  var url = URL.createObjectURL(new Blob(["﻿"+txt], {type:"text/csv;charset=utf-8"}));
+  a.href = url; a.download = fname;
+  /* Firefox faqat hujjatga QOʻSHILGAN havolani bosishga ruxsat beradi —
+     11-diag.js dagi `diagSave()` da bu allaqachon hisobga olingan edi,
+     bu yerda esa yoʻq: CSV eksporti Firefoxda jimgina ishlamasdi. */
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function(){
+    try { if (a.parentNode) a.parentNode.removeChild(a); } catch(e){}
+    URL.revokeObjectURL(url);
+  }, 4000);
 }
 
 /* 3.9.7 QOʻLDA TAHRIRLASH — detal koʻchirish, himoyalar bilan */
@@ -686,21 +704,20 @@ function packLoad(p, b){
 function refreshPack(p, mids){
   var bak = packSave(p);
   // v14: nostandart oqimdan chiqqan pochka oʻz limitlari bilan qayta teriladi
-  var sv = p.oddSrc ? oddLimitsOn() : null;
-  var np = layoutPack(p.base, mids, p.allowOvh, 0, 0);
-  if (sv) oddLimitsOff(sv);
+  var sv = p.oddSrc ? oddLimitsOn() : null, np;
+  /* `finally` SHART: layoutPack xato tashlasa nostandart limitlar S da
+     qolib ketardi va butun interfeys 35 kg oʻrniga 40 kg koʻrsatardi. */
+  try { np = layoutPack(p.base, mids, p.allowOvh, 0, 0); }
+  finally { if (sv) oddLimitsOff(sv); }
   if (np.left.length){ packLoad(p, bak); return np.left; }
-  p.layers=np.layers; p.kg=np.kg; p.envL=np.envL; p.envW=np.envW; p.off=np.off; p.left=[];
-  p.seq=packSeq(p); p.t=p.base.T;
+  p.layers=np.layers; p.envL=np.envL; p.envW=np.envW; p.off=np.off; p.left=[];
   // v15: qayta terilgach eng ustki qavat oʻzgaradi — TOM bayrogʻi yangilanadi
-  p.layers.forEach(function(L, li){
-    L.tom = (li === p.layers.length - 1) ? tomOK(L, p.base, p.off) : false;
-  });
-  p.h=p.base.T+p.layers.reduce(function(s,L){ return s+L.h; },0);
-  p.fillAvg=p.layers.length?p.layers.reduce(function(s,L){ return s+L.fill; },0)/p.layers.length:0;
-  var gL=p.base.L,gW=p.base.W;
-  p.layers.forEach(function(L){ if(L.bb){ gL=Math.max(gL,L.bb.L); gW=Math.max(gW,L.bb.W); } });
-  p.gabL=Math.round(gL); p.gabW=Math.round(gW);
+  markTom(p.layers, p.base, p.off);
+  packDerive(p);
+  /* v21: quyruq chiqib ketgan boʻlishi mumkin — zaxira belgisi ham tushadi.
+     Aks holda pochka oʻzida quyruq boʻlmasa ham +10 kg huquqini saqlab
+     qolardi va roʻyxatda «(zaxira)» yozuvi turaverardi. */
+  if (p.overKg && p.kg <= packKgBase(p) + 1e-9) p.overKg = false;
   p.done = 0;      // v10: qayta terilgan pochkaning ketma-ketligi oʻzgardi — progress nolga
   return [];
 }
@@ -728,9 +745,8 @@ function moveDetail(fromIdx, uid, toIdx){
     if (nLeft.length)
       return "P"+pad2(src.no)+" bu detalsiz qayta terilmadi — "+nLeft.length+" detal joysiz qolardi";
     var np = layoutPack(it, [], S.ovhOn, 0, 0);
-    np.no = PACKS.length+1; np.rev = P.rev || 1; np.t=it.T; np.seq=packSeq(np);
-    np.h=it.T+np.layers.reduce(function(s,L){ return s+L.h; },0);
-    np.gabL=it.L; np.gabW=it.W; np.fillAvg=0; np.done=0;
+    np.no = PACKS.length+1; np.rev = P.rev || 1; np.done = 0;
+    packDerive(np);
     // v12: yangi pochka manba pochkaning GURUHINI meros oladi. Ilgari gname
     // yozilmasdi va packGrpName() base.prod ga tushib ketardi — konveyrda
     // qoʻlda yasalgan pochka «Umumiy» ostida emas, modul nomi bilan alohida
@@ -750,7 +766,12 @@ function moveDetail(fromIdx, uid, toIdx){
   var rule = S.split || { prod:true, mat:false };
   if (dst.key && packKey(it, rule) !== dst.key)
     return keyWhy(it, dst.base, rule) || "boshqa guruhga tegishli detal";
-  if (S.byThick && dst.t !== it.T) return "qalinlik mos emas: pochka "+dst.t+" mm, detal "+it.T+" mm";
+  /* v21: qalinlik MATRITSA boʻyicha solishtiriladi. Ilgari bu yerda xom
+     `dst.t !== it.T` turardi va u matritsaga zid edi: «3 mm → 16 mm
+     pochkasiga» belgilangan boʻlsa ham qoʻlda koʻchirish rad etardi,
+     holbuki packer ularni ataylab bitta pochkaga qoʻyadi. */
+  if (S.byThick && thickKey(dst.t) !== thickKey(it.T))
+    return "qalinlik mos emas: pochka "+dst.t+" mm, detal "+it.T+" mm";
   // v14: yupqa tag ustiga qalin detal qoʻyib boʻlmaydi (04-packer thickOKon)
   if (!thickOKon(dst.base, it.T))
     return "tag " + dst.base.T + " mm — " + it.T + " mm detal ustiga qoʻyilmaydi";
@@ -835,6 +856,11 @@ function renderMgrEdit(){
       var m = $("emsg");
       if (err){ m.className="msg err"; m.textContent = err; return; }
       m.className="msg ok"; m.textContent = "koʻchirildi ✓";
+      /* v21: detal boshqa pochkaga oʻtdi — uning eski yacheykadagi belgisi
+         endi yolgʻon. `SORT.put[uid]` manba pochkaning yacheykasini
+         koʻrsatib turardi, yaʼni saralash ekrani detalni «allaqachon
+         joyida» deb hisoblardi. Belgi olinadi: detal qayta skanerlanadi. */
+      if (typeof SORT === "object" && SORT && SORT.put) delete SORT.put[uid];
       // v12: pochka tarkibi oʻzgardi — yacheyka rejasi sortPlan() ichida
       // packLeft() ga tayanadi, shuning uchun u ham qayta hisoblanishi shart
       if (typeof sortPlan === "function") sortPlan();

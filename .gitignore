@@ -20,8 +20,13 @@ namuna/image.png
 tests/corpus-*.csv
 
 # --- test qoldiqlari ---
-# smoke.ps1 sahifani nishon yoniga vaqtincha yozadi (-Keep bilan qoladi)
-_smoke-run.html
+# Uchala vosita ham sahifani vaqtincha loyiha ildiziga yozadi va oxirida
+# o'chiradi; skript uzilib qolsa fayl qoladi:
+#   _smoke-run.html   smoke.ps1 (-Keep bilan ataylab qoladi)
+#   _shot-run.html    shot.ps1
+#   _corpus-run.html  corpus.ps1  — MUHIM: ichida haqiqiy mijoz .project
+#                     fayllari singdirilgan bo'ladi, repoga tushmasin
+_*-run.html
 # shot.ps1 chiqargan skrinshotlar — kerak bo'lsa qayta yasaladi (.\tests\shot.ps1)
 tests/shot-*.png
 # chop etish ko'rinishini tekshirish uchun yasalgan fayllar

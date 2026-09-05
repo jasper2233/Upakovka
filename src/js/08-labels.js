@@ -136,9 +136,8 @@ function orderDocHTML(){
       if (s.it.mat) mats[s.it.mat.name] = (mats[s.it.mat.name] || 0) + 1;
     });
   });
-  var d = new Date();
-  function p2(v){ return (v < 10 ? "0" : "") + v; }
-  var sana = d.getFullYear() + "-" + p2(d.getMonth()+1) + "-" + p2(d.getDate());
+  var d = new Date();   // pad2() — 04-packer.js, ikki xonali son
+  var sana = d.getFullYear() + "-" + pad2(d.getMonth()+1) + "-" + pad2(d.getDate());
 
   var h = '<div class="odoc">';
 

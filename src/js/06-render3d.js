@@ -35,6 +35,13 @@ function shade(hex, k){
   return "rgb("+Math.round(r*k)+","+Math.round(g*k)+","+Math.round(b*k)+")";
 }
 var MATC = ["#c9a46c","#b98f7a","#8fa3ac","#c2b48a","#a89bb5"];
+/* Yigʻish holati ranglari. Kanvasda `var(--…)` ishlamaydi, shuning uchun
+   qiymatlar shu yerda. DIQQAT: index.html dagi qavat rejasi LEGENDASI aynan
+   shu ikki rangni koʻrsatadi (`<s style="background:#a5714c">` va `#4fae8a`) —
+   biri oʻzgarsa ikkinchisi ham oʻzgarishi kerak, aks holda ishchi rejadagi
+   rang bilan izohdagi rangni bogʻlay olmaydi. */
+var COL_BASE = "#a5714c";      // eng tag detal
+var COL_FRESH = "#4fae8a";     // shu qavatga endigina qoʻyilgan detal
 function matColor(it){
   if (!P) return MATC[0];
   var i = P.materials.findIndex(function(m){ return m.id===it.matId; });
@@ -48,7 +55,9 @@ function draw3D(){
   var w=C3.clientWidth, h=C3.clientHeight;
   G3.clearRect(0,0,w,h);
   var p = PACKS[CUR];
-  if (!p){ G3.fillStyle="#666e7c"; G3.font="13px "+getComputedStyle(document.body).fontFamily;
+  // v21: #666e7c — style.css da KONTRAST sababli tashlab yuborilgan eski --ink3.
+  // Kanvasda `var()` ishlamaydi, shuning uchun joriy qiymat qoʻlda yoziladi.
+  if (!p){ G3.fillStyle="#8a92a0"; G3.font="13px "+getComputedStyle(document.body).fontFamily;
     G3.textAlign="center"; G3.fillText("Chapdan pochka tanlang", w/2, h/2); return; }
 
   var zex = S.zex, boxes = [], fin = STEP >= p.seq.length;
@@ -153,7 +162,7 @@ function draw3D(){
     else if (bx.step < STEP) state = (myLayer===0) ? "base" : (myLayer===curLayer ? "fresh" : "done");
     else state = (myLayer===curLayer) ? "soon" : "wait";
     var solid = (state==="base" || state==="fresh" || state==="done");
-    var col = state==="base" ? "#a5714c" : state==="fresh" ? "#4fae8a" : matColor(bx.it);
+    var col = state==="base" ? COL_BASE : state==="fresh" ? COL_FRESH : matColor(bx.it);
     boxFaces(bx.x,bx.y,bx.z,bx.a,bx.b,bx.h).forEach(function(f,fi){
       if (solid && !faceUp(f.n, cv)) return;               // ortga qaragan yuza chizilmaydi
       var P2 = f.pts.map(S3);

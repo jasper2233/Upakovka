@@ -11,7 +11,7 @@ har detal uchun QR chek chiqaradi va upakovshikka 3D da qadam-baqadam qayerga qo
 `index.html` ni brauzerda ochsangiz bo'ldi.
 
 Ichida namuna buyurtma bor — **«Namuna loyiha»** tugmasini bossangiz tizim darrov
-50 ta pochka terib beradi. Fayl yuklash shart emas.
+**56 ta pochka** terib beradi (215 pozitsiya, 291 detal). Fayl yuklash shart emas.
 
 ---
 
@@ -134,7 +134,7 @@ aynan bir marta uchrashi.
 | **Detallar** | Butun buyurtma jadvali — kod, o'lcham, massa, material, kant, holat |
 | **Materiallar** | Yaxlit list bazasi: o'lcham va massa. List kilosi ↔ kg/m² ikki tomonlama bog'liq |
 | **Diagnostika** | Parser ogohlantirishlari, **audit**, XML tuzilishi, ishlash vaqti |
-| **Sozlamalar** | 15 me'yor, material katalogi, chek o'lchami, saqlash |
+| **Sozlamalar** | Me'yorlar uch blokda (standart / nostandart / ikkalasiga), qalinlik matritsasi, saralash posti, material katalogi, chek va buyurtma hujjati, saqlash |
 
 ---
 
@@ -148,7 +148,11 @@ aynan bir marta uchrashi.
 5. Pochka tugagach — «rulondan qog'oz yechib o'rang, 2 tasma, chek yopishtiring»
 
 **Klaviatura:** <kbd>Space</kbd>/<kbd>Enter</kbd> — qo'yildi · <kbd>Backspace</kbd> — orqaga ·
-<kbd>Ctrl</kbd>+<kbd>O</kbd> — fayl yuklash
+<kbd>Ctrl</kbd>+<kbd>O</kbd> — fayl yuklash · <kbd>Esc</kbd> — ochiq oynani yopish
+
+Qisqartmalar **faqat Qadoqlash ekranida** va hech qanday oyna ochiq bo'lmaganda
+ishlaydi; fokus tugmada yoki matn maydonida bo'lsa ular ham tegmaydi — aks holda
+QR skanerning oxiridagi Enter detalni tekshiruvsiz «qo'yildi» deb belgilardi.
 
 Yig'ish progressi **avtomatik saqlanadi**. Tab yopilib qolsa yoki brauzer yangilansa —
 keyingi ochilishda o'sha joydan davom etasiz.
@@ -181,10 +185,24 @@ upakovka/
 │     ├─ 13-app.js         sozlama, qayta hisob, tablar, ishga tushish
 │     └─ 14-sort.js        saralash posti: stelyaj/yacheyka, skaner, reja
 ├─ dist/                   build natijasi — bir faylli offline versiya
-├─ namuna/                 sinov uchun .project fayllar
-├─ tools/                  yordamchi skriptlar
-└─ docs/                   hujjatlar
+├─ namuna/                 sinov uchun .project fayllar (SEED dan yasaladi)
+├─ tools/
+│  └─ seed-to-project.ps1  SEED dan namuna .project fayllarni yasaydi
+├─ tests/
+│  ├─ smoke.ps1            haqiqiy brauzerda 394 tekshiruv
+│  ├─ corpus.ps1           205 ta real .project fayl bo'yicha regressiya
+│  └─ shot.ps1             interfeys skrinshoti
+└─ docs/
+   ├─ README.md            hujjatlar ko'rsatkichi — qaysi savolga qayerda javob bor
+   ├─ arxitektura.md       modullar, ma'lumot modeli, global nomlar
+   ├─ meyorlar-TZ.md       har me'yorning texnik asoslanishi
+   ├─ alohida-pochkalash.md  modul va xona kesimi
+   ├─ TZ-v2.md             buyurtmachi bilan kelishilgan talablar
+   ├─ TZ-v3-mantiq.md      guruhlash modeli va dunyo amaliyoti
+   └─ ochiq-qarorlar.md    hali hal qilinmagan savol va takliflar
 ```
+
+Hujjatlarning turi va bir-biridan farqi — **[docs/README.md](docs/README.md)**.
 
 ### Nega ES modul emas?
 `type="module"` `file://` orqali ochilganda CORS sababli **ishlamaydi** — sexdagi kompyuterda
@@ -212,18 +230,29 @@ To'liq hisobot: **Diagnostika** bo'limi.
 | `QALINLIK` | bitta qavatda ikki xil qalinlik (pochkada bir necha qalinlik — matritsa bilan ruxsat etilgan) |
 | `GURUH` | pochkada modul / material / klass chegarasi buzilgan (odatda qo'lda ko'chirishdan) |
 | `SEQ` | yig'ish ketma-ketligi detal soniga mos emas |
+| `BALANDLIK` | pochka yoki bog' `Pochka maks. balandligi` dan baland |
+| `TOM_TAGI` | tom ostidagi qavat («to'shak») siyrak — tom detallari qirraga tayanib dumalaydi |
+| `TUZILMA` | pochkada tag detal yo'q yoki qavatda bo'sh o'rin qolgan |
 
-**Ogohlantirishlar** (e'tibor talab qiladi, lekin xato emas): to'ldirish foizi past qavat,
-tag bo'lolmaydigan o'lcham, yolg'iz tag detaldan iborat pochka, yarim bo'sh pochka.
+**Ogohlantirishlar** (e'tibor talab qiladi, lekin xato emas):
 
-Ikkitasi ataylab **jim turadi**, chunki ular ogohlantirilsa ishchiga hech narsa bermaydi:
+| Kod | Nima |
+|---|---|
+| `TOM` | eng ustki yuza tom shartidan o'tmadi — sababi yozib qo'yiladi (pastda «Tom» bo'limi) |
+| `TOM_TAYANCH` | tom ostidagi qavatga yetarli tegmayapti (`Tom detali tayanchi`) |
+| `TOLDIRISH` | qavat `Qavat to'ldirish, min %` dan past |
+| `TAG_OLCHAM` | tag detal o'lchami me'yordan chetda — odatda qo'lda ko'chirishdan keyin |
+| `BOSH_POCHKA` | pochka faqat tag detaldan iborat, ustida qavat yo'q |
+| `YENGIL` | pochka limitning yarmidan yengil, lekin guruhda zaxira bor |
+| `MASSA_NOODATIY` | bitta detalning o'zi limitdan og'ir — bo'linmaydi |
+| `BALANDLIK_NOODATIY` | bitta detalning o'zi balandlik limitidan qalin — bo'linmaydi |
+| `BEGONA` | natijada kutilgan ro'yxatda yo'q detal bor (natija eskirgan — qayta pochkalang) |
 
-Alohida kod — **`TOM`**: pochkaning eng ustki yuzasi 90 % dan kam yopilgan.
-Yuqoridagi «Tom» bo'limiga qarang.
+Ikkita holat ataylab **jim turadi**, chunki ogohlantirish ishchiga hech narsa bermaydi:
 
 | Holat | Nega ogohlantirilmaydi |
 |---|---|
-| **Quyruq qavati** to'ldirishi past | Quyruq — pochkaning eng usti, ustida hech narsa yo'q, demak egiladigan qavat ham yo'q (pastda «Quyruq» bo'limiga qarang) |
+| **Quyruq qavati** to'ldirishi past | Quyruq `minFill` dan **ataylab** ozod — u guruh oxirida qolgan 2–4 detal uchun. Uning o'rnini uch boshqa o'lchov bosadi: `tailGap`, `tailSpan` va `lidBed` (pastda «Quyruq» bo'limi) |
 | **Yengil pochka**, agar butun guruh bir pochkaga ham yetmasa | 3 mm orqa devorlar butun modulda 15 kg bo'lsa, ular 35 kg li pochka yasay olmaydi va boshqa qalinlik bilan aralasha ham olmaydi — bu kamchilik emas, materialning o'zi shunday |
 
 ---
@@ -263,14 +292,19 @@ Tag pochkaning deyarli butun tagini egallashi shart. Ikkalasi **birga** tekshiri
 Foiz umumiy qamrovni ushlaydi, mm esa bitta yomon tomonni: uzun pochkada 5 % yuza
 ham 60 mm bo'lishi mumkin va qirra o'sha yerda osilib qoladi.
 
-Foiz **80 dan 100 gacha** sozlanadi — pochka qulay va ixcham chiqqunga qadar
-o'zgartirib ko'rish mumkin. Namuna buyurtmada:
+Foiz **80 dan 100 gacha** sozlanadi (chegara `readConf()` da ham shu) — pochka
+qulay va ixcham chiqqunga qadar o'zgartirib ko'rish mumkin. Namuna buyurtmada
+o'lchangan:
 
 | Qamrov | Pochka | O'rtacha | To'ldirish |
 |---|---|---|---|
-| 80 % | 50 | 26,4 kg | 92 % |
-| **90 %** | **52** | **25,4 kg** | **93 %** |
-| 100 % | 59 | 22,4 kg | 89 % |
+| 80 % | 56 | 23,6 kg | 96 % |
+| **90 %** | **56** | **23,6 kg** | **96 %** |
+| 95 % | 58 | 22,8 kg | 93 % |
+| 100 % | 64 | 20,6 kg | 93 % |
+
+Ya'ni 90 % gacha chegara bu buyurtmada hech nimani qisib turmaydi; 95 % dan
+boshlab tag nomzodlari kamayadi va pochka soni o'sadi.
 
 ### Har qavat — bitta qalinlikdan
 
@@ -292,8 +326,9 @@ cheklovsiz; sexda yacheyka balandligi ma'lum bo'lsa o'sha son kiritiladi.
   50/50 ruxsat, 88/12 yo'q. Mayda tasma chetda qolsa qog'oz o'ralganda burma
   hosil bo'ladi va tasma tortilganda detalni sindiradi.
 
-Rasmiy shakli — `Qopqoq muvozanati, min %` (standart 80): eng kichik detal teng
-ulushning shuncha % idan kam bo'lmasin. 2 detalda bu 40 %, 3 detalda 27 %.
+Rasmiy shakli — **`Tom ulushi, min %`** (standart **40**): eng kichik detalning
+ulushi shuncha % dan kam bo'lmasin. Formula: `minUlush(n) = lidBal − 10 × (n − 2)`,
+ya'ni 2 detalda 40 %, 3 detalda 30 %. Batafsil — pastdagi «Tom» bo'limi.
 
 ### Yupqa detal tag bo'lgan holat
 
@@ -439,14 +474,6 @@ pochkaning tomi ustidagining butun og'irligini ko'taradi. Tom ochiq qolsa —
 og'irlik bir necha kichik detalga to'planadi: qirralar eziladi, tasma bo'shaydi,
 og'irlik teng taqsimlanmaydi.
 
-Shuning uchun **har bir pochkaning eng ustki qavati** uch shartga bo'ysunadi:
-
-| Shart | Ma'nosi |
-|---|---|
-| **Yuza ≥ 90 %** | tag yuzasining kamida shuncha % ini yopadi (`Tom (qopqoq) yopilishi, min %`) |
-| **Gabarit** | hech bir detal pochka konvertidan chiqmaydi |
-| **Qalinlik ≥ 16 mm** | yupqa detal tom bo'lolmaydi |
-
 Shuning uchun **har bir pochkaning eng ustki qavati** besh shartga bo'ysunadi —
 u qanday paydo bo'lganidan qat'i nazar:
 
@@ -471,9 +498,11 @@ qo'llanardi.** Eng ustki qavat shunchaki «qopqoq» deb ko'tarilganda ular
 tekshirilmasdan qolardi — natijada 96 % yopilgan, lekin 958×510 va 511×84
 detallardan iborat tom chiqib ketardi. Yuza yopiq, lekin og'irlik notekis.
 
-**Narxi o'lchandi:** 205 ta haqiqiy buyurtmada qat'iy qoida pochka sonini
-3883 dan 3898 ga — **atigi +0,4 %** ga oshirdi. Ya'ni tom talabi zichlikni
-amalda buzmaydi.
+**Narxi o'lchandi.** 205 ta haqiqiy buyurtmada (`tests\corpus.ps1`) qavatli
+2932 pochkadan **434 tasi (14,8 %)** baribir ochiq tom bilan chiqadi — ular
+auditda `TOM` ogohlantirishini oladi. Qolgan 85 % da qoida bajariladi va
+zichlikka sezilarli ta'sir qilmaydi: namuna buyurtmada `Tom yopilishi` ni
+90 dan 100 ga ko'tarish 56 → 58 pochka beradi (+3,6 %).
 
 Terish algoritmida **yopiq tom eng og'ir ball oladi** — variant tanlashda u
 massadan ham ustun turadi. Baribir yopolmasa, audit `TOM` ogohlantirishini beradi:
@@ -523,8 +552,17 @@ Foiz ikkalasini ajratmaydi. Shuning uchun chegara **millimetrda**:
 **`Quyruqda maks. bo'shliq`** (standart 300 mm) — quyruq detallari orasida
 va tag chetigacha qolgan eng katta tayanchsiz oraliq shundan oshmasin.
 
-Namunada: chegarasiz eng katta bo'shliq **681 mm**, 300 mm chegara bilan **274 mm**.
-Narxi — 47 → 50 pochka.
+Namuna buyurtmada eng katta quyruq bo'shlig'i **187 mm** — ya'ni 200 mm dan
+yuqori chegara unga umuman tegmaydi. Qisganda narxi ko'rinadi:
+
+| `tailGap` | Pochka | O'rtacha | Eng katta bo'shliq |
+|---|---|---|---|
+| o'chiq · 500 · **300** | **56** | **23,6 kg** | 187 mm |
+| 200 | 56 | 23,6 kg | 187 mm |
+| 150 · 100 | 57 | 23,2 kg | 64 mm |
+| 50 | 58 | 22,8 kg | 16 mm |
+
+Chegara real buyurtmalarda ishlaydi — namuna undan qiyinroq holatni bermaydi.
 
 Qat'iy shartlar (bittasi buzilsa — singdirish bekor, pochka o'z holicha qoladi):
 
@@ -558,8 +596,16 @@ limitidan shuncha kg oshishga ruxsat. Uch narsani bilib qo'ying:
 **Mutlaq shift — 45 kg** (`maxKg + zaxira`). U nostandart limitning ustiga
 qo'shilmaydi: nostandart pochka ham shu shiftdan oshmaydi.
 
-Namunada zaxiradan foydalanish ulushi: **47 pochkadan 4 tasi (8,5 %)**, eng og'iri
-38,5 kg. Zaxira o'chirilsa 48 pochka chiqadi.
+Namuna buyurtmada o'lchangan:
+
+| `Qoldiq uchun zaxira` | Pochka | O'rtacha | Zaxiradan foydalangan |
+|---|---|---|---|
+| 0 (o'chiq) | 62 | 21,3 kg | 0 |
+| 5 kg | 58 | 22,8 kg | 4 |
+| **10 kg** | **56** | **23,6 kg** | **6** |
+| 20 kg | 56 | 23,6 kg | 4 |
+
+Ya'ni zaxira 62 → 56 pochka beradi va uni ishlatgan pochkalar ulushi 11 %.
 
 ### Qoldiq qayerga tushadi — uch yo'l
 
@@ -573,8 +619,8 @@ Singdirish **butun buyurtma bo'ylab** oxirida yana bir marta yuritiladi: shunda
 nostandart bog' ham o'z guruhidagi standart pochkaga singishi mumkin. Namunada
 shu bosqichdan keyin bog'lar umuman qolmadi.
 
-Namuna buyurtmada quyruqning o'z hissasi: **61 → 45 pochka**, o'rtacha massa
-**21,7 → 29,4 kg**.
+Namuna buyurtmada quyruq mexanizmining o'z hissasi: singdirish o'chirilsa
+**62 pochka** (o'rtacha 21,3 kg), yoqilganda **56 pochka** (23,6 kg).
 
 ### Qo'lda tuzatish quyruqni buzmaydi
 
@@ -606,7 +652,8 @@ SM.5EED0000.R3|P05|Q3|01_061|559x100x16
 
 **Chek o'lchami** sozlamalarda tanlanadi:
 - `A4 — 2 ustun` — oddiy printer
-- `100 × 70 mm` / `58 × 40 mm` — termal printer, har chek alohida varaqda
+- `100 × 70` / `80 × 60` / `58 × 40 mm` — termal printer, har chek alohida varaqda
+- `Boshqa — qo'lda (mm)` — o'lchamni o'zingiz kiritasiz (20…300 mm)
 
 **Brutto** = detallar massasi + qadoq materiali (tara: qog'oz + 4 burchak + tasma).
 Tara sozlamalarda kiritiladi va **pochkalash hisobiga kirmaydi** — u faqat chek va
@@ -638,16 +685,17 @@ o'tadi, quyruq esa undan ozod. Endi siyrak quyruq tom ostiga qo'yilmaydi —
 
 | `lidBed` | Pochka | O'rtacha | Eng yomon to'shak | Buzilgan |
 |---|---|---|---|---|
-| o'chiq | 55 | 24,0 kg | 75 % | 3 / 33 |
-| **85 %** | **56** | **23,6 kg** | **85 %** | **0 / 33** |
+| o'chiq · 70 % | 55 | 24,0 kg | 75 % | 3 / 33 |
+| **85 % · 100 %** | **56** | **23,6 kg** | **85 %** | **0 / 32** |
 
 > Chegara `minFill` dan qat'iyroq bo'lolmaydi. Oddiy qavat aynan `minFill` bilan
 > qabul qilinadi — undan ko'pini talab qilish bajarilmas shart bo'lardi va audit
 > hech qachon toza chiqmasdi. `minFill` ni 60 ga tushirsangiz to'shak talabi ham
 > 60 bo'ladi.
 
-Foydalanuvchining konfiguratsiyasida (UMUMIY guruh) ham o'lchandi: buzilgan
-**4 → 0**, eng yomon to'shak **73 % → 86 %**, narxi 47 → 49 pochka.
+Boshqa konfiguratsiyada (kesimsiz, UMUMIY guruh) ham o'lchangan edi: buzilgan
+**4 → 0**, eng yomon to'shak **73 % → 86 %**. Jadvaldagi raqamlar esa standart
+sozlamadagi namuna buyurtmaga tegishli.
 
 ---
 
@@ -670,9 +718,14 @@ O'rtacha aynan shu nosozlikni yashiradi — shuning uchun **eng yomoni** olinadi
 
 | `lidSupp` | Pochka | O'rtacha | Eng yomon tom tayanchi |
 |---|---|---|---|
-| o'chiq | 54 | 24,5 kg | **56 %** |
-| **65 %** | **55** | **24,0 kg** | **75 %** |
-| 80 % | 56 | 23,6 kg | 80 % |
+| o'chiq · 50 % | 54 | 24,5 kg | 80 % |
+| **65 %** | **56** | **23,6 kg** | **80 %** |
+| 80 % | 57 | 23,2 kg | 80 % |
+| 90 % | 58 | 22,8 kg | 72 % |
+
+Oxirgi qator qoidaning chegarasini ko'rsatadi: 90 % qo'yilsa ham namunada
+undan yaxshi joylashuv yo'q — natija yomonlashadi va audit `TOM` yoki
+`TOM_TAYANCH` ogohlantirishini beradi. Shuning uchun standart 65 %.
 
 Uch o'lchov endi uch xil nosozlikni ushlaydi va bir-birini almashtirmaydi:
 
@@ -727,11 +780,11 @@ tagdan tashqarida tayanch yo'q.
 
 | `tailSpan` | Pochka | O'rtacha | Eng tor tayanch |
 |---|---|---|---|
-| o'chiq | 50 | 26,4 kg | **18 %** |
-| 60 % | 52 | 25,4 kg | 61 % |
-| **70 %** | **54** | **24,5 kg** | **71 %** |
-| 80 % | 55 | 24,0 kg | 81 % |
-| 90 % | 56 | 23,6 kg | 90 % |
+| o'chiq · 60 % · **70 %** · 80 % | **56** | **23,6 kg** | 80 % |
+| 90 % | 57 | 23,2 kg | 91 % |
+
+Namuna buyurtmada eng tor quyruq tayanchi 80 % — ya'ni 80 % gacha chegara
+tegmaydi. `tailGap` kabi, bu ham real buyurtmalar uchun qo'yilgan qorovul.
 
 > Oddiy qavatlarga bu qoida kerak emas: `fill ≥ 85 %` bo'lsa qoplanish har
 > ikkala o'q bo'yicha ham kamida 85 % bo'ladi (yuza ulushi ikki o'q
@@ -747,7 +800,7 @@ Uch xil bosma bor va ular bir-birini almashtirmaydi:
 | Nima | Qachon | O'lchami | Ichida nima bor |
 |---|---|---|---|
 | **Detal cheki** | ishchi qo'lda so'raganda | tanlangan o'lcham | bitta detal: kod, o'lcham, massa, material, modul, QR |
-| **Pochka cheki** | pochkaning oxirgi detali qo'yilganda — **o'zi** | **80 × 60 mm** | pochka: modul, material, qavat, detal soni, netto/brutto, QR va **ichidagi detallar ro'yxati** |
+| **Pochka cheki** | pochkaning oxirgi detali qo'yilganda — **o'zi** | tanlangan o'lcham (`80 × 60` — tavsiya) | pochka: modul, material, qavat, detal soni, netto/brutto, QR va **ichidagi detallar ro'yxati** |
 | **Buyurtma hujjati** | butun buyurtma yig'ilib bo'lgach | **A4** | to'liq tarkib: har pochka, har detal, material kesimi, imzo joylari |
 
 ### Chek o'lchamini qo'lda belgilash
@@ -840,8 +893,8 @@ raqam qaysi oqimga tegishli ekanini ko'rmasdi — nostandart limitni o'zgartirib
 
 Har maydonda **«?»** — sichqoncha olib borilsa (yoki Tab bilan tanlansa)
 podskaska chiqadi: maydon nimani qiladi, nimaga shu qiymat tanlangan va
-oshirsa/kamaytirsa nima o'zgaradi. Aniq raqamlar bilan, masalan quyruq
-bo'shlig'i uchun: o'chiq — 47 pochka, 500 — 48, 300 — 50, 200 — 53.
+oshirsa/kamaytirsa nima o'zgaradi — imkoni bo'lsa o'lchangan raqam bilan
+(quyruq bo'shlig'i uchun: o'chiq / 300 / 200 — 56 pochka, 150 — 57, 50 — 58).
 
 > Testda qo'riqlanadi: uch blok bor, har maydon o'z blokida, nostandart limit
 > standart blokka sizib o'tmagan va **har** maydonda ≥ 40 belgili podskaska bor —
@@ -899,6 +952,7 @@ Qaysi biri avval to'lsa, terish o'sha yerda to'xtaydi. Misol: 16 mm laminat va
 Har me'yorning texnik asoslanishi **[docs/meyorlar-TZ.md](docs/meyorlar-TZ.md)** da
 yozilgan: nima uchun 35 kg, nega chiqish 20 mm, qavat to'ldirish 85 % va paddon
 qamrovi 90 % qayerdan olingan va har birini oshirsa/kamaytirsa nima bo'ladi.
+Kod tuzilishi va ma'lumot modeli — **[docs/arxitektura.md](docs/arxitektura.md)**.
 
 Me'yorni o'zgartirish tartibi:
 1. Sozlamalarda qiymatni o'zgartiring — tizim avtomatik qayta teradi
@@ -946,11 +1000,13 @@ Fayllar `namuna\Project` da kutiladi. **Bu papka `.gitignore` da** — u yerda
 haqiqiy mijoz buyurtmalari turadi va repo ochiq. Skript faqat statistika
 chiqaradi, tarkibni emas.
 
-Oxirgi o'lchov (205 fayl, 15 958 detal): **205/205 o'qildi, audit xatosi 0,
-detal yo'qolmadi**, 3999 pochka.
+Oxirgi o'lchov (205 fayl, 15 958 detal, 61 414 kg):
+**205/205 o'qildi, audit xatosi 0, detal yo'qolmadi** — 4892 pochka
+(shundan 881 tasi nostandart bog'), o'rtacha 12,6 kg, ochiq tom 434/2932 (14,8 %),
+zaxiradan foydalangan 97 pochka, pochkalanmagan xona obyekti 6 ta.
 
-Skript sahifani **haqiqiy brauzerda** (Edge yoki Chrome, headless) yuklaydi va 240 dan ortiq
-tekshiruvni bajaradi. Node.js kerak emas. Nima tekshiriladi:
+Skript sahifani **haqiqiy brauzerda** (Edge yoki Chrome, headless) yuklaydi va
+**394 ta** tekshiruvni bajaradi. Node.js kerak emas. Nima tekshiriladi:
 
 - sahifa JS xatosisiz yuklandimi, hamma modul funksiyalari joyidami
 - pochkalash natijasi: audit toza, hamma detal joylashgan, statistika (kg, to'ldirish, qavat)
@@ -1045,19 +1101,40 @@ Natija: `tests\shot-<view>.png`. Interfeys o'zgarishini ko'z bilan tekshirish uc
 
 - **Kod uslubi:** `var` va `function`, o'zbekcha izohlar, bo'limlar raqamlangan (3.1 … 3.15).
   ES modul, `fetch`/XHR va tashqi CDN ishlatilmaydi — `file://` da ular ishlamaydi.
-  Pochkalash yadrosi generator (`function*`) va `Promise` ishlatadi, shu sabab
-  **minimal brauzer: Chrome/Edge 50+**.
+- **Minimal brauzer: Chrome / Edge 87+** (2020-yil oxiri). Chegarani JS emas,
+  CSS qo'yadi:
+
+  | Nima | Kerak | Bo'lmasa nima bo'ladi |
+  |---|---|---|
+  | `inset` (overlay) | Chrome 87 | yuklash, jarayon va xato oynalari ekranni qoplamaydi |
+  | flex `gap` | Chrome 84 | elementlar bir-biriga yopishadi |
+  | `clamp()` (qavat rejasi bo'yi) | Chrome 79 | 2D reja umuman chizilmaydi |
+  | `display:grid` | Chrome 57 | uch ustunli maket yiqiladi |
+  | generator + `Promise` | Chrome 50 | pochkalash yadrosi ishlamaydi |
+
+  `accent-color` (Chrome 93) va `:focus-visible` (Chrome 86) faqat ko'rinishga
+  ta'sir qiladi — ularsiz ham tizim ishlaydi.
 - **Yangi modul qo'shish:** `src/js/NN-nom.js` yarating va `index.html` ga mos joyga
   `<script src>` qo'shing. `build.ps1` o'zi topib singdiradi.
-- **Global nomlar** (band): `S P PACKS CUR STEP EDIT WRAP $ esc Store DIAG PACKPROG
-  LAST_AUDIT PEND PENDING BUSY cam C3 G3 C2 G2 DENS KGM2_FALLBACK ORD CLS_KEYS
-  APP_VER SEED Packer PACK_TRIES SORT TAIL_LAYERS MAIN_T`
+- **Global nomlar** — modullararo ishlatiladiganlari: `S P PACKS CUR STEP WRAP
+  APP_VER SEED Store DIAG SORT $ esc cut QRLIB LAST_AUDIT BUSY PACKPROG MAIN_T`.
+  To'liq ro'yxat (modulga xos konstantalar bilan) —
+  **[docs/arxitektura.md](docs/arxitektura.md)**, 4-bo'lim.
 - **Determinizm:** pochkalash urug'i qat'iy (`mulberry(1234 + t*7919)`) — bir xil kirish
   va bir xil sozlama har doim bir xil natija beradi. Seansni tiklash shunga tayanadi.
 - **Diagnostikada ishlash vaqti** ko'rsatiladi — algoritmni o'zgartirgach shu raqamga qarang.
 
 ### Keyingi bosqichlar (rejalashtirilgan)
-1. Real `.project` fayllar korpusida regressiya testi (10–50 ta fayl, audit invariantlari)
-2. Server + baza: buyurtma holati, rollar, har skan uchun hodisa yozuvi (traceability)
-3. Furnitura xaltasi, qadoq materiali sarfi, yuklash rejasi
-4. Termal printerga to'g'ridan-to'g'ri ZPL/TSPL eksporti
+1. Server + baza: buyurtma holati, rollar, har skan uchun hodisa yozuvi (traceability)
+2. Fors major — qo'lda yig'ilgan pochkani tizimga kiritish
+   ([TZ-v2 §12](docs/TZ-v2.md), [TZ-v3 §4](docs/TZ-v3-mantiq.md))
+3. P/M da qo'lda terish (tetris) — [TZ-v2 §11](docs/TZ-v2.md)
+4. Furnitura xaltasi, qadoq materiali sarfi, yuklash rejasi
+5. Termal printerga to'g'ridan-to'g'ri ZPL/TSPL eksporti
+
+*Bajarilgan:* real fayllar korpusida regressiya testi — `tests\corpus.ps1`,
+205 fayl.
+
+To'liq tartib, har qadamning holati va nega aynan shu ketma-ketlik ekani —
+**[docs/TZ-v3-mantiq.md](docs/TZ-v3-mantiq.md) §6**. Hali hal qilinmagan
+savol va takliflar — **[docs/ochiq-qarorlar.md](docs/ochiq-qarorlar.md)**.

@@ -1,20 +1,20 @@
 # ME'YORLAR — TEXNIK ASOSLANISH
 
-**Tizim:** UPAKOFKA v10 (`APP_VER = 10`, `src/js/02-state.js`) — mebel tsexi uchun detallarni pochkalash (MES)
-**Hujjat mavzusi:** sozlamalar bo'limidagi 15 me'yor + algoritm ichidagi qat'iy konstantalar
-**Kod manbasi:** `src/js/02-state.js` (standart qiymatlar), `src/js/13-app.js` → `readConf()` (o'qish va chegaralash), `src/js/04-packer.js` (qo'llanishi)
+**Tizim:** UPAKOFKA (`APP_VER`, `src/js/02-state.js`) — mebel tsexi uchun detallarni pochkalash (MES)
+**Hujjat mavzusi:** sozlamalar bo'limidagi **34 me'yor** + algoritm ichidagi qat'iy konstantalar
+**Kod manbasi:** `src/js/02-state.js` (standart qiymatlar), `index.html` (interfeysdagi standart va chegara), `src/js/13-app.js` → `readConf()` (o'qish va chegaralash), `src/js/04-packer.js` (qo'llanishi)
 
-> **Funksiya nomlari haqida.** v10 da pochkalash yadrosi generatorga o'tkazildi, shuning uchun kodda
-> `greedyPackGen()`, `packGroupGen()`, `packAllGen()` nomlari turadi (eski `greedyPack`/`packGroup`/`packAll`
-> nomlari faqat `files/` papkasidagi arxiv nusxada qolgan). `packAll()` hozir — generatorni oxirigacha
-> aylantiradigan sinxron o'ram; interfeys esa `packAllAsync()` orqali chaqiradi. Hujjatda hamma havola
-> `src/js/04-packer.js` ning joriy holatiga mos.
+> **Funksiya nomlari haqida.** Pochkalash yadrosi generator: kodda
+> `greedyPackGen()`, `packGroupGen()`, `packAllGen()` nomlari turadi.
+> `packAll()` — generatorni oxirigacha aylantiradigan sinxron o'ram; u faqat
+> sinov va skript uchun, interfeys esa `packAllAsync()` orqali chaqiradi.
+> Hujjatda qator raqamiga havola qilinmaydi — faqat funksiya nomiga.
 
 ---
 
 ## Bu hujjat nima uchun
 
-Pochkalash natijasi — necha pochka chiqdi, qaysi detal qayerga tushdi, nega bu detal noodatiy bo'lib qoldi — to'liq 15 ta sonli me'yorga bog'liq. Bu sonlar interfeysdagi "Sozlamalar" bo'limida bemalol o'zgartiriladi, lekin har birining ortida geometrik hisob, ergonomika standarti yoki tsex amaliyoti turadi. Ularni "ko'proq siqilsin" degan niyat bilan o'zgartirish ko'pincha teskari natija beradi: pochka soni kamayadi, ammo yuk ko'taruvchi charchaydi, qavatlar chetdan chiqib qoladi yoki qopqoq yaxlit bo'lmay ombor tepasidagi bosimga chidamaydi.
+Pochkalash natijasi — necha pochka chiqdi, qaysi detal qayerga tushdi, nega bu detal noodatiy bo'lib qoldi — to'liq 34 ta sonli me'yorga bog'liq. Bu sonlar interfeysdagi "Sozlamalar" bo'limida bemalol o'zgartiriladi, lekin har birining ortida geometrik hisob, ergonomika standarti yoki tsex amaliyoti turadi. Ularni "ko'proq siqilsin" degan niyat bilan o'zgartirish ko'pincha teskari natija beradi: pochka soni kamayadi, ammo yuk ko'taruvchi charchaydi, qavatlar chetdan chiqib qoladi yoki qopqoq yaxlit bo'lmay ombor tepasidagi bosimga chidamaydi.
 
 Hujjat uch savolga javob beradi:
 
@@ -34,7 +34,7 @@ Hujjatda ixtiro qilingan raqam yoki soxta havola yo'q. Standart raqami keltirilg
 | 2 | Chiqish (overhang) | `ovh` | 20 mm | bo'sh/0 → 0 | qavat konverti |
 | 3 | Tag detal min. o'lcham | `minBase` | 190 mm | bo'sh/0 → 190 | tag tanlash |
 | 4 | Maks. o'lcham | `maxLen` | 2100 mm | bo'sh/0 → 2100 | noodatiy ajratish |
-| 5 | Tag/ust min. qalinlik | `minBaseT` | 0 mm | bo'sh/0 → 0 | tag tanlash |
+| 5 | Tag/qopqoq min. qalinlik | `minBaseT` | **16 mm** | bo'sh/0 → 0 | tag, qopqoq va tom |
 | 6 | Qavat to'ldirish min. % | `minFill` | 85 | 10…130 | qavat yaratish |
 | 7 | **Tom (qopqoq) yopilishi min. %** | `lidFill` | **90** | 10…100 | eng ustki yuza |
 | 8 | Qopqoq detallari maks. | `lidN` | 3 | 1…4 | qopqoq |
@@ -55,7 +55,7 @@ Hujjatda ixtiro qilingan raqam yoki soxta havola yo'q. Standart raqami keltirilg
 | 18 | Paddon qamrovi, min % | `baseCover` | 90 % | qavat qabul qilish |
 | 19 | Chetdan qochish, maks | `baseInset` | 40 mm | konvert + qavat qabul qilish |
 | 20 | Pochka maks. balandligi | `maxH` | 0 (cheklovsiz) | qavat qabul qilish |
-| 21 | Qopqoq muvozanati, min % | `lidBal` | 80 % | qopqoq |
+| 21 | Tom ulushi, min % | `lidBal` | **40 %** | tom va qopqoq |
 | 22 | Nostandart maks. massa | `oddKg` | 40 kg | nostandart oqim |
 | 23 | Nostandart maks. bo'yi | `oddLMax` | 3200 mm | nostandart oqim |
 | 24 | Nostandart maks. eni | `oddWMax` | 1900 mm | nostandart oqim |
@@ -70,9 +70,15 @@ Hujjatda ixtiro qilingan raqam yoki soxta havola yo'q. Standart raqami keltirilg
 | 33 | Tom detali tayanchi, min | `lidSupp` | 65 % | tom qabul qilish |
 | 34 | Tom ostidagi qavat, min | `lidBed` | 85 % | quyruq joylashuvi |
 
-**21-me'yor o'zgardi:** `lidBal` endi «teng ulushdan necha %» emas, **eng kichik ulushning to'g'ridan-to'g'ri foizi** (2 detalda). Standart 80 → **40**. Formula: `minUlush(n) = lidBal − 10 × (n − 2)` → 2 detalda 40 %, 3 detalda 30 %.
+> **Ikki me'yorning ma'nosi o'zgargan** (jadvalda joriy holat turibdi):
+> `lidBal` endi «teng ulushdan necha %» emas, eng kichik ulushning
+> **to'g'ridan-to'g'ri foizi** (21-bo'lim); `minBaseT` esa endi faqat tagga
+> emas, qopqoq va tomga ham qo'llanadi (5-bo'lim).
 
-**5-me'yor o'zgardi:** `minBaseT` (tag/qopqoq min. qalinlik) standarti **0 dan 16 mm ga** ko'tarildi va endi qopqoqqa ham qo'llanadi.
+**Pochkalash qoidasi** (`S.split`) — me'yor emas, lekin natijaga eng kuchli
+ta'sir qiladigan sozlama. U P/M ekranida ikki katakcha bilan beriladi
+(`mgrByRoom` → `split.prod`, `mgrByMat` → `split.mat`) va boshqa me'yorlar
+kabi saqlanadi. Batafsil: [alohida-pochkalash.md](alohida-pochkalash.md).
 
 > **Diqqat:** 1, 3, 4-me'yorlarda `readConf()` `+value || N` shaklida o'qiydi — maydonga **0** yozilsa u standart qiymatga qaytadi, cheklov o'chmaydi. Bu ataylab: massa yoki gabarit cheklovini butunlay o'chirish xavfli. Xuddi shu shakl `oneMan`, `minFill`, `lidFill`, `lidN`, `tries` uchun ham ishlatilgan (pastdagi "Integratsiya eslatmalari", 4-band).
 
@@ -81,7 +87,7 @@ Hujjatda ixtiro qilingan raqam yoki soxta havola yo'q. Standart raqami keltirilg
 | Maydon | `S` kaliti | Standart | Ma'nosi |
 |---|---|---|---|
 | Qadoq materiali (tara) | `tare` | 0,6 kg | Qog'oz + 4 burchak + tasma. **Pochkalash hisobiga kirmaydi** — faqat brutto va "2 KISHI" ogohlantirishiga qo'shiladi (`04-packer.js` → `packBrutto()`) |
-| Chek o'lchami | `labelSize` | `a4` | Bosma chek formati (`a4` \| `100x70` \| `58x40`), algoritmga aloqasi yo'q |
+| Chek o'lchami | `labelSize` | `a4` | Bosma chek formati: `a4` \| `100x70` \| `80x60` \| `58x40` \| `custom` (oxirgisida `labelW`×`labelH`, 20…300 mm). Algoritmga aloqasi yo'q |
 
 ---
 
@@ -95,9 +101,9 @@ Hujjatda ixtiro qilingan raqam yoki soxta havola yo'q. Standart raqami keltirilg
 - `packAllGen()` — pochkalashdan oldingi filtr: `it.kg > S.maxKg` bo'lgan detal darhol **noodatiy** ro'yxatiga tushadi va sababi `it.why` ga yoziladi;
 - `greedyPackGen()` — tag detal tanlashda eligibility sharti (`it.kg <= S.maxKg`);
 - `layoutPack()` — qavatlar uchun massa byudjeti: `budget = S.maxKg - base.kg`, har qavat qo'yilgach byudjet kamayadi;
-- `packAllGen()` — noodatiy pochkalarni bucketlarga yig'ishda (`b.kg + it.kg > S.maxKg` → yangi bucket).
+- `oddBundles()` — nostandart bog'ni yig'ishda. Diqqat: u **`S.oddKg`** bilan cheklaydi (`kgCap = +S.oddKg || S.maxKg`), `maxKg` bilan emas — nostandart bog'ning o'z limiti bor (22-me'yor).
 
-Bundan tashqari `packGroupGen()` da konsolidatsiya chegarasi (`S.maxKg * 0.62`) va `packAllGen()` da to'ldirish ko'rsatkichi (`wFill`) shu songa nisbatan hisoblanadi. Ko'rsatish: `src/js/10-ui.js` → `selectPack()`. Audit ham shu limitni tekshiradi: `src/js/05-audit.js` → `auditPacks()`, `MASSA` xato kodi.
+Bundan tashqari `packGroupGen()` da konsolidatsiya chegarasi (`S.maxKg * 0.62`) va `packAllGen()` da to'ldirish ko'rsatkichi (`wFill`) shu songa nisbatan hisoblanadi. Quyruq singdirishda esa chegara pochkaning **o'z** limitidan olinadi (`packKgCap(p) * 0.5`) — nostandart pochkada u `maxKg` dan katta bo'lishi mumkin. Ko'rsatish: `src/js/10-ui.js` → `selectPack()`. Audit ham shu limitni tekshiradi: `src/js/05-audit.js` → `auditPacks()`, `MASSA` xato kodi.
 
 **Nega shunday:** 35 kg — bir kishi **ko'tarib yurmaydigan**, lekin ikki kishi bemalol olib qo'yadigan, yoki bir kishi arava/rolgang bilan siljitadigan chegara. Bu ISO 11228-1 dagi 25 kg tavsiyaviy chegaradan yuqori — ataylab: pochka konveyer va aravada harakatlanadi, qo'lda ko'tarish faqat yuklash paytida bo'ladi. 25 kg dan oshgan har pochkaga chek va interfeysda "2 KISHI" ogohlantirishi chiqadi (10-me'yorga qarang). 35 dan yuqorisi 16 mm LDSP uchun taxminan 3,1 m² material degani — bu 2750×1830 listning 62% i, ya'ni bir pochkada amalda bitta shkafning yarmi.
 
@@ -114,7 +120,7 @@ Bundan tashqari `packGroupGen()` da konsolidatsiya chegarasi (`S.maxKg * 0.62`) 
 **Nima:** O'rta qavat detallari tag detal gabaritidan har tomonga chiqishi mumkin bo'lgan masofa. Jami kenglik qo'shimchasi — 2× (bir tomonga 20 → konvert 40 mm kengroq).
 
 **Qayerda ishlaydi:** `src/js/04-packer.js` → `layoutPack()` boshida:
-`off = allowOvh ? S.ovh : 0`, so'ng `envL = base.L + 2*off`, `envW = base.W + 2*off`. Bu **konvert** `makeLayer()` ga uzatiladi, ammo qavat markazlashi (`centerLayer()`) va to'ldirish foizi (`fill`) baribir **tag detal yuzasiga** nisbatan hisoblanadi. Natijada koordinata `x`/`y` manfiy bo'lishi mumkin, chegara `[-off, base.L+off]`. Chizishda: `src/js/07-render2d.js` chiqish chegarasi punktiri. Interfeysda joriy qiymat `$("lgOv")` da ko'rsatiladi.
+`off = allowOvh ? min(S.ovh, S.baseInset) : 0`, so'ng `envL = base.L + 2*off`, `envW = base.W + 2*off`. Chiqish **paddon qamrovi bilan qisilgan** (19-me'yor): tag chetdan `baseInset` mm dan ko'p ichkarida qololmaydi, demak qavat ham undan ko'p chiqolmaydi. Bu **konvert** `makeLayer()` ga uzatiladi, ammo qavat markazlashi (`centerLayer()`) va to'ldirish foizi (`fill`) baribir **tag detal yuzasiga** nisbatan hisoblanadi. Natijada koordinata `x`/`y` manfiy bo'lishi mumkin, chegara `[-off, base.L+off]`. Chizishda: `src/js/07-render2d.js` chiqish chegarasi punktiri. Interfeysda joriy qiymat `$("lgOv")` da ko'rsatiladi.
 
 **Nega shunday:** 20 mm — LDSP detalning bir qalinligidan (16 mm) bir oz katta va qog'ozga o'rashda burma yo'qotadigan zaxiradan kichik. Geometrik ma'nosi: chiqqan qirra tag detal ustida osilib turadi, lekin pochka yon tomondan urilganda qirra sinishga yetadigan yelka hosil qilmaydi. Amaliy asos: 20 mm chiqish bilan tor detallar (masalan 190×550 polkalar) tagning to'liq enini qoplab, `minFill` 85% shartidan o'tadi — chiqishsiz ular 78–82% da qolib qavat umuman yaratilmasdi.
 
@@ -147,7 +153,7 @@ Bundan tashqari `packGroupGen()` da konsolidatsiya chegarasi (`S.maxKg * 0.62`) 
 **Nima:** Detalning **uzun tomoni** (`it.L`) uchun yuqori chegara. Undan uzun detal oddiy pochkaga umuman kirmaydi — u alohida **noodatiy** pochkaga ajratiladi.
 
 **Qayerda ishlaydi:** `src/js/04-packer.js`, ikki bosqichda:
-- `packAllGen()` boshida, pochkalashdan oldin: `if (it.L > S.maxLen || it.kg > S.maxKg)` → `oddPre` ga tushadi, sababi `it.why = it.L + " mm > " + S.maxLen + " mm"` ko'rinishida yoziladi va interfeysda ko'rsatiladi;
+- `packAllGen()` boshida, pochkalashdan oldin. Filtr **besh shartli** va birinchi mos kelgani sababni belgilaydi: `it.L > S.maxLen`, `it.W > S.baseWMax`, `it.kg > S.maxKg`, `S.minPartW && it.W < S.minPartW`, `S.minPartL && it.L < S.minPartL`. Detal `oddPre` ga tushadi, `it.why` ga o'qiladigan sabab (`"2188 mm > 2100 mm (tag bo'yi)"`) va `it.nst = true` yoziladi;
 - `greedyPackGen()` eligibility sharti — bu bosqichda qolgan detal tag bo'lishi uchun ham qayta tekshiriladi.
 
 `src/js/10-ui.js` → `renderParts()` bunday detalga "noodatiy · N mm" tegini qo'yadi.
@@ -162,19 +168,42 @@ Bundan tashqari `packGroupGen()` da konsolidatsiya chegarasi (`S.maxKg * 0.62`) 
 
 ---
 
-### 5. Tag/ust min. qalinlik — 0 mm (`S.minBaseT`)
+### 5. Tag/qopqoq min. qalinlik — 16 mm (`S.minBaseT`)
 
-**Nima:** Tag detal qalinligi (`it.T`) uchun quyi chegara. Standart 0 — cheklov yo'q, ya'ni 3 mm XDF ham tag bo'la oladi.
+**Nima:** Tag, qopqoq va tom detalining qalinligi (`it.T`) uchun quyi chegara.
+Standart **16 mm** — ya'ni 3 mm XDF orqa devor na tag, na tom bo'la oladi.
 
-**Qayerda ishlaydi:** `src/js/04-packer.js` → `greedyPackGen()` eligibility sharti: `it.T >= S.minBaseT`. Boshqa hech qayerda tekshirilmaydi.
+**Qayerda ishlaydi:** to'rt joyda, hammasi `src/js/04-packer.js` da:
 
-**Nega shunday:** Standart 0 qo'yilgan, chunki `byThick` (11) yoqilgan holatda 3 mm XDF pochkasida **hamma** detal 3 mm bo'ladi — u yerda tag ham majburan 3 mm. Cheklov qo'yilsa bunday guruh umuman pochkalanmay qolardi. Ya'ni bu me'yor faqat `byThick` o'chirilgan (aralash qalinlik) rejim uchun mo'ljallangan zaxira himoya: aralash pochkada yupqa XDF tagda qolib, ustiga 16 mm LDSP qavatlari tushishining oldini oladi.
+- `greedyPackGen()` — tag nomzodi filtri: `it.T >= minT`;
+- `thickOKon(base, t)` — **yupqa tag ustiga qalin detal qo'yilmaydi**: 3 mm
+  paddon ustiga 16 mm bok tushsa tag ezilib pochka buklanadi;
+- `makeLid()` — qopqoq nomzodlari `r.t >= minT` bo'yicha filtrlanadi;
+- `tomOK()` — eng ustki qavatning har detali `minBaseT` dan qalin bo'lishi shart.
 
-**Oshirsa nima bo'ladi (masalan 10 qo'yilsa):** Yupqa material hech qachon tag bo'lmaydi. `byThick` o'chirilgan aralash rejimda bu foydali. Lekin `byThick` yoqilgan holatda 3 mm XDF guruhida **birorta ham** detal eligibility dan o'tmaydi va `greedyPackGen()` `if (!elig.length){ odd = odd.concat(rem); ... }` shoxiga tushib, butun XDF guruhini noodatiy pochkalarga chiqaradi. Bu eng ko'p uchraydigan noto'g'ri sozlash.
+Bundan tashqari `10-ui.js` → `moveDetail()` qo'lda ko'chirishda ham shu
+chegarani tekshiradi.
 
-**Kamaytirsa nima bo'ladi:** 0 dan past qiymat ma'nosiz — `readConf()` bo'sh/0 ni 0 ga tenglashtiradi.
+**ZAXIRA YO'LI.** Guruhda `minBaseT` ga yetadigan birorta detal bo'lmasa
+(masalan butun guruh 3 mm orqa devor) talab **o'sha guruhning eng qalin
+detaliga** tushiriladi: `var minT = Math.min(S.minBaseT || 0, maxT)`. Aks
+holda butun guruh nostandart oqimga o'tib ketardi — bu qoidaning maqsadi
+emas. Qalinlik talabi tomdan ham shunday holatda tushiriladi.
 
-**Bog'liqligi:** `byThick` (11) — bevosita: `byThick` yoqilgan bo'lsa bu me'yorni 0 da qoldirish kerak. Interfeysdagi yorliq "Tag/**ust** min. qalinlik" deydi, lekin kodda `makeLid()` qalinlikni tekshirmaydi — amalda faqat tagga ta'sir qiladi (pastdagi "Integratsiya eslatmalari" ga qarang).
+**Nega 16 mm:** 3 mm HDF/XDF tagda butun pochkani ko'tarolmaydi va tasma
+tortilganda buklanadi; tomda esa ustiga terilgan pochkaning og'irligi ostida
+sinadi. 16 mm — LDSP korpus plitasining standart qalinligi.
+
+**Oshirsa nima bo'ladi (masalan 18):** 16 mm plita ham tag bo'lolmaydi.
+Deyarli har buyurtmada bu butun guruhni zaxira yo'liga tushiradi — natija
+o'zgarmaydi, lekin qoida ma'nosini yo'qotadi.
+
+**Kamaytirsa nima bo'ladi (0):** eski xatti-harakat qaytadi — yupqa detal tag
+va tom bo'la oladi. `byThick` o'chirilgan aralash rejimda bu xavfli.
+
+**Bog'liqligi:** `byThick` (11) — yoqilgan holatda zaxira yo'li deyarli har
+doim ishlaydi; `lidFill` (7), `lidN` (8), `lidBal` (21) — birgalikda TOM
+shartini tashkil qiladi.
 
 ---
 
@@ -183,7 +212,8 @@ Bundan tashqari `packGroupGen()` da konsolidatsiya chegarasi (`S.maxKg * 0.62`) 
 **Nima:** Har bir o'rta qavat tag detal yuzasining kamida shuncha foizini qoplashi shart. Qoplamasa qavat butunlay bekor qilinadi va pochka shu yerda yopiladi.
 
 **Qayerda ishlaydi:** `src/js/04-packer.js` → `layoutPack()` ning asosiy qavat siklida:
-`if (L.fill < S.minFill/100){ L.items.forEach(function(q){ q.it.used=false; }); break; }`
+`if (Lc.fill < S.minFill/100 || !coverOK(...) || !heightOK(...)){ drop(Lc); continue; }`
+Diqqat: sikl `break` **qilmaydi** — har qalinlik uchun alohida nomzod quriladi (`poolThicks`) va faqat mos kelgani qabul qilinadi; birorta nomzod qolmagandagina qavat sikli to'xtaydi.
 `L.fill` `makeLayer()` da `cov / area` sifatida hisoblanadi, bu yerda `area = baseL * baseW` — ya'ni **tag detal yuzasi**, konvert emas. Shu sababli chiqish yoqilgan bo'lsa `fill` 100% dan oshishi mumkin; `packAllGen()` statistikada uni `Math.min(1.3, L.fill)` bilan cheklaydi, `readConf()` esa kiritishga 130 gacha ruxsat beradi.
 
 **Nega shunday:** Bo'shliq — pochkaning eng katta dushmani. 15% bo'sh joyda ustidagi qavat egiladi, tashishda detallar siljib bir-biriga uriladi, qirralar shikastlanadi. 85% — amaliyotdan olingan qiymat: undan yuqori talab qavat yaratilishini juda qiyinlashtiradi (`makeLayer()` javon/strip usuli bilan), pastroq talab esa ko'zga ko'rinadigan bo'shliq qoldiradi. namuna sinov loyihasida amalda o'rtacha 97–99% ga erishilgan, ya'ni 85 chegarasi kamdan-kam ishga tushadi — u faqat oxirgi, yarim bo'sh qavatni kesib tashlaydi.
@@ -194,9 +224,13 @@ Bundan tashqari `packGroupGen()` da konsolidatsiya chegarasi (`S.maxKg * 0.62`) 
 
 **Bog'liqligi:** `ovh` (2) — chiqish `fill` ni oshiradi, shuning uchun ikkalasi birga ishlaydi; `lidFill` (7) — qopqoq uchun alohida, pastroq chegara; `maxLayers` (13) — ikkalasi qavat siklini to'xtatadigan ikki mustaqil sabab.
 
-**Istisno — QUYRUQ qavat (v13).** `minFill` ning mazmuni bitta jumlada: *ustidagi qavat egilmasin*. Guruhning oxirgi 2–4 detali bu shartdan o'tolmay o'ziga alohida yarim bo'sh pochka ochib yuborardi (namunada har modulning 3 mm orqa devorlari 12 kg + 3 kg bo'lib ikkiga bo'linardi). Shuning uchun `absorbTails()` (`04-packer.js` → 3.6.7.1) bunday qoldiqni tayyor pochkaning **eng ustiga** qo'shadi va o'sha bitta qavatga `minFill` qo'llanmaydi — quyruqning ustida hech narsa yo'q, demak egiladigan narsa ham yo'q. Quyruq qopqoqning ustiga tushadi, ya'ni tekis yuzada yotadi; qog'oz va ikki tasma uni joyida ushlab turadi. Massa, qavat va konvert chegaralari esa o'zgarishsiz amal qiladi.
+**Istisno — QUYRUQ qavat (v13).** `minFill` ning mazmuni bitta jumlada: *ustidagi qavat egilmasin*. Guruhning oxirgi 2–4 detali bu shartdan o'tolmay o'ziga alohida yarim bo'sh pochka ochib yuborardi (namunada har modulning 3 mm orqa devorlari 12 kg + 3 kg bo'lib ikkiga bo'linardi). Shuning uchun `absorbTails()` (`04-packer.js` → 3.6.7.1) bunday qoldiqni tayyor pochkaga qo'shadi va o'sha qavat(lar)ga `minFill` qo'llanmaydi.
 
-Auditda quyruq qavati `TOLDIRISH` ogohlantirishini bermaydi (`05-audit.js` → `!L.tail`) — bu qoidaning o'zi, xatoni yashirish emas. Tashqi belgisi ko'rinib turadi: 2D rejada qavat sarlavhasi *«quyruq (eng ust)»*, qadam matnida esa *«quyruq — hammasining ustiga»* deb yoziladi.
+**Quyruq qayerga tushadi.** v13 da u pochkaning eng ustiga qo'yilardi — «ustida hech narsa yo'q, demak egiladigan narsa ham yo'q» degan asos bilan. Asos noto'g'ri edi: ustida **keyingi pochka** turadi. v15 dan beri quyruq **qopqoq ostiga** suqiladi, v20 dan esa o'rni to'shak shartiga qarab tanlanadi (`tailInsertAt`): quyruq zich bo'lsa tom ostiga, siyrak bo'lsa bir qavat pastga, hech qaysisi bo'lmasa umuman singdirilmaydi.
+
+`minFill` o'rnini uch boshqa o'lchov bosadi va ular quyruqni qabul qilishda tekshiriladi: `tailGap` (31), `tailSpan` (32) va `lidBed` (34). Massa, balandlik, qavat va konvert chegaralari o'zgarishsiz amal qiladi.
+
+Auditda quyruq qavati `TOLDIRISH` ogohlantirishini bermaydi (`05-audit.js` → `!L.tail`) — bu qoidaning o'zi, xatoni yashirish emas. Tashqi belgisi ko'rinib turadi: 2D rejada qavat sarlavhasi *«quyruq (qopqoq ostida)»*, qadam matnida esa *«quyruq — qopqoq ostiga»* deb yoziladi.
 
 ---
 
@@ -243,7 +277,7 @@ Auditda quyruq qavati `TOLDIRISH` ogohlantirishini bermaydi (`05-audit.js` → `
 
 **Nima:** Qopqoq nechta detaldan tashkil topishi mumkin. Algoritm avval **1 ta yaxlit** detal bilan urinadi, topolmasa 2, keyin 3.
 
-**Qayerda ishlaydi:** `src/js/04-packer.js` → `makeLid()` ning tashqi sikli: `for (var n = 1; n <= S.lidN; n++)`. Har `n` uchun to'rtta saralash tartibi (`ORD`) sinaladi va eng zichi olinadi; birinchi muvaffaqiyatli `n` da sikl to'xtaydi — ya'ni **eng kam detalli variant g'olib**. `n === 1` bo'lganda qavatga `L.whole = true` belgisi qo'yiladi. `readConf()` kiritishni 1…4 oralig'ida cheklaydi.
+**Qayerda ishlaydi:** `src/js/04-packer.js` → `makeLid()` ning tashqi sikli: `for (var n = 1; n <= S.lidN; n++)`. Har `n` uchun to'rtta saralash tartibi (`ORD`) va pooldagi har qalinlik sinaladi, eng zichi olinadi; birinchi muvaffaqiyatli `n` da sikl to'xtaydi — ya'ni **eng kam detalli variant g'olib**. Nomzodlar teng sharoitda solishtiriladi: har urinishdan keyin pool bo'shatiladi va faqat g'olibning detallari belgilanadi. `readConf()` kiritishni 1…4 oralig'ida cheklaydi.
 
 **Nega shunday:** Yaxlit bitta detalli qopqoq — ideal: choksiz, tekis, ustiga chek yopishtirish qulay, qog'ozga o'rashda burma bermaydi. Lekin har pochkada tagga o'lchamdosh yaxlit detal topilavermaydi. 2 detal — hali ham qabul qilsa bo'ladigan variant (bitta chok). 3 — amaliy chegara: undan ko'p bo'lsa ustki yuza mozaikaga aylanadi, chekni qayerga yopishtirishni bilib bo'lmaydi va choklar orqali chang o'tadi. Aniq son amaliyotdan olingan qiymat.
 
@@ -260,7 +294,8 @@ Auditda quyruq qavati `TOLDIRISH` ogohlantirishini bermaydi (`05-audit.js` → `
 **Nima:** Qopqoq tag detal gabaritidan har o'lcham bo'yicha shuncha millimetrgacha kichik bo'lishi mumkin. Undan kichik bo'lsa qopqoq deb qabul qilinmaydi.
 
 **Qayerda ishlaydi:** `src/js/04-packer.js` → `makeLid()` da qabul sharti:
-`var ok = (base.L - L.bb.L) <= S.lidTol && (base.W - L.bb.W) <= S.lidTol && L.fill >= S.lidFill/100;`
+`var ok = L.items.length && (base.L - L.bb.L) <= S.lidTol && (base.W - L.bb.W) <= S.lidTol && lidOK(L, base, 0);`
+Uchinchi shart — to'liq TOM qoidasi (`lidOK` = `tomOK`): yuza, detal soni, ulush muvozanati, gabarit va qalinlik birdan tekshiriladi.
 `L.bb` — `bboxOf()` qaytargan qavat gabariti. Diqqat: `makeLid()` `makeLayer()` ni `off = 0` bilan chaqiradi, ya'ni **qopqoq hech qachon tagdan chiqmaydi** — bu me'yor faqat "kichik bo'lish" tomonini boshqaradi.
 
 **Nega shunday:** `lidFill` (yuza foizi) va `lidTol` (chiziqli o'lcham) bir-birini to'ldiradi. Yuza bo'yicha 80% ni yopgan qopqoq shakli noto'g'ri bo'lishi mumkin: masalan tag 1800×500 bo'lsa, 1440×500 detal 80% ni yopadi, lekin uzunligi bo'yicha 360 mm kalta — pochkaning bir uchi ochiq qoladi. `lidTol` aynan shu holatni to'sadi. 100 mm — tag chekkasida qolgan ochiq qism ko'zga tashlanmaydigan va qog'oz o'rash bilan yopiladigan maksimal masofa. Amaliyotdan olingan qiymat.
@@ -307,11 +342,12 @@ Tizim ikkovining yuqorisini (25 kg) ogohlantirish chegarasi qilib olgan, chunki 
 
 **Nima:** Yoqilgan bo'lsa turli qalinlikdagi detallar hech qachon bitta pochkaga tushmaydi: 16 mm alohida, 3 mm alohida.
 
-**Qayerda ishlaydi:** `src/js/04-packer.js` → `packAllGen()`, ikki joyda:
-- Oddiy detallarni guruhlashda kalitning bir qismi sifatida:
-  `var k = (rule.prod ? it.prodCode : "*") + "/" + (rule.mat ? it.matId : "*") + "/" + (S.byThick ? it.T : "*") + "/" + (...klass...);`
-  Har guruh mustaqil `packGroupGen()` ga beriladi.
-- Noodatiy detallarni bucketlarga yig'ishda: `var k = (S.byThick ? String(it.T) : "*") + "/" + (...klass...);`
+**Qayerda ishlaydi:** `src/js/04-packer.js` → `packKey()` — buyurtmani guruhlarga bo'ladigan yagona funksiya:
+`mod + "/" + (rule.mat ? it.matId : "*") + "/" + (S.byThick ? thickKey(it.T) : "*") + "/" + clsKeyOf(it.cls)`
+bu yerda `mod = rule.prod ? (modGroupOf(it.unit) || it.unit) : "*"`.
+Har guruh mustaqil `packGroupGen()` ga beriladi. Nostandart oqim ham shu kalitdan foydalanadi (`oddPackGen`), faqat oldiga oqim belgisi qo'shiladi.
+
+Diqqat: qalinlik kalitga `thickKey()` orqali tushadi — **qalinlik matritsasi** (26) da belgilangan qalinlik asosiy qalinlikning kalitini oladi, ya'ni bitta pochkaga tushadi (lekin alohida qavat bo'lib).
 
 **Nega shunday:** Bu tizimning **eng birinchi qoidasi** va u geometriyadan kelib chiqadi. Bir qavatda 16 mm va 3 mm detal yonma-yon tursa, ustidagi qavat 13 mm bo'shliq ustida osilib qoladi: yoki egiladi, yoki 3 mm XDF ni bosib sindiradi. Qavat balandligi `makeLayer()` da `h = max(it.T)` sifatida hisoblanadi — ya'ni model qavatni **bir tekis qalinlikda** deb qabul qiladi. Aralash qalinlikda bu model to'g'ri bo'lmay qoladi, 3D ko'rinish ham, real pochka ham noto'g'ri chiqadi. Amaliy jihatdan: yupqa XDF orqa devorlari odatda alohida, tekis dasta qilib beriladi — bu tsex amaliyoti ham.
 
@@ -319,7 +355,7 @@ Tizim ikkovining yuqorisini (25 kg) ogohlantirish chegarasi qilib olgan, chunki 
 
 **Yoqilganda:** Standart va tavsiya etiladigan holat. namuna sinov loyihasida 3 material, 2 xil qalinlik — hech qanday aralashish yo'q. Audit ham shu holatni tekshiradi: `05-audit.js` → `auditPacks()` da `byThick` yoqilgan bo'lsa qavat detali tag detal bilan bir xil qalinlikda emasligi `QALINLIK` xatosini beradi.
 
-**Bog'liqligi:** `minBaseT` (5) — o'chirilganda majburiy juftlik; `S.sepCls` (klass ajratish) va `S.rules` (B2C/B2B) — bir xil guruhlash kalitida ishlaydi; `tries` (14) — guruhlar ko'paygani sari har urinish qimmatroq bo'ladi.
+**Bog'liqligi:** `minBaseT` (5) — o'chirilganda majburiy juftlik; `S.sepCls` / `S.clsGroups` (klass ajratish) va `S.split` (modul va material o'qlari) — bir xil guruhlash kalitida ishlaydi; `thickMix` (26) — qalinlik kalitini o'zgartiradi; `tries` (14) — guruhlar ko'paygani sari har urinish qimmatroq bo'ladi.
 
 ---
 
@@ -465,13 +501,13 @@ detal qalinligi ≥ minBaseT
 | Yuza | `tag_yuzasi / gabarit_yuzasi ≥ baseCover/100` |
 | Qochish | `(gabarit − tag) / 2 ≤ baseInset` — har ikki o'q bo'yicha |
 
-**Qayerda ishlaydi:** `04-packer.js` → `layoutPack()` ichidagi `coverOK()`; har qavat qabul qilinishidan oldin. Chiqish konverti ham shundan kelib chiqadi: `off = min(ovh, baseInset)`. Quyruq qavati uchun `tailCoverOK()` xuddi shu tekshiruvni takrorlaydi.
+**Qayerda ishlaydi:** `04-packer.js` → `coverOK()`; har qavat qabul qilinishidan oldin. Chiqish konverti ham shundan kelib chiqadi: `off = min(ovh, baseInset)`. Quyruq qavati ham AYNAN shu funksiyadan oʻtadi — ilgari u yerda `tailCoverOK()` degan ikkinchi nusxa bor edi.
 
 **Nega ikkalasi:** Foiz umumiy qamrovni ushlaydi, mm esa bitta yomon tomonni. Uzun pochkada 5 % yuza ham 60 mm bo'lishi mumkin — qirra o'sha yerda osilib qoladi va birinchi bo'lib sinadi. Tor pochkada esa aksincha: 20 mm chiqish yuzaning 12 % ini yeydi.
 
 **Oshirsa nima bo'ladi:** 100 % da chiqish umuman qolmaydi — pochka qat'iy to'g'ri burchakli bo'ladi, lekin qavatlar `minFill` dan o'tolmay pochka soni oshadi. Namuna buyurtmada 90 % → 100 % o'tish **52 → 59 pochka** beradi.
 
-**Kamaytirsa nima bo'ladi:** Tor tagli pochkalarda chiqish qaytadi, zichlik oshadi. Namunada 90 % → 80 % o'tish **52 → 50 pochka** beradi, lekin tor paddonli pochkalar ustiga boshqa pochka terib bo'lmaydi.
+**Kamaytirsa nima bo'ladi:** Tor tagli pochkalarda chiqish qaytadi. Namuna buyurtmada 90 % → 80 % o'tish natijani **umuman o'zgartirmaydi** (56 pochka) — bu buyurtmada chegara shu darajada qisib turmaydi. Oshirish esa darrov ko'rinadi: 95 % — 58 pochka, 100 % — 64.
 
 **Namuna buyurtmadagi jadval:**
 
@@ -497,20 +533,41 @@ detal qalinligi ≥ minBaseT
 
 ---
 
-### 21. Qopqoq muvozanati — `lidBal` 80 %
+### 21. Tom ulushi, min % — `lidBal` 40 %
 
-**Nima:** Ko'p detalli qopqoqda **eng kichik detal teng ulushning kamida `lidBal` % ini** qoplashi kerak.
+**Nima:** Ko'p detalli tomda **eng kichik detalning ulushi** shundan kam
+bo'lmasin. Ulush — detal yuzasining qavat yuzasidagi hissasi.
 
 ```
-n = 2  →  teng ulush 50 %,  80 % dan  →  ≥ 40 %
-n = 3  →  teng ulush 33 %,  80 % dan  →  ≥ 27 %
+minUlush(n) = lidBal % − 10 % × (n − 2)
+
+n = 2  →  40 %      60/40 ✓   50/50 ✓   65/35 ✗   88/12 ✗
+n = 3  →  30 %      34/33/33 ✓   55/25/20 ✗
+n = 4  →  20 %
 ```
 
-**Qayerda ishlaydi:** `04-packer.js` → `lidBalOK()`, `makeLid()` da qabul shartiga kiradi.
+Ikki nuqta buyurtmachi tomonidan berilgan (*«2 detal — 60/40 dan yomon
+bo'lmasin, 3 detal — 30/30/30 atrofida»*) va ular bitta chiziqda yotadi;
+formula shundan chiqarilgan.
 
-**Nega shunday:** Buyurtmachi talabi aynan shu shaklda berilgan: *«qopqoq 2 yoki 3 detaldan bo'lsa, ular 60×40 yoki 50×50 bo'lishi kerak»* — ya'ni bo'laklar deyarli teng. 88/12 kabi bo'linishda mayda tasma chetda qoladi: qog'oz o'ralganda o'sha yerda burma hosil bo'ladi, tasma tortilganda tasma detalni sindiradi, ustiga boshqa pochka terilsa esa yuk bir nuqtaga tushadi.
+**Qayerda ishlaydi:** `04-packer.js` → `lidBalOK()`. U `tomOK()` ichida
+chaqiriladi, ya'ni qoida **eng ustki qavatning hammasiga** tegishli —
+`makeLid()` yasagan haqiqiy qopqoqqa ham, shunchaki ko'tarilgan qavatga ham.
 
-**Muhim:** Bu qoida faqat `makeLid()` yasagan **haqiqiy qopqoqqa** tegishli. Agar qopqoq topilmasa, eng ustki qavat shunchaki qopqoq deb belgilanadi va `L.impl = true` bayrog'ini oladi — unga qopqoq qoidalari qo'llanmagan va buni tashxisdan ko'rish mumkin.
+**Nega shunday:** 88/12 kabi bo'linishda mayda tasma chetda qoladi: qog'oz
+o'ralganda o'sha yerda burma hosil bo'ladi, tasma tortilganda detalni
+sindiradi, ustiga boshqa pochka terilsa yuk bir nuqtaga to'planadi.
+
+**v16 gacha bu qoida faqat `makeLid()` ga tegishli edi.** Eng ustki qavat
+shunchaki «qopqoq» deb ko'tarilganda muvozanat tekshirilmasdan qolardi —
+natijada 96 % yopilgan, lekin 958×510 va 511×84 detallardan iborat tom
+chiqib ketardi: yuza yopiq, og'irlik esa notekis. Endi istisno yo'q.
+`L.impl` bayrog'i saqlanadi, lekin u endi faqat **tashxis** uchun: qopqoq
+qanday paydo bo'lganini ko'rsatadi, qoidani o'zgartirmaydi.
+
+**O'lchangan** (namuna buyurtma): 0 — 58 pochka, **40 % — 56**, 60 % — 57,
+80 % — 57. Ya'ni chegarani ko'tarish ham, butunlay olib tashlash ham
+natijani yomonlashtiradi.
 
 ---
 
@@ -531,7 +588,10 @@ n = 3  →  teng ulush 33 %,  80 % dan  →  ≥ 27 %
 
 **`oddTol` = 300 mm:** «O'lchami yaqin» chegarasi. Bog'ga qo'shiladigan detalning bo'yi ham, eni ham bog'ning birinchi detalidan shuncha mm dan ko'p farq qilmasligi kerak. Kattalashtirsa bog' kamayadi, lekin bog' ichida turli o'lchamlar aralashadi va u fizik jihatdan bog' bo'lmay qoladi.
 
-**Namuna buyurtmada:** `oddTol` 300 → 2000 o'tish **52 → 50 pochka** beradi (7 bog' → 4 bog').
+**Namuna buyurtmada:** `oddTol` ni 100 dan 2000 gacha o'zgartirish natijani
+**umuman o'zgartirmaydi** (56 pochka, 3 bog') — bu buyurtmadagi nostandart
+detallar shundoq ham bir-biriga yaqin. Chegara ta'siri real buyurtmalarda
+ko'rinadi: korpusda 881 ta bog' bor.
 
 ---
 
@@ -578,7 +638,7 @@ Ya'ni «qo'shish» degani: **bitta pochkada, alohida qavatlarda**. 3 mm orqa dev
 
 1-bosqich faqat 0-bosqichda hech qanday nishon topilmagandagina ishga tushadi.
 
-Ilgari filtr darhol `packKgAbs` ni ruxsat berardi va eng zich joylashuv g'olib bo'lardi. Natijada qoldiq 20 kg li pochkaga (35 ichida qolar edi) emas, 33 kg li pochkaga tushib uni 41 kg ga ko'tarardi. Namunada **45 pochkadan 11 tasi (24 %)** limitdan og'ir chiqardi; tuzatilgandan keyin **47 dan 4 tasi (8,5 %)**, eng og'iri 45,1 → 38,5 kg.
+Ilgari filtr darhol `packKgAbs` ni ruxsat berardi va eng zich joylashuv g'olib bo'lardi. Natijada qoldiq 20 kg li pochkaga (35 ichida qolar edi) emas, 33 kg li pochkaga tushib uni 41 kg ga ko'tarardi — zaxira oddiy holatga aylanib qolgandi. Endi u **oxirgi chora**: avval chegara ichida joy qidiriladi, faqat topilmasa zaxira ochiladi va shunda ham **eng kam oshadigan** nishon tanlanadi.
 
 **Zaxira nostandart limit ustiga qo'shilmaydi.** Ilgari nostandart pochka 40 + 10 = 50 kg gacha ko'tarilardi — bu ikki kishi uchun ham og'ir va buyurtmachi bunday narsani so'ramagan edi. Mutlaq shift bitta: 35 + 10 = 45 kg.
 
@@ -586,9 +646,18 @@ Ilgari filtr darhol `packKgAbs` ni ruxsat berardi va eng zich joylashuv g'olib b
 
 **Nega 10 kg:** Qoldiq detal odatda 2–8 kg. 10 kg zaxira bitta qoldiqni to'liq qamrab oladi va shu bilan bir vaqtda 35 → 45 kg oralig'ida qoladi — bu ISO 11228-1 bo'yicha **ikki kishilik** ish, ya'ni chekda `«2 KISHI»` yozuvi allaqachon chiqib turadi (`oneMan` = 25 kg).
 
-**Oshirsa nima bo'ladi:** Pochka soni yana kamayadi, lekin og'irlik oshadi. Namunada 10 → 15 kg o'tish 44 → 43 pochka beradi, eng og'iri esa 48,5 kg ga chiqadi — bu ikki kishi uchun ham og'ir.
+**O'lchangan** (namuna buyurtma):
 
-**Kamaytirsa nima bo'ladi:** 0 da singdirish faqat limit ichida ishlaydi — namunada 44 o'rniga 52 pochka chiqadi va yarim bo'sh pochkalar qaytadi.
+| `tailKgOver` | Pochka | O'rtacha | Zaxiradan foydalangan |
+|---|---|---|---|
+| 0 (o'chiq) | 62 | 21,3 kg | 0 |
+| 5 kg | 58 | 22,8 kg | 4 |
+| **10 kg** | **56** | **23,6 kg** | **6** |
+| 20 kg | 56 | 23,6 kg | 4 |
+
+**Oshirsa nima bo'ladi:** 10 dan yuqorisi namunada pochka sonini kamaytirmaydi (56 da to'xtaydi), lekin ayrim pochkalarni og'irlashtiradi — bu ikki kishi uchun ham noqulay.
+
+**Kamaytirsa nima bo'ladi:** 0 da singdirish faqat limit ichida ishlaydi — namunada 56 o'rniga **62 pochka** chiqadi va yarim bo'sh pochkalar qaytadi.
 
 **Bog'liqligi:** `maxKg` (1) — zaxira uning ustiga qo'shiladi; `oneMan` (10) — «2 KISHI» chegarasi; `oddKg` (22) — nostandart pochkada asos boshqa, zaxira ular ustiga ham qo'shiladi.
 
@@ -647,13 +716,20 @@ Nostandart oqimga ikki xil detal keladi va ular aralashmasligi shart:
 
 **Qayerda:** `oddPackGen()` guruhlash kalitiga `NS/` yoki `ST/` prefiksini qo'shadi; `absorbTails(out, true)` yakuniy bosqichida `!p.nst === !w.nst` sharti tekshiriladi.
 
-**Nega:** v16 da bu chegara yo'q edi — yakuniy singdirish ikkala oqimni aralashtirib yuborardi va uzun-tor detallar bog'iga oddiy polka tushib qolardi. Ajratishning narxi 205 fayllik korpusda **3898 → 3999 pochka (+2,6 %)**, audit toza qoladi.
+**Nega:** v16 da bu chegara yo'q edi — yakuniy singdirish ikkala oqimni aralashtirib yuborardi va uzun-tor detallar bog'iga oddiy polka tushib qolardi. Ajratishning narxi o'lchangan edi: 205 fayllik korpusda pochka soni ~2,6 % ga oshdi, audit esa toza qoldi. Joriy korpus natijasi — **4892 pochka, audit xatosi 0** (`tests\corpus.ps1`).
 
 **Diqqat:** prefiks FAQAT guruhlash uchun ishlatiladi; pochkaga toza `packKey()` yoziladi. Aks holda yakuniy singdirish kalitni standart pochkaniki bilan solishtira olmaydi va standart qoldiq o'z pochkasini topolmay qoladi.
 
 ---
 
 ### 31. Quyruqda maks. bo'shliq — 300 mm (`S.tailGap`)
+
+> **31–34 birga o'qiladi.** Ular bitta bo'shliqni to'rt tomondan yopadi:
+> quyruq `minFill` dan ozod (6-me'yor), demak uning sifatini boshqa narsa
+> o'lchashi kerak. 31 — detallar orasidagi **teshik**, 32 — qavatning umumiy
+> **kengligi**, 33 — **har tom detalining** ostidagi qavatga tegishi,
+> 34 — tom ostidagi qavatning **o'zi** to'laligi. Biri ikkinchisining o'rnini
+> bosmaydi: har biri boshqa nosozlikni ushlaydi.
 
 **Nima:** Quyruq qavati detallari orasida (va tag chetigacha) qolgan eng katta **tayanchsiz oraliq**. Ustidagi qavat aynan shu oraliq ustidan o'tadi.
 
@@ -674,12 +750,128 @@ Foiz ikkalasini ajratmaydi, oraliq ajratadi.
 
 | `tailGap` | Pochka | O'rtacha | Quyruq | Eng katta bo'shliq |
 |---|---|---|---|---|
-| o'chiq | 47 | 28,1 kg | 16 | **681 mm** |
-| 500 | 48 | 27,5 kg | 15 | 456 mm |
-| **300** | **50** | **26,4 kg** | **14** | **274 mm** |
-| 200 | 53 | 24,9 kg | 10 | 174 mm |
+| o'chiq · 500 · **300** · 200 | **56** | **23,6 kg** | 6 | 187 mm |
+| 150 · 100 | 57 | 23,2 kg | 5 | 64 mm |
+| 50 | 58 | 22,8 kg | 4 | 16 mm |
+
+Namuna buyurtmada eng katta quyruq bo'shlig'i **187 mm**, ya'ni 200 mm dan
+yuqori chegara unga tegmaydi. Chegara real buyurtmalar uchun qo'yilgan —
+namuna undan qiyinroq holatni bermaydi.
 
 **Bog'liqligi:** `minFill` (6) — quyruq undan ozod, shu chegara uning o'rnini bosadi; `tailKgOver` (27) — ikkovi birga quyruqning qancha ishlashini belgilaydi.
+
+---
+
+### 32. Quyruq tayanchi, min % — 70 (`S.tailSpan`)
+
+**Nima:** Singdirilgan qoldiq qavati pochkani **har o'q bo'yicha** kamida shuncha
+foiz qoplashi shart. Ikki o'q alohida o'lchanadi, kichigi olinadi.
+
+**Qayerda:** `04-packer.js` → `layerSpan()`, `tailFit()` ichida `tailGap` bilan
+yonma-yon.
+
+**Nima uchun `tailGap` yetarli emas.** Ular boshqa-boshqa nosozlikni ushlaydi:
+
+- `tailGap` — detallar orasidagi eng katta **tayanchsiz oraliq**. Ikkita keng
+  detal bir chetga yig'ilib o'rtada teshik qoldirsa, shu o'lchov ushlaydi.
+- `tailSpan` — **tayanchning kengligi**. Bitta tor detal markazga qo'yilsa
+  teshik umuman yo'q (chetlardagi bo'shliqlar kichik), lekin ustidagi qopqoq
+  tor qirraga tayanadi va chayqaladi.
+
+**O'lchangan holat (sexdan).** 1910×300 li pochka, quyruq 1720×160, markazda:
+
+| O'lchov | Qiymat | Chegara | Natija |
+|---|---|---|---|
+| bo'shliq X | 102 mm | 300 mm | o'tadi |
+| bo'shliq Y | 70 mm | 300 mm | o'tadi |
+| **tayanch Y** | **53 %** | 70 % | **rad etiladi** |
+
+Namuna korpusida chegarasiz eng yomoni **17 %**: 1878×600 li pochkaga uchta
+438×100 li tasma.
+
+**Nega chetdan chiqqan qism sanalmaydi:** tagdan tashqarida tayanch yo'q, u yerda
+detal havoda turadi. Proyeksiya `[0, base.L]` va `[0, base.W]` ga qisiladi.
+
+**Nega oddiy qavatlarga kerak emas:** `fill ≥ minFill` bo'lsa qoplanish har
+ikkala o'q bo'yicha ham kamida `minFill` bo'ladi — yuza ulushi ikki o'q
+qoplanishining ko'paytmasidan katta bo'lolmaydi (`fill ≤ sx·sy ≤ min(sx,sy)`).
+Faqat quyruq foizdan ozod.
+
+**Sozlash (namuna, 291 detal):**
+
+| `tailSpan` | Pochka | O'rtacha | Eng tor tayanch |
+|---|---|---|---|
+| 0 (o'chiq) · 60 · **70** · 80 | **56** | **23,6 kg** | 80 % |
+| 90 | 57 | 23,2 kg | 91 % |
+
+`tailGap` kabi, namuna buyurtmada eng tor quyruq tayanchi 80 % — ya'ni 80 %
+gacha chegara tegmaydi. U real buyurtmalar uchun qo'yilgan qorovul.
+
+70 % tanlandi: 16 mm LDSP qopqoq eni bo'yicha 2/3 dan ko'p tayanchda yotsa
+ustiga 40 kg qo'yilganda chayqalmaydi. Bu **hisoblangan emas, tanlangan** qiymat —
+sexda sinab o'zgartiriladi.
+
+**Test:** `smoke.ps1` → «QUYRUQ TAYANCHINING KENGLIGI». O'lchovning o'zi ham
+sun'iy qavatlarda tekshiriladi: kichik o'q bo'yicha olinishi (X=100 %, Y=50 % →
+50 %), chetdan chiqqan qism sanalmasligi, ustma-ust bo'laklar ikki marta
+sanalmasligi.
+
+---
+
+### 33. Tom detali tayanchi, min % — 65 (`S.lidSupp`)
+
+**Nima:** **Har bir** tom detali o'z yuzasining kamida shuncha foizi bilan
+ostidagi qavatga tegishi shart. Ostida qavat bo'lmasa — tag detalga.
+
+**Qayerda:** `04-packer.js` → `partSupport()`, `layerSupp()`, `stackSuppOK()`,
+`tailStackOK()`. Uch joyda qo'llanadi:
+
+1. `layoutPack()` — `last.tom` shartiga kiradi (ball orqali, qat'iy rad etish emas)
+2. `absorbTails()` — quyruq nomzodi **qat'iy rad etiladi** agar u tomni tayanchsiz qoldirsa
+3. `auditPacks()` — `TOM` / `TOM_TAYANCH` ogohlantirishi
+
+**Nima uchun kerak.** Tomning yuzasi, nisbatlari va gabariti to'g'ri bo'lishi
+mumkin — va u baribir sinadi, agar ostidagi qavatga tegmasa. Sexda ko'rilgani:
+tom uch detaldan, yuzasi 98 %, nisbatlar 30/30/30 — hammasi qoida bo'yicha.
+Lekin ostidagi qavat tor: o'rtadagi detal tegadi, chetdagi ikkitasi undan
+butunlay chiqib osilib qolgan (tegish yuzasi 30 % ham emas).
+
+**Nega `tailSpan` yetarli emas.** U butun qavatning **umumiy kengligini**
+o'lchaydi. 70 % qoplagan quyruq ham tomning chetdagi detalini 0 % tayanchda
+qoldirishi mumkin — agar o'sha detal quyruq bandidan tashqarida tursa.
+
+**Nega eng yomoni olinadi, o'rtacha emas.** Uchta detalning o'rtachasi 70 %
+bo'lishi mumkin, lekin chetdagi bittasi 0 % bo'lsa u baribir sinadi. O'rtacha
+aynan shu nosozlikni yashiradi.
+
+**Geometriya.** Bir qavat ichidagi detallar bir-birining ustiga tushmaydi
+(audit `USTMA_UST` invarianti), shuning uchun kesishmalar yig'indisi =
+birlashma bilan kesishma. Qo'shimcha geometriya kerak emas.
+
+**Quyruq suqilganda butun taxlam tekshiriladi** (`tailStackOK`). Yangi tartib
+`[eski qavatlar] + Ls + [tom]` bo'lgani uchun uchta bog'lanish bor: `Ls[0]`
+ostidagiga, `Ls[i]` → `Ls[i-1]`, va tom → `Ls[oxirgi]`.
+
+> Ilgari `absorbTails` izohida «ustki qavat quyruq ustida osilib qoladi, lekin
+> ko'pi bilan bir qavat pastga egiladi» deb yozilgandi. Asos noto'g'ri edi:
+> tomning chetdagi detali quyruqdan **butunlay** chiqib, havoda osilib qolishi
+> mumkin ekan.
+
+**Sozlash (namuna, 291 detal):**
+
+| `lidSupp` | Pochka | O'rtacha | Eng yomon tom tayanchi |
+|---|---|---|---|
+| 0 (o'chiq) · 50 | 54 | 24,5 kg | 80 % |
+| **65** | **56** | **23,6 kg** | **80 %** |
+| 80 | 57 | 23,2 kg | 80 % |
+| 90 | 58 | 22,8 kg | 72 % |
+
+**Kafolat chegarasi.** 65 % da namuna buyurtmada bajarilmagan holat yo'q —
+eng yomon tayanch 80 %. Yuqoriroq qiymatda (90 %) ba'zi guruhda hech qanday
+joylashuv shartni bajara olmaydi: pochka baribir teriladi, tayanch 72 % ga
+tushadi va audit ogohlantirishi chiqadi. Jadvalning oxirgi qatori aynan
+shuni ko'rsatadi.
+Test aynan shuni qo'riqlaydi: «bajarilmagan tayanch jim qolmaydi».
 
 ---
 
@@ -730,125 +922,15 @@ faqat haqiqiy regressiyada yoki qo'lda ko'chirishdan keyin qizaradi.
 
 | `lidBed` | Pochka | O'rtacha | Eng yomon to'shak | Buzilgan |
 |---|---|---|---|---|
-| 0 (o'chiq) | 55 | 24,0 kg | 75 % | 3 / 33 |
-| **85** | **56** | **23,6 kg** | **85 %** | **0 / 33** |
+| 0 (o'chiq) · 70 | 55 | 24,0 kg | 75 % | 3 / 33 |
+| **85** · 100 | **56** | **23,6 kg** | **85 %** | **0 / 32** |
 
-UMUMIY guruhda: buzilgan 4 → 0, eng yomon to'shak 73 % → 86 %, 47 → 49 pochka.
+Kesimsiz (UMUMIY) guruhda ham o'lchangan edi: buzilgan 4 → 0, eng yomon to'shak 73 % → 86 %.
 
 **Test:** `smoke.ps1` → «TOM OSTIDAGI QAVAT (TO'SHAK)». Xato yo'lini sinash
 uchun chegarani ko'tarib bo'lmaydi (u `minFill` bilan qisiladi), shuning uchun
 buzilish to'g'ridan-to'g'ri yasaladi: bitta pochkaning to'shak qavati siyrak
 deb belgilanadi va audit `TOM_TAGI` berishi tekshiriladi.
-
----
-
-### 33. Tom detali tayanchi, min % — 65 (`S.lidSupp`)
-
-**Nima:** **Har bir** tom detali o'z yuzasining kamida shuncha foizi bilan
-ostidagi qavatga tegishi shart. Ostida qavat bo'lmasa — tag detalga.
-
-**Qayerda:** `04-packer.js` → `partSupport()`, `layerSupp()`, `stackSuppOK()`,
-`tailStackOK()`. Uch joyda qo'llanadi:
-
-1. `layoutPack()` — `last.tom` shartiga kiradi (ball orqali, qat'iy rad etish emas)
-2. `absorbTails()` — quyruq nomzodi **qat'iy rad etiladi** agar u tomni tayanchsiz qoldirsa
-3. `auditPacks()` — `TOM` / `TOM_TAYANCH` ogohlantirishi
-
-**Nima uchun kerak.** Tomning yuzasi, nisbatlari va gabariti to'g'ri bo'lishi
-mumkin — va u baribir sinadi, agar ostidagi qavatga tegmasa. Sexda ko'rilgani:
-tom uch detaldan, yuzasi 98 %, nisbatlar 30/30/30 — hammasi qoida bo'yicha.
-Lekin ostidagi qavat tor: o'rtadagi detal tegadi, chetdagi ikkitasi undan
-butunlay chiqib osilib qolgan (tegish yuzasi 30 % ham emas).
-
-**Nega `tailSpan` yetarli emas.** U butun qavatning **umumiy kengligini**
-o'lchaydi. 70 % qoplagan quyruq ham tomning chetdagi detalini 0 % tayanchda
-qoldirishi mumkin — agar o'sha detal quyruq bandidan tashqarida tursa.
-
-**Nega eng yomoni olinadi, o'rtacha emas.** Uchta detalning o'rtachasi 70 %
-bo'lishi mumkin, lekin chetdagi bittasi 0 % bo'lsa u baribir sinadi. O'rtacha
-aynan shu nosozlikni yashiradi.
-
-**Geometriya.** Bir qavat ichidagi detallar bir-birining ustiga tushmaydi
-(audit `USTMA_UST` invarianti), shuning uchun kesishmalar yig'indisi =
-birlashma bilan kesishma. Qo'shimcha geometriya kerak emas.
-
-**Quyruq suqilganda butun taxlam tekshiriladi** (`tailStackOK`). Yangi tartib
-`[eski qavatlar] + Ls + [tom]` bo'lgani uchun uchta bog'lanish bor: `Ls[0]`
-ostidagiga, `Ls[i]` → `Ls[i-1]`, va tom → `Ls[oxirgi]`.
-
-> Ilgari `absorbTails` izohida «ustki qavat quyruq ustida osilib qoladi, lekin
-> ko'pi bilan bir qavat pastga egiladi» deb yozilgandi. Asos noto'g'ri edi:
-> tomning chetdagi detali quyruqdan **butunlay** chiqib, havoda osilib qolishi
-> mumkin ekan.
-
-**Sozlash (namuna, 291 detal):**
-
-| `lidSupp` | Pochka | O'rtacha | Eng yomon tom tayanchi |
-|---|---|---|---|
-| 0 (o'chiq) | 54 | 24,5 kg | 56 % |
-| **65** | **55** | **24,0 kg** | **75 %** |
-| 80 | 56 | 23,6 kg | 80 % |
-
-**Kafolat chegarasi.** 65 % da namuna korpusida bajarilmagan holat yo'q.
-Yuqoriroq qiymatda (85 %) ba'zi guruhda hech qanday joylashuv shartni bajara
-olmaydi — u holda pochka baribir teriladi, lekin audit ogohlantirishi chiqadi.
-Test aynan shuni qo'riqlaydi: «bajarilmagan tayanch jim qolmaydi».
-
----
-
-### 32. Quyruq tayanchi, min % — 70 (`S.tailSpan`)
-
-**Nima:** Singdirilgan qoldiq qavati pochkani **har o'q bo'yicha** kamida shuncha
-foiz qoplashi shart. Ikki o'q alohida o'lchanadi, kichigi olinadi.
-
-**Qayerda:** `04-packer.js` → `layerSpan()`, `tailFit()` ichida `tailGap` bilan
-yonma-yon.
-
-**Nima uchun `tailGap` yetarli emas.** Ular boshqa-boshqa nosozlikni ushlaydi:
-
-- `tailGap` — detallar orasidagi eng katta **tayanchsiz oraliq**. Ikkita keng
-  detal bir chetga yig'ilib o'rtada teshik qoldirsa, shu o'lchov ushlaydi.
-- `tailSpan` — **tayanchning kengligi**. Bitta tor detal markazga qo'yilsa
-  teshik umuman yo'q (chetlardagi bo'shliqlar kichik), lekin ustidagi qopqoq
-  tor qirraga tayanadi va chayqaladi.
-
-**O'lchangan holat (sexdan).** 1910×300 li pochka, quyruq 1720×160, markazda:
-
-| O'lchov | Qiymat | Chegara | Natija |
-|---|---|---|---|
-| bo'shliq X | 102 mm | 300 mm | o'tadi |
-| bo'shliq Y | 70 mm | 300 mm | o'tadi |
-| **tayanch Y** | **53 %** | 70 % | **rad etiladi** |
-
-Namuna korpusida chegarasiz eng yomoni **17 %**: 1878×600 li pochkaga uchta
-438×100 li tasma.
-
-**Nega chetdan chiqqan qism sanalmaydi:** tagdan tashqarida tayanch yo'q, u yerda
-detal havoda turadi. Proyeksiya `[0, base.L]` va `[0, base.W]` ga qisiladi.
-
-**Nega oddiy qavatlarga kerak emas:** `fill ≥ minFill` bo'lsa qoplanish har
-ikkala o'q bo'yicha ham kamida `minFill` bo'ladi — yuza ulushi ikki o'q
-qoplanishining ko'paytmasidan katta bo'lolmaydi (`fill ≤ sx·sy ≤ min(sx,sy)`).
-Faqat quyruq foizdan ozod.
-
-**Sozlash (namuna, 291 detal):**
-
-| `tailSpan` | Pochka | O'rtacha | Eng tor tayanch |
-|---|---|---|---|
-| 0 (o'chiq) | 50 | 26,4 kg | 18 % |
-| 60 | 52 | 25,4 kg | 61 % |
-| **70** | **54** | **24,5 kg** | **71 %** |
-| 80 | 55 | 24,0 kg | 81 % |
-| 90 | 56 | 23,6 kg | 90 % |
-
-70 % tanlandi: 16 mm LDSP qopqoq eni bo'yicha 2/3 dan ko'p tayanchda yotsa
-ustiga 40 kg qo'yilganda chayqalmaydi. Bu **hisoblangan emas, tanlangan** qiymat —
-sexda sinab o'zgartiriladi.
-
-**Test:** `smoke.ps1` → «QUYRUQ TAYANCHINING KENGLIGI». O'lchovning o'zi ham
-sun'iy qavatlarda tekshiriladi: kichik o'q bo'yicha olinishi (X=100 %, Y=50 % →
-50 %), chetdan chiqqan qism sanalmasligi, ustma-ust bo'laklar ikki marta
-sanalmasligi.
 
 ---
 
@@ -1008,7 +1090,7 @@ maydonni o'zgartirish butun buyurtmani qayta terib yuboradi.
 |---|---|---|
 | STANDART | `.blk-std` (yashil) | `cMaxKg`, `cMaxLen`, `cBaseWMax`, `cMinPartW`, `cMinPartL`, `cMinBase`, `cBaseLMin`, `cBaseT`, `cBaseCover`, `cBaseInset`, `cMaxH`, `cOvhOn` |
 | NOSTANDART | `.blk-nst` (qizg'ish) | `cOddKg`, `cOddLMax`, `cOddWMax`, `cOddTol` |
-| IKKALASIGA | `.blk-all` (ko'k) | `cOneMan`, `cTare`, `cMaxPartT`, `cThick`, `cTailOver`, `cTailGap`, qalinlik matritsasi |
+| IKKALASIGA | `.blk-all` (ko'k) | `cOneMan`, `cTare`, `cMaxPartT`, `cThick`, `cTailOver`, `cTailGap`, `cTailSpan`, `cLidSupp`, `cLidBed`, qalinlik matritsasi |
 
 **Nima uchun aynan shunday taqsimlangan:**
 
@@ -1026,8 +1108,11 @@ maydonni o'zgartirish butun buyurtmani qayta terib yuboradi.
 **Podskaska (`.q[data-tip]`).** Har maydonda «?» belgisi; hover yoki `Tab`
 (`tabindex="0"` + `:focus`) bilan ochiladi. Matn uch qismdan iborat: (1) maydon
 nima qiladi, (2) nimaga shu qiymat, (3) oshirsa/kamaytirsa nima bo'ladi —
-imkon bo'lsa o'lchangan raqam bilan (`tailGap`: o'chiq 47 / 500 → 48 / 300 → 50 /
-200 → 53 pochka).
+imkon bo'lsa o'lchangan raqam bilan (`tailGap`: o'chiq / 300 / 200 → 56 pochka,
+150 → 57, 50 → 58). Raqamlar `namuna
+amuna.project` ustida o'lchanadi va
+algoritm o'zgarganda qayta o'lchanadi — 31–34-me'yorlardagi jadvallar bilan
+bir xil manba.
 
 Tooltip `.f` ga nisbatan joylashadi, `.q` ning o'ziga emas: 13 px li doiraga
 nisbatan 320 px li quti ekrandan chiqib ketardi.
@@ -1045,31 +1130,56 @@ Bu qiymatlar sozlamalar oynasida yo'q — ular kodda qat'iy yozilgan. O'zgartiri
 
 | Konstanta | Qiymat | Joyi | Ma'nosi |
 |---|---|---|---|
-| `S.packTries` | 100 | `13-app.js` → `readConf()`; ishlatilishi `04-packer.js` → `greedyPackGen()` | Har bitta pochkaga sinaladigan variantlar soni |
-| `guard` | 900 | `04-packer.js` → `greedyPackGen()` sikli | Bitta guruhdan chiqadigan pochkalar mutlaq chegarasi (cheksiz sikldan himoya) |
+| `PACK_TRIES` | 100 | `04-packer.js`; ishlatilishi `greedyPackGen()` | Har bitta pochkaga sinaladigan variantlar soni. **Sozlama emas** — interfeysda maydoni yo'q |
+| `GREEDY_GUARD` | 900 | `04-packer.js` → `greedyPackGen()` sikli | Bitta guruhdan chiqadigan pochkalar mutlaq chegarasi (cheksiz sikldan himoya). To'siq ishlab ketsa qolgan detallar nostandart oqimga o'tadi — yo'qolmaydi |
+| `MAIN_SEED` / `SEED_STEP` | 1234 / 7919 | `04-packer.js` → `packAllGen()` | Asosiy oqim urug'i: `MAIN_SEED + t*SEED_STEP` |
+| `ODD_SEED` | 4242 | `04-packer.js` → `oddPackGen()` | Nostandart oqim urug'i — asosiy oqim urinishiga bog'liq emas |
 | `g < 40` | 40 | `04-packer.js` → `layoutPack()` qavat sikli | O'rta qavat yaratishga urinishlar mutlaq chegarasi |
 | Konsolidatsiya | 0,62 | `04-packer.js` → `packGroupGen()` | `p.kg < S.maxKg * 0.62 \|\| p.layers.length === 0` bo'lgan pochkalar "kuchsiz" deb birlashtiriladi (35 kg da ≈ 21,7 kg; qavatsiz pochka massasidan qat'i nazar kuchsiz) |
 | Konsolidatsiya bosqichlari | 2 | `04-packer.js` → `packGroupGen()` | Birlashtirish ikki marta sinaladi, yaxshilanmasa to'xtaydi |
-| Quyruq chegarasi | 0,50 | `04-packer.js` → `absorbTails()` | `p.kg < S.maxKg * 0.5` bo'lgan pochka "yengil" deb boshqasining ustiga singdirishga uriniladi (35 kg da 17,5 kg — auditdagi `YENGIL` chegarasi bilan bir xil) |
+| Quyruq chegarasi | 0,50 | `04-packer.js` → `absorbTails()` | `p.kg < packKgCap(p) * 0.5` bo'lgan pochka "yengil" deb boshqasiga singdirishga uriniladi. Chegara pochkaning **o'z** limitidan olinadi — nostandart pochkada u kattaroq |
 | `TAIL_LAYERS` | 2 | `04-packer.js` → `absorbTails()` | Bitta quyruq nishon pochkaga eng ko'pi bilan shuncha qavat qo'sha oladi. 3 ga oshirish namunada hech narsa bermadi; 0 — xususiyatni butunlay o'chiradi |
 | Quyruq bosqichlari | 4 | `04-packer.js` → `absorbTails()` | Singdirish sikli shuncha marta takrorlanadi (singdirilgan pochka o'zi keyingi nishon bo'lishi mumkin), o'zgarish bo'lmasa erta to'xtaydi |
-| Nostandart urug'i | 4242 | `04-packer.js` → `oddPackGen()` | Nostandart oqim o'z qat'iy urug'i bilan teriladi — asosiy oqim natijasiga bog'liq emas |
 | Aralashtirish ehtimoli | 0,14 | `04-packer.js` → `makeLayer()` | Saralangan ro'yxatda qo'shni juftlarni almashtirish ehtimoli (variatsiya uchun) |
 | Toza greedy variantlar | 8 | `04-packer.js` → `greedyPackGen()` | Birinchi 8 variant aralashtirishsiz, qat'iy saralash bo'yicha |
 | Tag nomzodlari | 10 | `04-packer.js` → `greedyPackGen()` (`baseCap`) | Tasodifiy tanlashda ko'riladigan eng keng 10 nomzod |
 | Markaziy bo'shliq | 40 mm | `04-packer.js` → `makeLayer()` | Shundan katta bo'shliq bo'lsa MaxRects bilan kichik detallar to'ldiriladi |
 | Yaxlitlik chegarasi | 0,96 | `04-packer.js` → `layoutPack().wholeness()` | Qavat "yaxlit" hisoblanishi uchun kerakli to'ldirish |
+| A4 cheti | 8 mm | `10-ui.js` → `A4_MARGIN` | Chek uchun. Buyurtma hujjati kengroq oladi (`A4_MARGIN + 2`) |
+| Chek cheti | 3 / 2 mm | `10-ui.js` → `LBL_MARGIN`, `LBL_MARGIN_TINY` | Termal chek; bo'yi 62 mm dan past bo'lsa ikkinchisi |
 | Statistik cheklov | 1,3 | `04-packer.js` → `packAllGen()` | `fill` statistikada `min(1.3, fill)` bilan cheklanadi (chiqish 100% dan oshirishi mumkin) |
 | Nafas olish oralig'i | 40 ms | `04-packer.js` → `packAllAsync()` | Shu vaqtdan keyin generator to'xtatilib brauzerga boshqaruv qaytariladi |
 | `S.tare` | 0,6 kg | `02-state.js`; `readConf()` → `cTare` maydoni | Qadoq materiali. Pochkalash hisobiga kirmaydi, faqat brutto va "2 KISHI" uchun (`packBrutto()`) |
 
-**`packTries = 100` nima uchun:** Har pochkada 100 variant — bu 3 ta deterministik tag nomzodi (eng keng uchtasi, chunki `rem` `ORD[0]` bo'yicha saralangan) + 97 ta tasodifiy kombinatsiya (tag × strategiya × saralash tartibi × aralashtirish). Har variant to'liq `layoutPack()` chaqiruvi, ya'ni butun pochka boshidan teriladi va ball bilan baholanadi:
-```
-sc = -pk.kg*3 + gO*0.05 + (qopqoq jarimasi) + (qavatsiz bo'lsa +400) + rnd()*4
-```
-Ballda massa (`-kg*3`) eng katta vazn oladi — ya'ni zich pochka g'olib; gabarit chiqishi (`gO`) yengil jarima; qopqoq holati alohida baholanadi (yaxlit 0, oddiy +16, yumshoq +30, yo'q +90). 100 dan yuqorisi namuna tipidagi loyihada natijani deyarli o'zgartirmaydi, lekin vaqtni chiziqli oshiradi. Bu qiymat interfeysdan **olib tashlangan** — ilgari foydalanuvchi uni pasaytirib natija sifatini bilmasdan buzardi. Kodda quyi chegara ham bor: `var N = Math.max(8, S.packTries || 100);` — 8 tadan kam variant hech qachon sinalmaydi.
+**`PACK_TRIES = 100` nima uchun:** Har pochkada 100 variant — bu 3 ta
+deterministik tag nomzodi (eng keng uchtasi, chunki `rem` `ORD[0]` bo'yicha
+saralangan) + 97 ta tasodifiy kombinatsiya (tag × strategiya × saralash
+tartibi × aralashtirish). Dastlabki 8 tasi aralashtirishsiz — toza greedy.
+Har variant to'liq `layoutPack()` chaqiruvi, ya'ni butun pochka boshidan
+teriladi va ball bilan baholanadi:
 
-**`guard = 900` nima uchun:** Bu me'yor emas, xavfsizlik to'siqi. Agar biror sozlama kombinatsiyasi tufayli `greedyPackGen()` sikli detallarni kamaytirmay qolsa (masalan `layoutPack()` hech narsa joylashtirolmasa), 900-iteratsiyada sikl majburan to'xtaydi va brauzer muzlab qolmaydi. Normal ishlashda har guruh o'nlab iteratsiyada tugaydi — to'siqqa hech qachon yetib borilmaydi.
+```
+sc = −pk.kg*3            zich pochka g'olib (eng katta vazn)
+   + gO*0.05             gabarit chiqishi — yengil jarima
+   + (tom yopiq ? 0 : 90)   ochiq tom — ENG OG'IR jarima
+   + (qopqoq yaxlit ? 0 : 8)  yaxlit qopqoq — kichik ustunlik
+   + (qavatsiz ? 400 : 0)     yolg'iz tag — deyarli rad etish
+   + rnd()*4             teng ballarni ajratish uchun
+```
+
+Jarima 90 taxminan 30 kg massa vazniga teng — ya'ni **yopiq tom zichlikdan
+ustun turadi**. Bu ataylab: yetkazib berishda pochkalar ustma-ust teriladi.
+
+100 dan yuqorisi namuna tipidagi loyihada natijani deyarli o'zgartirmaydi,
+lekin vaqtni chiziqli oshiradi. Qiymat interfeysdan **olib tashlangan** —
+ilgari foydalanuvchi uni pasaytirib natija sifatini bilmasdan buzardi.
+
+**`GREEDY_GUARD = 900` nima uchun:** Bu me'yor emas, xavfsizlik to'siqi. Agar
+biror sozlama kombinatsiyasi tufayli `greedyPackGen()` sikli detallarni
+kamaytirmay qolsa, 900-iteratsiyada sikl majburan to'xtaydi va brauzer muzlab
+qolmaydi. To'siq ishlab ketsa qolgan detallar **nostandart oqimga** o'tadi —
+ilgari ular hech qayerga tushmay, auditda `YOQOLGAN` bo'lib chiqardi. Normal
+ishlashda har guruh o'nlab iteratsiyada tugaydi.
 
 ---
 
@@ -1089,15 +1199,19 @@ Ballda massa (`-kg*3`) eng katta vazn oladi — ya'ni zich pochka g'olib; gabari
 
 Quyidagilar kodni o'qishda aniqlangan nozik joylar. Ular xato emas, lekin me'yorni sozlashda kutilgan natijadan chetlashishga sabab bo'lishi mumkin.
 
-1. **`minBaseT` faqat tagga ta'sir qiladi.** Interfeys yorlig'i "Tag/**ust** min. qalinlik" deydi, lekin `makeLid()` qopqoq detalining qalinligini tekshirmaydi — `greedyPackGen()` eligibility filtri esa faqat tag nomzodlariga qo'llanadi. Amalda me'yor tag detalni boshqaradi.
+1. **`minBaseT` to'rt joyda ishlaydi.** Tag nomzodi (`greedyPackGen`), yupqa tag ustidagi qalin detal (`thickOKon`), qopqoq nomzodi (`makeLid`) va tom (`tomOK`). Guruhda yetarli qalin detal bo'lmasa talab o'sha guruhning eng qalin detaliga tushiriladi — 5-me'yordagi «zaxira yo'li».
 
 2. **`maxLayers` `strat === 1` yo'lida bir qavat konservativ.** `midCap` formulasi qopqoq uchun oldindan bitta o'rin ayiradi, lekin `strat === 1` da qopqoq alohida qo'shilmay, eng tepadagi o'rta qavat qopqoq deb **belgilanadi**. Natijada bu yo'lda jami qavatlar `maxLayers - 1` bo'lib chiqadi. `strat === 0` da esa aynan `maxLayers` ga yetadi. Ya'ni limit hech qachon buzilmaydi, lekin ba'zi pochkalarda bitta qavat ishlatilmay qoladi.
 
 3. **`fill` 100% dan oshishi mumkin.** `makeLayer()` da `fill = cov / (baseL × baseW)`, ammo detallar chiqish tufayli tagdan tashqariga chiqadi. Shuning uchun `readConf()` `minFill` uchun 130 gacha ruxsat beradi va `packAllGen()` statistikada `Math.min(1.3, fill)` qo'llaydi. 100 dan yuqori `minFill` — bu "qavat tagdan katta bo'lsin" degani, tavsiya etilmaydi.
 
-4. **0 kiritish cheklovni o'chirmaydi.** `readConf()` da `maxKg`, `minBase`, `maxLen`, `oneMan`, `minFill`, `lidFill`, `lidN`, `tries` uchun `+value || N` shakli ishlatilgan — 0 yozilsa standart qiymat qaytadi. Faqat `ovh`, `minBaseT`, `lidTol`, `maxLayers`, `tare` uchun 0 haqiqiy 0 ni bildiradi.
+4. **0 kiritish har doim ham cheklovni o'chirmaydi.** Ikki shakl bor:
+   - `+value || N` — 0 yozilsa **standart qiymat qaytadi**: `maxKg`, `minBase`, `maxLen`, `oneMan`, `minFill`, `lidFill`, `lidN`, `tries`. Bu ataylab: massa yoki gabarit cheklovini butunlay o'chirish xavfli.
+   - `numOr(el, def, lo, hi)` — 0 **haqiqiy 0** va ko'pincha «cheklovsiz» degani: `baseLMin`, `maxH`, `minPartW`, `minPartL`, `maxPartT`, `baseInset`, `oddTol`, `tailKgOver`, `tailGap`, `tailSpan`, `lidSupp`, `lidBed`, `lidBal`. Shuningdek `ovh`, `minBaseT`, `lidTol`, `maxLayers`, `tare` uchun ham 0 — haqiqiy 0.
 
-5. **`packTries` interfeysda yo'q.** `readConf()` uni har safar 100 ga majburan tenglashtiradi (`S.packTries = 100`). `02-state.js` dagi boshlang'ich qiymat ham 100. O'zgartirish uchun ikkala joyni ham tahrirlash kerak.
+   `numOr()` ning `lo`/`hi` chegaralari `index.html` dagi `min`/`max` bilan **bir xil** bo'lishi shart. Brauzer bu atributlarni qo'llamaydi (`fixNumberInputs()` maydonlarni `type="text"` ga o'giradi), ya'ni yagona haqiqiy cheklov — `readConf()`.
+
+5. **`PACK_TRIES` sozlama emas.** U `04-packer.js` dagi konstanta va `S` da umuman turmaydi. O'zgartirish uchun manba faylni tahrirlash kerak.
 
 6. **Qo'lda tuzatilgan `kg/m²` `applyCat()` da yo'qoladi.** IndexedDB seansi `P` ni materiallari bilan birga saqlaydi (`09-storage.js` → `makeSnapshot()`), `saveConf()` esa `S.matCat` ni localStorage ga yozadi. Lekin ham `boot()`, ham seans tiklash yo'li `applyCat()` ni chaqiradi, u esa har bir materialga katalogdan topilgan `kgm2` ni **qayta yozadi**. Ya'ni "Materiallar" bo'limida qo'lda kiritilgan qiymat keyingi ochilishda yo'qoladi. Doimiy o'zgartirish katalogga kiritilishi kerak.
 
@@ -1139,17 +1253,32 @@ Xato kodlari — hammasi 0 bo'lishi shart:
 
 | Kod | Nimani tekshiradi |
 |---|---|
-| `USTMA_UST` | Bitta qavatdagi ikki detal kesishmasi 1 mm² dan katta emasligi |
-| `CHEGARA` | Har detal `[-off, base.L+off] × [-off, base.W+off]` konverti ichida ekanligi |
-| `QALINLIK` | `byThick` yoqilganda qavat detali tag detal bilan bir xil qalinlikda ekanligi |
-| `MASSA` | Pochka massasi `> maxKg` emasligi |
-| `QAVAT` | `maxLayers > 0` bo'lganda `tag + qavatlar ≤ maxLayers` ekanligi |
-| `SEQ` | Yig'ish ketma-ketligidagi qadamlar soni detallar soniga tengligi |
-| `TUZILMA` | Oddiy pochkada tag detal borligi |
 | `YOQOLGAN` | `buildItems()` dagi har detal biror pochkaga tushganligi |
 | `TAKROR` | Bir detal ikki joyda turmaganligi |
+| `TUZILMA` | Oddiy pochkada tag detal borligi; qavatda bo'sh o'rin qolmaganligi |
+| `USTMA_UST` | Bitta qavatdagi ikki detal kesishmasi 1 mm² dan katta emasligi |
+| `CHEGARA` | Har detal `[-off, base.L+off] × [-off, base.W+off]` konverti ichida ekanligi |
+| `QALINLIK` | `byThick` yoqilganda **bitta qavat ichida** ikki xil qalinlik yo'qligi (pochkada bir necha qalinlik — matritsa bilan ruxsat etilgan) |
+| `MASSA` | Pochka massasi o'z limitidan oshmasligi (`maxKg` / `oddKg` + zaxira) |
+| `QAVAT` | `maxLayers > 0` bo'lganda `tag + qavatlar ≤ maxLayers`; **bog'da** detallar soni |
+| `BALANDLIK` | `maxH > 0` bo'lganda `base.T + Σ qavat`; **bog'da** qalinliklar yig'indisi |
+| `GURUH` | Pochkadagi har detal tag detal bilan bir xil pochkalash guruhida ekanligi |
+| `TOM_TAGI` | Tom ostidagi qavat («to'shak») yetarli to'lganligi (34-me'yor) |
+| `SEQ` | Yig'ish ketma-ketligidagi qadamlar soni detallar soniga tengligi |
 
-Ogohlantirishlar (0 bo'lishi shart emas, lekin o'sib ketishi yomon belgi): `TOLDIRISH` (qavat `minFill` dan past), `TAG_OLCHAM` (tag `minBase`/`maxLen` me'yoriga tushmaydi — odatda qo'lda ko'chirishdan keyin), `BOSH_POCHKA` (faqat tagdan iborat), `YENGIL` (limitning yarmidan yengil), `MASSA_NOODATIY` (bitta detalning o'zi limitdan og'ir — bo'linmaydi), `BEGONA` (natija eskirgan, qayta pochkalash kerak).
+Ogohlantirishlar (0 bo'lishi shart emas, lekin o'sib ketishi yomon belgi):
+
+| Kod | Nima |
+|---|---|
+| `TOM` | eng ustki yuza TOM shartidan o'tmadi — **sababi yozib qo'yiladi** |
+| `TOM_TAYANCH` | tom ostidagi qavatga yetarli tegmayapti (33-me'yor) |
+| `TOLDIRISH` | qavat `minFill` dan past (quyruq va qopqoq bundan ozod) |
+| `TAG_OLCHAM` | tag `minBase`/`maxLen` me'yoriga tushmaydi — odatda qo'lda ko'chirishdan keyin |
+| `BOSH_POCHKA` | faqat tag detaldan iborat |
+| `YENGIL` | limitning yarmidan yengil, lekin guruhda zaxira bor |
+| `MASSA_NOODATIY` | bitta detalning o'zi limitdan og'ir — bo'linmaydi |
+| `BALANDLIK_NOODATIY` | bitta detalning o'zi balandlik limitidan qalin — bo'linmaydi |
+| `BEGONA` | natija eskirgan (kutilgan ro'yxatda yo'q detal) — qayta pochkalash kerak |
 
 > **Eslatma:** auditda "markazdan chetlashish" tekshiruvi **yo'q** — markazlash (`centerLayer()`) algoritmning ichki ishi, invariant emas.
 
@@ -1169,9 +1298,13 @@ Nima o'zgarganini tushunish uchun `maxKg` ni oshirganda pochka soni kamayishi, `
 
 Natija qoniqarli bo'lsa — **"Sozlamalarni saqlash"** tugmasini bosing. `saveConf()` quyidagilarni brauzer xotirasiga (`localStorage`, kalit `upk_conf`) yozadi:
 
-- `CONF_IDS` ro'yxatidagi hamma maydon qiymati (15 me'yor + tara + chek o'lchami + prefiks + menejer belgilari va rejim);
-- `_matCat` — butun material katalogi;
-- `_sepCls` — alohida pochkalanadigan klasslar.
+- `CONF_IDS` ro'yxatidagi hamma maydon qiymati — u **DOM dan yig'iladi**
+  (`#v-conf` ichidagi har `input`/`select` + P/M dagi `mgrByRoom`/`mgrByMat`),
+  ya'ni yangi me'yor qo'shilsa u o'zi ro'yxatga tushadi;
+- `_matCat` — material katalogi; `_sepCls` va `_clsGroups` — klass ajratish;
+- `_modGroups` va `_unitNames` — xonalar va modul nomlari;
+- `_split` — pochkalash qoidasi; `_thickMix` — qalinlik matritsasi;
+- `_cellOff` — yopiq yacheykalar (sexning fizik holati).
 
 Keyingi ochilishda `restoreConf()` ularni avtomatik tiklaydi. Yashil "Sozlamalar saqlandi" xabari 3,5 soniya ko'rinadi. `localStorage` mavjud bo'lmasa (masalan brauzer uni bloklagan bo'lsa) xabar qizil chiziq bilan chiqadi va sabab yoziladi — hujjat yiqilmaydi, lekin sozlama saqlanmaydi.
 
@@ -1203,4 +1336,9 @@ Keyingi ochilishda `restoreConf()` ularni avtomatik tiklaydi. Yashil "Sozlamalar
 
 ---
 
-*Hujjat `src/js/02-state.js`, `src/js/03-parser.js`, `src/js/04-packer.js`, `src/js/05-audit.js`, `src/js/08-labels.js`, `src/js/09-storage.js`, `src/js/10-ui.js`, `src/js/11-diag.js`, `src/js/13-app.js` va `index.html` sozlamalar bo'limi kodiga (v10, `APP_VER = 10`) asoslangan. Kod o'zgarganda hujjat ham yangilanishi kerak.*
+*Hujjat `src/js/02-state.js`, `src/js/03-parser.js`, `src/js/04-packer.js`,
+`src/js/05-audit.js`, `src/js/08-labels.js`, `src/js/09-storage.js`,
+`src/js/10-ui.js`, `src/js/11-diag.js`, `src/js/13-app.js` va `index.html`
+sozlamalar bo'limi kodiga asoslangan. Kod o'zgarganda hujjat ham **o'sha
+kommitda** yangilanishi kerak — yangilash tartibi
+[docs/README.md](README.md) da.*

@@ -9,6 +9,10 @@
 
 var UP_MAXMB = 60;                 // bundan katta fayl — ogohlantirish bilan davom etadi
 var UP_SCANMAX = 4 * 1024 * 1024;  // matn skaneri shuncha belgidan koʻpini koʻrmaydi (muzlab qolmasin)
+/* Qabul qilinadigan kengaytmalar. Bu roʻyxat fayl tanlash oynasining
+   `accept` atributiga ham qoʻyiladi (`initUpload`) — ilgari u index.html da
+   alohida yozilgan edi va ikkalasi bir-biridan uzilib qolishi mumkin edi.
+   Kengaytma mos kelmasa fayl baribir oʻqiladi, faqat ogohlantirish chiqadi. */
 var UP_EXT   = [".project", ".xml", ".txt"];
 var UP_BOUND = false;              // oyna hodisalari bir marta bogʻlanadi
 var UP_DRAG  = 0;                  // dragenter/dragleave hisoblagichi
@@ -35,7 +39,6 @@ function upThen(v, cb){
   if (v && typeof v.then === "function"){ v.then(function(r){ cb(r); }, function(){ cb(null); }); }
   else cb(v);
 }
-function up2(n){ return (n < 10 ? "0" : "") + n; }
 function upKb(n){ return (Math.round((+n || 0) / 1024 * 10) / 10).toFixed(1); }
 /* prototipsiz sanoq obyekti: "constructor" yoki "toString" nomli teg hisobni buzmasin */
 function upBag(){
@@ -99,21 +102,27 @@ function upExtInfo(xmlText){
   } catch(e){ return null; }
 }
 /* xmlStructure() natijasi bor boʻlsa oʻshandan, boʻlmasa oʻz skanerdan.
-   ext ikkinchi argument sifatida berilsa qayta hisoblanmaydi (katta faylda muhim). */
+   ext ikkinchi argument sifatida berilsa qayta hisoblanmaydi (katta faylda muhim).
+
+   Ikki manba turli shaklda: `xmlStructure()` teglarni MASSIV qilib beradi
+   ({tag,count,attrs}), `upScanXml()` esa XARITA ({teg:soni}). `upMap()` ikkovini
+   bitta shaklga keltiradi. `good`/`operation` turlarini xmlStructure sanamaydi —
+   ular har doim matn skaneridan olinadi.
+
+   v21: bu yerda maydonlarning oʻn beshta muqobil nomi sinalardi
+   (rootTag/rootName/tagCount/goodTypes/opTypes…). Ularning birortasi ham
+   `xmlStructure()` natijasida yoʻq — faqat `root`, `tags`, `chars` va `cut` bor. */
 function upXmlInfo(xmlText, ext){
-  var loc = upScanXml(xmlText), r;
+  var loc = upScanXml(xmlText);
   if (arguments.length < 2) ext = upExtInfo(xmlText);
   if (!ext || typeof ext !== "object") return loc;
-  r = ext.root || ext.rootTag || ext.rootName;
-  if (r && typeof r === "object") r = r.name || r.tag || r.tagName;
-  if (typeof r !== "string" || !r) r = loc.root;
   return {
-    root:  r,
-    tags:  upMap(ext.tags  || ext.tagCount || ext.tagCounts) || loc.tags,
-    goods: upMap(ext.goods || ext.goodTypes || ext.goodTypeIds) || loc.goods,
-    ops:   upMap(ext.ops   || ext.operations || ext.opTypes || ext.operationTypes) || loc.ops,
-    bytes: ext.bytes || loc.bytes,
-    lines: ext.lines || loc.lines,
+    root:  (typeof ext.root === "string" && ext.root) ? ext.root : loc.root,
+    tags:  upMap(ext.tags) || loc.tags,
+    goods: loc.goods,
+    ops:   loc.ops,
+    bytes: ext.chars || loc.bytes,
+    lines: loc.lines,
     cut:   !!(loc.cut || ext.cut),
     raw:   ext
   };
@@ -153,8 +162,12 @@ function upDropzone(){
   if (!document.body) return null;               // hali <body> yigʻilmagan
   z = document.createElement("div");
   z.id = "dropzone";
+  /* Butun koʻrinish shu yerda: style.css dagi #dropzone qoidasi v21 da olib
+     tashlandi — undan faqat backdrop-filter amalda edi, qolgani shu satr
+     bilan ustidan yozilardi. */
   z.style.cssText = "display:none;position:fixed;inset:0;z-index:80;background:rgba(10,12,15,.86);" +
-    "align-items:center;justify-content:center;text-align:center;padding:24px;pointer-events:none";
+    "backdrop-filter:blur(2px);align-items:center;justify-content:center;" +
+    "text-align:center;padding:24px;pointer-events:none";
   z.innerHTML = '<div style="border:2px dashed var(--mark);border-radius:8px;padding:42px 54px;background:rgba(30,33,39,.72)">' +
       '<div style="font-size:25px;font-weight:700;letter-spacing:.03em;color:var(--mark)">Faylni shu yerga tashlang</div>' +
       '<div style="font-family:var(--mono);font-size:12.5px;color:var(--ink2);margin-top:9px;letter-spacing:.06em">· .project yoki .xml ·</div>' +
@@ -266,10 +279,10 @@ function loadXmlText(xmlText, fname){
   var d = upDiag(), st = upStore(), data = null, err = null;
   d.fileName = fname || "";
   d.fileSize = String(xmlText || "").length;
-  var t0 = (window.performance && performance.now) ? performance.now() : Date.now();
+  var t0 = nowMs();
   try { data = parseProject(xmlText); }
   catch(e){ err = e; }
-  var t1 = (window.performance && performance.now) ? performance.now() : Date.now();
+  var t1 = nowMs();
   d.parseMs = Math.round((t1 - t0) * 10) / 10;
   var ext = upExtInfo(xmlText);            // bir marta hisoblanadi, xato oynasiga ham shu beriladi
   d.xmlInfo = upDiagInfo(xmlText, ext);
@@ -438,19 +451,25 @@ function showLoadError(err, xmlText, fname, ext, title){
 /* ------------------------------------------------------------
    3.13.5 OXIRGI FAYLLAR — #recentBox (proekt menejer)
    ------------------------------------------------------------ */
-function upRecId(r){ return r ? (r.id != null ? r.id : (r.key != null ? r.key : r.name)) : null; }
-function upRecTs(r){ return +(r && (r.ts || r.time || r.date || r.saved)) || 0; }
+/* Yozuv shakli 09-storage.js `metaOf()` da belgilangan: { id, name, ts, size }.
+   v21: ilgari bu uch funksiya oʻn ikki xil maydon nomini taxmin qilardi
+   (key/time/date/saved/bytes/len…) — hech biri hech qachon uchramaydi.
+   `xml.length` zaxirasi qoladi: xotira rejimida toʻliq yozuv kelishi mumkin. */
+function upRecId(r){ return r ? r.id : null; }
+function upRecTs(r){ return +(r && r.ts) || 0; }
 function upRecSize(r){
-  var n = r && (r.size || r.bytes || r.len);
-  if (!n && r && typeof r.xml === "string") n = r.xml.length;
-  return +n || 0;
+  if (!r) return 0;
+  if (r.size != null) return +r.size || 0;
+  return (typeof r.xml === "string") ? r.xml.length : 0;
 }
 function upDate(ts){
   if (!ts) return "sana nomaʼlum";
   var d = new Date(ts);
   if (isNaN(d.getTime())) return "sana nomaʼlum";
   try { return d.toLocaleString(); } catch(e){}
-  return up2(d.getDate()) + "." + up2(d.getMonth() + 1) + "." + d.getFullYear() + " " + up2(d.getHours()) + ":" + up2(d.getMinutes());
+  // pad2() — 04-packer.js
+  return pad2(d.getDate()) + "." + pad2(d.getMonth() + 1) + "." + d.getFullYear() +
+         " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
 }
 /* v10 da bu roʻyxat tepasida «Fayl tanlash» tugmasi bor edi, lekin ekran tepasida
    allaqachon «Loyiha yuklash» turibdi — ikkita bir xil tugma ortiqcha shovqin edi.
@@ -551,14 +570,17 @@ function upOpenRecent(rec){
 
 function upDelRecent(rec){
   var st = upStore();
-  if (!st) return;
-  var fn = st.delFile || st.deleteFile || st.removeFile || st.rmFile || st.dropFile || st.del || st.remove;
-  if (typeof fn !== "function"){
+  /* v21: ilgari bu yerda oʻchirish metodining YETTI xil nomi sinalardi
+     (delFile / deleteFile / removeFile / rmFile / dropFile / del / remove).
+     Store — shu repodagi qoʻshni modul (09-storage.js) va unda aynan bitta
+     nom bor. Qolgan oltitasi hech qachon topilmasdi, lekin haqiqiy shartnoma
+     nima ekanini yashirardi. */
+  if (!st || typeof st.delFile !== "function"){
     upDiagWarn("SAQLASH", "Store ichida oʻchirish funksiyasi yoʻq — fayl tarixdan olinmadi");
     renderRecent();
     return;
   }
-  try { upThen(fn.call(st, upRecId(rec)), function(){ renderRecent(); }); }
+  try { upThen(st.delFile(upRecId(rec)), function(){ renderRecent(); }); }
   catch(e){ upDiagWarn("SAQLASH", "oʻchirib boʻlmadi: " + (e.message || e)); renderRecent(); }
 }
 
@@ -583,6 +605,7 @@ function initUpload(){
   var b = $("btnLoad"), f = $("file"), mt;
   // tugma va input har chaqiruvda qayta bogʻlanadi (13-app.js dagi eski bogʻlanish ustidan yozadi)
   if (b) b.onclick = function(){ upPick(); };
+  if (f) f.accept = UP_EXT.join(",");     // yagona manba — UP_EXT
   if (f) f.onchange = function(){
     var file = (f.files && f.files[0]) || null;
     f.value = "";                     // bir xil faylni ketma-ket ikki marta tanlash uchun

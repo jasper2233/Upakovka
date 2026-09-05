@@ -116,7 +116,7 @@ function toggleCell(code){
    Band yacheykalarga tegilmaydi, ular sanab qaytariladi. */
 function toggleRack(letter){
   var t = rackTarget();
-  var C = cellCount(), busy = 0, offN = 0, opened = 0, closed = 0;
+  var C = cellCount(), busy = 0, offN = 0;
   var i, code;
   for (i = 1; i <= C; i++) if (t[letter + i]) offN++;
   var close = offN < C;                      // yarmidan koʻpi ochiq boʻlsa — yopamiz
@@ -124,11 +124,13 @@ function toggleRack(letter){
     code = letter + i;
     if (close){
       if (SORT.cell[code]){ busy++; continue; }
-      if (!t[code]){ t[code] = true; closed++; }
-    } else if (t[code]){ delete t[code]; opened++; }
+      t[code] = true;
+    } else delete t[code];
   }
   if (!RACK_EDIT) sortPlan();
-  return { closed:closed, opened:opened, busy:busy };
+  // v21: `opened`/`closed` hisoblagichlari qaytarilardi, lekin hech kim
+  // oʻqimasdi — chaqiruvchiga faqat band yacheykalar soni kerak.
+  return { busy:busy };
 }
 
 /* Pochkaning detallari — oddiy va noodatiy pochka uchun bir xil koʻrinishda */
@@ -533,7 +535,7 @@ function sortInit(){
   };
   /* Ikki panel — «Reja» va «Stelyajlar». Bittasi ochilsa ikkinchisi yopiladi:
      ekran pastida ikkita katta blok bir vaqtda turmasin. */
-  function panel(btnId, boxId, draw){
+  function panel(btnId, boxId){
     var pb = $(btnId), box = $(boxId);
     if (!pb || !box) return;
     pb.onclick = function(){

@@ -64,6 +64,19 @@ function mulberry(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0;
   var t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t;
   return ((t^t>>>14)>>>0)/4294967296; }; }
 
+/* DETERMINIZM URUGʻLARI. `Math.random()` pochkalashda TAQIQLANGAN — bir xil
+   kirish har doim bir xil natija berishi shart (seansni tiklash shunga
+   tayanadi). Urugʻlar oddiy qatʼiy sonlar, sehr yoʻq:
+     MAIN_SEED / SEED_STEP — asosiy oqim, har urinishga (`tries`) boshqa urugʻ
+     ODD_SEED              — nostandart oqim: u alohida teriladi va natijasi
+                             asosiy oqimning urinish raqamiga bogʻliq boʻlmasin */
+var MAIN_SEED = 1234, SEED_STEP = 7919, ODD_SEED = 4242;
+
+/* Vaqt oʻlchovi — diagnostika uchun. `performance.now()` Chrome/Edge 50+ da
+   har doim bor (minimal brauzer 09-storage.js da yozilgan), shuning uchun
+   `Date.now()` zaxirasi kerak emas; ilgari u olti joyda takrorlanardi. */
+function nowMs(){ return performance.now(); }
+
 function centerLayer(items, baseL, baseW){
   if (!items.length) return items;
   var x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
@@ -132,7 +145,7 @@ function makeLayer(pool, envL, envW, kgBudget, baseL, baseW, ord, maxN, flip, rn
         usedH += o[k2][1]; kg += it.kg; cnt++; it.used = true; return;
       }
   });
-  if (!strips.length) return { items:[], kg:0, fill:0, bb:bboxOf([]), h:0, strips:0 };
+  if (!strips.length) return { items:[], kg:0, fill:0, bb:bboxOf([]), h:0 };
 
   // zonalarni simmetrik tarqatish: eng balandi chetlarda
   strips.sort(function(a,b){ return b.h - a.h || b.len - a.len; });
@@ -174,8 +187,11 @@ function makeLayer(pool, envL, envW, kgBudget, baseL, baseW, ord, maxN, flip, rn
 
   centerLayer(items, baseL, baseW);
   if (flip) mirrorLayer(items, baseL, baseW);      // gʻisht terish: qator boshi almashadi
+  /* v21: `strips` va `t` maydonlari olib tashlandi — ular yozilardi, lekin
+     butun loyihada bir marta ham oʻqilmasdi (04-packer dagi `L.whole` va
+     03-parser dagi `part`/`area`/`idx` bilan bir xil holat). Qavat qalinligi
+     kerak boʻlsa `L.items[0].it.T` dan olinadi: bitta qavatda bitta qalinlik. */
   return { items:items, kg:kg, fill:area? cov/area : 0, bb:bboxOf(items), flipped:!!flip,
-           strips:strips.length, t:(tOnly != null ? tOnly : null),
            h:items.reduce(function(m,q){ return Math.max(m,q.it.T); },0) };
 }
 
@@ -281,6 +297,31 @@ function tomOK(L, base, off){
    koʻrinib tursin. */
 function lidOK(L, base, off){ return tomOK(L, base, off); }
 
+/* v21: TOM BAYROGʻI — BITTA JOYDA.
+
+   `L.tom` — «bu qavat TOM shartidan oʻtdimi». Uch shart birdan:
+     tomOK        — yuza, detal soni, ulush muvozanati, gabarit, qalinlik
+     stackSuppOK  — har detal ostidagi qavatga yetarli tayanadimi (lidSupp)
+     bedOK        — ostidagi qavat («toʻshak») oʻzi toʻlami (lidBed)
+
+   Ilgari bu ifoda UCH joyda qoʻlda takrorlanardi (layoutPack, absorbTails,
+   10-ui.js `refreshPack`) va nusxalar bir-biridan farq qilardi:
+     - `makeLid()` yasagan qopqoqqa `tom = true` shartsiz qoʻyilardi;
+     - `refreshPack` faqat `tomOK` ni tekshirardi — qoʻlda tuzatishdan keyin
+       tayanchsiz tom «yopiq» deb belgilanardi va roʻyxatda hech narsa
+       koʻrinmasdi (audit esa TOM_TAYANCH deb ogohlantirardi — ikkovi zid).
+   Endi bayroqni faqat shu funksiya qoʻyadi. Ifodani koʻchirib yozmang. */
+function markTom(layers, base, off){
+  for (var i = 0; i < layers.length; i++){
+    var L = layers[i], bel = i > 0 ? layers[i-1] : null;
+    L.tom = (i === layers.length - 1) &&
+            tomOK(L, base, off) &&
+            stackSuppOK(L, bel ? bel.items : null, base) &&
+            (!bel || bedOK(bel));
+  }
+  return layers;
+}
+
 /* 3.6.4 QOPQOQ — avval yaxlit 1 detal, boʻlmasa 2, keyin 3 */
 function makeLid(pool, base, kgBudget){
   function drop(L){ L.items.forEach(function(q){ q.it.used=false; }); }
@@ -300,16 +341,47 @@ function makeLid(pool, base, kgBudget){
     for (var o=0;o<ORD.length;o++){
       var L = makeLayer(pool, base.L, base.W, kgBudget, base.L, base.W, o, n,
                         false, null, ths[ti].t);
-      if (!L.items.length){ continue; }
-      var ok = (base.L-L.bb.L) <= S.lidTol && (base.W-L.bb.W) <= S.lidTol &&
+      var ok = L.items.length &&
+               (base.L-L.bb.L) <= S.lidTol && (base.W-L.bb.W) <= S.lidTol &&
                lidOK(L, base, 0);
-      // v12: L.whole yoziladigan, lekin hech qayerda oʻqilmaydigan maydon edi — olindi
-      if (ok && (!best || L.fill > best.fill)){ if (best) drop(best); L.lid=true; L.tom=true; best=L; }
-      else drop(L);
+      var win = ok && (!best || L.fill > best.fill);
+      /* v21: nomzod TOʻLIQ pool ustida baholanadi.
+         Ilgari gʻolib nomzodning detallari `used=true` boʻlib qolardi va
+         keyingi tartib (ORD) allaqachon kamaygan pool ustida sinalardi —
+         nomzodlar teng sharoitda solishtirilmasdi. Endi har nomzoddan keyin
+         pool boʻshatiladi; joylashuv (`L.items` koordinatalari) saqlanib
+         qoladi, gʻolib esa qaytarishdan oldin qayta belgilanadi. */
+      drop(L);
+      if (win) best = L;
     }
-    if (best) return best;      // eng kam detalli variant gʻolib
+    if (best){                  // eng kam detalli variant gʻolib
+      best.items.forEach(function(q){ q.it.used = true; });
+      best.lid = true;
+      return best;
+    }
   }
   return null;
+}
+
+/* v14: PADDON QAMROVI — tag yuzasi pochka gabaritining kamida `baseCover` % i
+   boʻlishi shart, tag esa gabaritdan har tomonga `baseInset` mm dan koʻp
+   ichkariga qochmasin. Foiz umumiy qamrovni ushlaydi, mm esa bitta yomon
+   tomonni: uzun pochkada 5 % yuza ham 60 mm boʻlishi mumkin.
+
+   v21: ayni shu qoida ikki joyda — `layoutPack()` ichidagi `coverOK` va
+   quyruq uchun `tailCoverOK` — soʻzma-soʻz takrorlanardi. Endi bitta funksiya;
+   `layers` — hisobga olinadigan qavatlar (qabul qilinganlari + sinalayotgani). */
+function coverOK(base, layers){
+  var gL = base.L, gW = base.W;
+  (layers || []).forEach(function(L){
+    if (L && L.bb){ gL = Math.max(gL, L.bb.L); gW = Math.max(gW, L.bb.W); }
+  });
+  if (S.baseInset != null){
+    if ((gL - base.L)/2 > S.baseInset + 1e-9) return false;
+    if ((gW - base.W)/2 > S.baseInset + 1e-9) return false;
+  }
+  if (!S.baseCover) return true;
+  return ((base.L * base.W) / (gL * gW)) >= S.baseCover/100 - 1e-9;
 }
 
 /* 3.6.5 LAYOUTPACK — bitta pochka: tag → qavatlar (tartib: boʻlaklar pastda,
@@ -321,24 +393,12 @@ function layoutPack(base, mids, allowOvh, ord, strat, rndj){
      necha mm ichkarida qolishi mumkinligi; chiqish shundan katta boʻlsa tag
      ustidagi qavat osilib qoladi. Shuning uchun konvert ikkalasining kichigidan. */
   var off = allowOvh ? Math.min(S.ovh, (S.baseInset != null ? S.baseInset : S.ovh)) : 0;
-  var envL = base.L + 2*off, envW = base.W + 2*off, area = base.L*base.W;
+  var envL = base.L + 2*off, envW = base.W + 2*off;
   mids.forEach(function(i){ i.used = false; });
   var budget = S.maxKg - base.kg, layers = [], lid = null;
 
   function drop(L){ L.items.forEach(function(q){ q.it.used=false; }); }
 
-  /* v14: PADDON QAMROVI — tag yuzasi pochka gabaritining kamida baseCover % i
-     boʻlishi shart. `list` — hozircha qabul qilingan qavatlar + sinalayotgani. */
-  function coverOK(list){
-    var gL = base.L, gW = base.W;
-    list.forEach(function(L){ if (L && L.bb){ gL = Math.max(gL, L.bb.L); gW = Math.max(gW, L.bb.W); } });
-    if (S.baseInset != null){
-      if ((gL - base.L)/2 > S.baseInset + 1e-9) return false;
-      if ((gW - base.W)/2 > S.baseInset + 1e-9) return false;
-    }
-    if (!S.baseCover) return true;
-    return (area / (gL*gW)) >= S.baseCover/100 - 1e-9;
-  }
   /* v14: BALANDLIK — maxH mm. Qavat soni aralash qalinlikda balandlikni yomon
      oʻlchaydi (12×3 mm = 36 mm, 12×16 mm = 192 mm), shuning uchun ikkinchi chegara. */
   function heightOK(extra){
@@ -357,10 +417,12 @@ function layoutPack(base, mids, allowOvh, ord, strat, rndj){
     if (lid) budget -= lid.kg;
   }
 
-  // QAVAT LIMITI: tag(1) + oʻrta qavatlar + qopqoq(1) <= S.maxLayers
-  var midCap = S.maxLayers > 0
-    ? Math.max(0, S.maxLayers - 1 - (lid ? 1 : (strat===0 ? 0 : 1)))
-    : 1e9;
+  /* QAVAT LIMITI: tag(1) + oʻrta qavatlar + qopqoq(1) <= S.maxLayers.
+     v21: `strat === 1` da qopqoq ALOHIDA qoʻshilmaydi — eng tepadagi oʻrta
+     qavat qopqoq deb belgilanadi. Ilgari bu yoʻlda ham qopqoqqa oʻrin
+     ayrilardi va natijada har pochkaning yarim variantlari bitta qavat kam
+     terilardi (limit buzilmasdi, lekin joy behuda qolardi). */
+  var midCap = S.maxLayers > 0 ? Math.max(0, S.maxLayers - 1 - (lid ? 1 : 0)) : 1e9;
 
   /* v14: har qavat BITTA qalinlikdan. Qolgan qalinliklar navbat bilan sinaladi
      va eng zichi olinadi — shu sabab 3 mm orqa devorlar 16 mm pochkasining
@@ -372,7 +434,7 @@ function layoutPack(base, mids, allowOvh, ord, strat, rndj){
       var Lc = makeLayer(mids, envL, envW, budget, base.L, base.W, ord||0, 1e9,
                          flip, rndj, ths[ti].t);
       if (!Lc.items.length){ continue; }
-      if (Lc.fill < S.minFill/100 || !coverOK(layers.concat([Lc])) || !heightOK(Lc.h)){
+      if (Lc.fill < S.minFill/100 || !coverOK(base, layers.concat([Lc])) || !heightOK(Lc.h)){
         drop(Lc); continue;
       }
       if (!bestL || Lc.fill > bestL.fill){ if (bestL) drop(bestL); bestL = Lc; }
@@ -389,7 +451,7 @@ function layoutPack(base, mids, allowOvh, ord, strat, rndj){
       if (!thickOKon(base, wths[wi].t)) continue;
       var Wc = makeLayer(mids, envL, envW, budget, base.L, base.W, ord||0, 1e9,
                          false, rndj, wths[wi].t);
-      if (Wc.items.length && coverOK([Wc]) && heightOK(Wc.h)) Wk = Wc;
+      if (Wc.items.length && coverOK(base, [Wc]) && heightOK(Wc.h)) Wk = Wc;
       else drop(Wc);
     }
     if (Wk){ Wk.weak = true; layers.push(Wk); budget -= Wk.kg; }
@@ -421,18 +483,6 @@ function layoutPack(base, mids, allowOvh, ord, strat, rndj){
     // qopqoq: eng tepadagi qavat; agar yaxlit boʻlmasa "soft" deb belgilanadi
     var last = layers[layers.length-1];
     last.lid = true;
-    /* v15: haqiqatan tom boʻla oldimi.
-       v20: endi OSTIDAGI QAVATGA TAYANISHI ham shartga kiradi. Tom yuzasi
-       toʻgʻri, nisbatlari toʻgʻri boʻlishi mumkin, lekin uning chetdagi detali
-       ostidagi qavatdan chiqib osilib qolsa — u baribir sinadi. */
-    var belL = layers.length > 1 ? layers[layers.length-2] : null;
-    var bel  = belL ? belL.items : null;
-    /* v20: toʻshak — tom ostidagi qavat. Ostida qavat boʻlmasa tom TAG ustida
-       yotadi, tag esa yaxlit detal: shart avtomatik bajariladi. */
-    last.tom  = tomOK(last, base, off) && stackSuppOK(last, bel, base) &&
-                (!belL || bedOK(belL));
-    last.supp = layerSupp(last, bel, base);   // tashxis va sinov uchun
-    last.bed  = belL ? belL.fill : 1;
     /* v14: bu qopqoq makeLid() dan OʻTMAGAN — u shunchaki eng ustki qavat
        boʻlgani uchun qopqoq deb belgilanmoqda. Demak unga qopqoq qoidalari
        (min qalinlik, muvozanat) qoʻllanmagan. Belgi tashxis va sinov uchun:
@@ -442,19 +492,27 @@ function layoutPack(base, mids, allowOvh, ord, strat, rndj){
       return q.x < -1e-9 || q.y < -1e-9 || q.x+q.a > base.L+1e-9 || q.y+q.b > base.W+1e-9; }));
   }
 
+  /* TOM bayrogʻi — ikkala yoʻl uchun ham bir joyda: makeLid() yasagan qopqoq
+     ham, koʻtarilgan eng ustki qavat ham ayni shu shartdan oʻtadi. */
+  markTom(layers, base, off);
+
   var kg = base.kg + layers.reduce(function(s,L){ return s+L.kg; },0);
   return { base:base, layers:layers, kg:kg, envL:envL, envW:envW, off:off,
            allowOvh:allowOvh, left:mids.filter(function(i){ return !i.used; }) };
 }
 
-/* 3.6.6 PACKGROUP — har pochkaga 24+ variant sinaladi, eng zichi tanlanadi
+/* 3.6.6 PACKGROUP — har pochkaga PACK_TRIES ta variant sinaladi, eng zichi tanlanadi
    v10: generator — har pochka yigʻilgach `yield` qiladi. Shu sabab katta buyurtmada ham
    interfeys muzlamaydi: haydovchi (packAllAsync) har 40 ms da brauzerga nafas beradi. */
 var PACKPROG = { t:0, tries:0, g:0, groups:0, packs:0, cancel:false };
 
+/* Bitta guruhdan chiqadigan pochkalarning MUTLAQ chegarasi — cheksiz sikldan
+   himoya. Meʼyor emas: normal ishlashda har guruh oʻnlab iteratsiyada tugaydi. */
+var GREEDY_GUARD = 900;
+
 function* greedyPackGen(list, rnd){
   var rem = list.slice().sort(ORD[0]), packs=[], odd=[], guard=0;
-  while (rem.length && guard++ < 900){
+  while (rem.length && guard++ < GREEDY_GUARD){
     /* v14: TAG OYNASI — toʻrt chegara (eni min/maks, boʻyi min/maks) + qalinlik.
        Qalinlik chegarasi ZAXIRA yoʻli bilan: agar guruhda minBaseT ga yetadigan
        birorta detal boʻlmasa (masalan butun guruh 3 mm orqa devor), talab shu
@@ -518,6 +576,11 @@ function* greedyPackGen(list, rnd){
     PACKPROG.packs++;
     yield PACKPROG;                    // bitta pochka tayyor — brauzerga nafas berish nuqtasi
   }
+  /* Himoya toʻsigʻi ishlab ketgan boʻlsa qolgan detallar HECH QAYERGA
+     tushmasdi — na `packs` ga, na `odd` ga. Ular auditda YOʻQOLGAN boʻlib
+     chiqardi va sabab koʻrinmasdi. Endi ular nostandart oqimga oʻtadi:
+     sikl ichidagi ikkita boshqa chiqish yoʻli allaqachon shunday qiladi. */
+  if (rem.length) odd = odd.concat(rem);
   return { packs:packs, odd:odd };
 }
 
@@ -633,7 +696,7 @@ function tailFit(w, p, cap, kgLimit){
       var Lc = makeLayer(rest, p.envL, p.envW, budget, p.base.L, p.base.W, 0, 1e9,
                          (p.layers.length + n) % 2 === 1, null, ths[ti].t);
       if (!Lc.items.length) continue;
-      if (!tailCoverOK(p, out.concat([Lc]))) continue;   // v14: paddon qamrovi buzilmasin
+      if (!coverOK(p.base, p.layers.concat(out, [Lc]))) continue;  // paddon qamrovi buzilmasin
       /* v15: quyruq — pochkaning ENG USTKI yuzasi, demak u ham TOM qoidasiga
          boʻysunadi. Ilgari bu yerda istisno bor edi va natijada 27 % yopilgan
          tom bilan pochka yopilib qolardi; ustiga boshqa pochka terilganda
@@ -671,32 +734,17 @@ function tailFit(w, p, cap, kgLimit){
   return rest.length ? null : out;
 }
 
-/* v14: quyruq qavati gabaritni kengaytirishi mumkin — paddon qamrovi qoidasi
-   (baseCover / baseInset) unda ham amal qiladi, aks holda quyruq tagdan
-   osilib chiqib pochkani beqaror qilardi. */
+/* Quyruq qavati gabaritni kengaytirishi mumkin — paddon qamrovi qoidasi
+   (`coverOK`, yuqorida) unda ham amal qiladi, aks holda quyruq tagdan osilib
+   chiqib pochkani beqaror qilardi. */
 function packHeight(p, extra){
   return p.base.T + p.layers.reduce(function(s, L){ return s + L.h; }, 0) +
          (extra || 0);
 }
-/* Nishon pochkaning tomi yopiqmi — quyruq qopqoq ostiga tushishi shu bilan
-   hal qilinadi (yuqoridagi izohga qarang). */
-function tailUnderLid(p){
-  return !!(p && p.layers && p.layers.length &&
-            p.layers[p.layers.length-1].tom);
-}
-function tailCoverOK(p, extra){
-  var gL = p.base.L, gW = p.base.W;
-  p.layers.concat(extra || []).forEach(function(L){
-    if (L && L.bb){ gL = Math.max(gL, L.bb.L); gW = Math.max(gW, L.bb.W); }
-  });
-  if (S.baseInset != null){
-    if ((gL - p.base.L)/2 > S.baseInset + 1e-9) return false;
-    if ((gW - p.base.W)/2 > S.baseInset + 1e-9) return false;
-  }
-  if (!S.baseCover) return true;
-  return ((p.base.L*p.base.W) / (gL*gW)) >= S.baseCover/100 - 1e-9;
-}
-
+/* v21: `tailUnderLid()` shu yerda turardi — quyruq qopqoq ostiga tushishini
+   hal qilardi. v20 da bu qaror `tailInsertAt()` ga oʻtdi (u faqat «tom
+   yopiqmi» emas, «quyruq qaysi oʻringa suqiladi» degan savolga javob beradi)
+   va funksiya oʻqilmay qoldi — hech bir joydan chaqirilmasdi. */
 /* `sameKey` — nishon manba bilan bir xil pochkalash guruhida boʻlishi shart.
    packGroupGen ichida chaqirilganda kerak emas (u yerda hamma pochka bitta
    guruhdan), YAKUNIY bosqichda esa shart: u butun buyurtma boʻylab ishlaydi.
@@ -932,14 +980,7 @@ function absorbTails(packs, sameKey){
         if (p.kg > packKgBase(p) + 1e-9) p.overKg = true;
         /* v15: eng ustki qavat oʻzgargan boʻlishi mumkin — bayroqlarni yangilaymiz.
            Aks holda audit eski qopqoqning `tom` bayrogʻiga qarab qolardi. */
-        p.layers.forEach(function(L, li){
-          var top = (li === p.layers.length - 1);
-          var blL = li > 0 ? p.layers[li-1] : null;
-          var bl  = blL ? blL.items : null;
-          L.tom = top ? (tomOK(L, p.base, p.off) && stackSuppOK(L, bl, p.base) &&
-                         (!blL || bedOK(blL))) : false;
-          if (top){ L.supp = layerSupp(L, bl, p.base); L.bed = blL ? blL.fill : 1; }
-        });
+        markTom(p.layers, p.base, p.off);
         packs.splice(packs.indexOf(w), 1);
         did = true;
       }
@@ -1141,8 +1182,13 @@ function groupSortKey(list){
 
 /* Nostandart limitlarini vaqtincha oʻrnatib funksiyani chaqiradi.
    Sabab: layoutPack/greedyPackGen limitlarni S dan oʻqiydi va ularni
-   parametrga chiqarish butun signaturani buzardi. Qaytarishda `finally` —
-   xato boʻlsa ham standart limitlar tiklanadi. */
+   parametrga chiqarish butun signaturani buzardi.
+
+   DIQQAT: chaqiruv `try … finally` ichida boʻlishi SHART. Izohda `finally`
+   ilgari ham yozilgan edi, lekin kodda yoʻq edi — natijada pochkalash bekor
+   qilinganda (`packAllAsync` generatorni `return()` qiladi) S.maxKg 35 emas,
+   40 boʻlib qolardi va keyingi qayta hisobgacha butun interfeys notoʻgʻri
+   chegara koʻrsatardi. */
 function oddLimitsOn(){
   var sv = { maxKg:S.maxKg, maxLen:S.maxLen, baseWMax:S.baseWMax };
   S.maxKg    = Math.max(S.maxKg,  +S.oddKg   || S.maxKg);
@@ -1244,9 +1290,9 @@ function* oddPackGen(list, rule){
       /* packGroupGen — greedyPackGen ustiga konsolidatsiya (3.6.7) va quyruq
          (3.6.7.1) qoʻshadi. Nostandart oqimga ular ayniqsa kerak: u yerda
          detal kam, demak yarim boʻsh pochka ehtimoli yuqori. */
-      var sv = oddLimitsOn();
-      var res = yield* packGroupGen(wide, mulberry(4242));
-      oddLimitsOff(sv);
+      var sv = oddLimitsOn(), res;
+      try { res = yield* packGroupGen(wide, mulberry(ODD_SEED)); }
+      finally { oddLimitsOff(sv); }
       for (var pi = 0; pi < res.packs.length; pi++){
         var pk = res.packs[pi];
         pk.key = pkey; pk.gname = gl; pk.room = gr;
@@ -1312,7 +1358,7 @@ function* packAllGen(){
        uchun bir xil kirish va bir xil sozlama har doim bir xil natija beradi.
        Har guruhga alohida urugʻ berib koʻrildi (tartibdan mustaqil boʻlsin deb) —
        namunada natija yomonlashdi: 55 pochka oʻrniga 57. Shu sabab qoldirildi. */
-    var rnd = mulberry(1234 + t*7919), all=[], odd=oddPre.slice();
+    var rnd = mulberry(MAIN_SEED + t*SEED_STEP), all=[], odd=oddPre.slice();
     PACKPROG.t = t+1;
     // forEach ichida yield qilib boʻlmaydi — shu sabab oddiy for sikli
     for (var gi=0; gi<gks.length; gi++){
@@ -1383,17 +1429,14 @@ function* packAllGen(){
   out.forEach(function(p,i){
     p.no = i+1;
     p.rev = P.rev;
-    p.t = p.odd ? p.t : p.base.T;
-    p.seq = packSeq(p);
-    p.h = p.odd ? p.items.reduce(function(s,x){ return s+x.T; },0)
-                : p.base.T + p.layers.reduce(function(s,L){ return s+L.h; },0);
-    if (!p.odd){
-      var gL = p.base.L, gW = p.base.W;
-      p.layers.forEach(function(L){ if (L.bb){ gL=Math.max(gL,L.bb.L); gW=Math.max(gW,L.bb.W); } });
-      p.gabL = Math.round(gL); p.gabW = Math.round(gW);
-    }
-    p.fillAvg = (!p.odd && p.layers.length)
-      ? p.layers.reduce(function(s,L){ return s+L.fill; },0)/p.layers.length : 0;
+    packDerive(p);
+    /* v21: `left` — layoutPack ning ISHCHI maydoni: «shu tagga sigʻmaganlar».
+       greedyPackGen uni keyingi pochkaga uzatadi, yaʼni terish tugagach
+       roʻyxatdagi detallar ALLAQACHON boshqa pochkalarda turadi. Uni tozalab
+       qoʻymaslik jimgina xatoga olib kelardi: «chiqishga ruxsat» katagi
+       (10-ui.js `togglePackOvh`) shu roʻyxatni pochkaga qayta qoʻshib,
+       detallarni IKKI joyda paydo qilardi. */
+    p.left = [];
     p.done = 0;
   });
   PACKS = out;
@@ -1401,7 +1444,9 @@ function* packAllGen(){
 }
 
 /* 3.6.8.1 SINXRON KOʻRINISH — generatorni bir yoʻla oxirigacha aylantiradi.
-   Kichik buyurtmalarda va testlarda ishlatiladi; eski chaqiruv joylari buzilmaydi. */
+   Interfeys buni CHAQIRMAYDI: u har doim `packAllAsync()` orqali ishlaydi
+   (aks holda katta buyurtmada brauzer muzlaydi). Bu oʻram sinov va skript
+   uchun — `smoke.ps1`, `corpus.ps1` va oʻlchov vositalari shuni ishlatadi. */
 function packAll(){
   var g = packAllGen(), r = g.next();
   while (!r.done) r = g.next();
@@ -1430,12 +1475,12 @@ function packAllAsync(onProg){
         resolve({ ok:false, cancelled:true });
         return;
       }
-      var t0 = (window.performance && performance.now) ? performance.now() : Date.now();
+      var t0 = nowMs();
       try {
         for (;;){
           var r = gen.next();
           if (r.done){ if (onProg) onProg(PACKPROG); resolve({ ok:true }); return; }
-          var now = (window.performance && performance.now) ? performance.now() : Date.now();
+          var now = nowMs();
           if (now - t0 > 40) break;              // 40 ms ishladik — nafas olamiz
         }
       } catch(e){ if (myRun === PACK_RUN) PACKS = prevPacks; reject(e); return; }
@@ -1466,6 +1511,44 @@ function packSeq(p){
     });
   });
   return s;
+}
+
+/* 3.6.9.1 HOSILA MAYDONLAR — bitta joyda.
+
+   `kg`, `t`, `h`, `gabL`, `gabW`, `fillAvg`, `seq` — hammasi `base` + `layers`
+   dan (bogʻda `items` dan) kelib chiqadi, yaʼni ularni saqlashning maʼnosi
+   yoʻq: har oʻzgarishdan keyin qayta hisoblanadi.
+
+   Ilgari bu hisob TOʻRT joyda qoʻlda takrorlanardi — `packAllGen()`,
+   09-storage `restoreSnapshot()`, 10-ui `togglePackOvh()` va `refreshPack()` —
+   va nusxalar bir-biridan farq qilib ketgan edi (bogʻning gabariti faqat
+   tiklashda hisoblanardi, `fillAvg` esa uch xil shaklda yozilgandi).
+
+   Hosila EMAS va shuning uchun bu yerda tegilmaydi: `no`, `rev`, `done`,
+   `key`, `gname`, `room`, `nst`, `oddSrc`, `overKg`, `allowOvh`, `off`. */
+function packDerive(p){
+  if (!p) return p;
+  if (p.odd){
+    var its = p.items || [];
+    p.kg   = its.reduce(function(s,x){ return s + x.kg; }, 0);
+    p.h    = its.reduce(function(s,x){ return s + x.T;  }, 0);
+    if (p.t == null) p.t = its.length ? its[0].T : 0;
+    p.gabL = its.reduce(function(m,x){ return Math.max(m, x.L); }, 0);
+    p.gabW = its.reduce(function(m,x){ return Math.max(m, x.W); }, 0);
+    p.fillAvg = 0;
+    p.seq  = packSeq(p);
+    return p;
+  }
+  var lay = p.layers || [], gL = p.base.L, gW = p.base.W;
+  lay.forEach(function(L){ if (L.bb){ gL = Math.max(gL, L.bb.L); gW = Math.max(gW, L.bb.W); } });
+  p.kg      = p.base.kg + lay.reduce(function(s,L){ return s + L.kg; }, 0);
+  p.t       = p.base.T;
+  p.h       = p.base.T + lay.reduce(function(s,L){ return s + L.h; }, 0);
+  p.gabL    = Math.round(gL);
+  p.gabW    = Math.round(gW);
+  p.fillAvg = lay.length ? lay.reduce(function(s,L){ return s + L.fill; }, 0)/lay.length : 0;
+  p.seq     = packSeq(p);
+  return p;
 }
 
 /* 3.6.10 QR MATNI — detal va pochka cheki uchun

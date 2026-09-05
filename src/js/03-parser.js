@@ -5,6 +5,11 @@ var DENS = {3:900, 4:850, 6:850, 8:800, 10:700, 16:700, 18:700, 22:680, 25:680};
 /* Material topilmaganda ishlatiladigan zaxira zichlik (16 mm LDSP, kg/m²).
    Ilgari bu son toʻrt joyda qoʻlda yozilgan edi — biri oʻzgarsa qolgani ortda qolardi. */
 var KGM2_FALLBACK = 11.2;
+/* v21: STANDART LIST — 16 mm LDSP. Ikki joyda kerak: faylda list oʻlchami
+   boʻlmaganda zaxira qiymat va «+ Material / + Tur qoʻshish» tugmalarining
+   boshlangʻich qiymati. Ilgari oʻsha toʻrt son uch faylda qoʻlda
+   takrorlanardi — yuqoridagi izoh vaʼda qilgan markazlashtirish chala edi. */
+var SHEET_DEFAULT = { l:2750, w:1830, t:16, kgm2:KGM2_FALLBACK };
 function catLookup(name, t){
   var u = (name||"").toUpperCase(), best = null;
   (S.matCat||[]).forEach(function(c){
@@ -91,8 +96,8 @@ function parseProject(xmlText){
     // Bazis eksportida list oʻlchami <good> da emas, ichidagi <part l w> da turadi
     var sp = g.querySelector("part");
     mats.push({ id:id, name:nm,
-      l:num(g.getAttribute("l"), sp ? num(sp.getAttribute("l"), 2750) : 2750),
-      w:num(g.getAttribute("w"), sp ? num(sp.getAttribute("w"), 1830) : 1830),
+      l:num(g.getAttribute("l"), sp ? num(sp.getAttribute("l"), SHEET_DEFAULT.l) : SHEET_DEFAULT.l),
+      w:num(g.getAttribute("w"), sp ? num(sp.getAttribute("w"), SHEET_DEFAULT.w) : SHEET_DEFAULT.w),
       t:t, kgm2: cat ? cat.kgm2 : +(t/1000*dens).toFixed(3),
       cat: cat ? cat.key : null,
       sheets:num(g.getAttribute("count"), 0) });
@@ -222,7 +227,7 @@ function matOf(id){
 
    Chiqarib tashlangani YOʻQOLMAYDI: roʻyxati DIAG.skipped ga yoziladi va
    Diagnostikada koʻrinadi. */
-function partSkipWhy(p, m){
+function partSkipWhy(m){
   var t = m ? +m.t : 16;
   var lim = +S.maxPartT || 0;
   if (lim && t > lim)
@@ -235,12 +240,28 @@ function buildItems(){
   var out = [];
   if (!P || !P.parts) return out;
   var skipped = [];
-  P.parts.forEach(function(p){
+  /* v21: UID TOʻQNASHUVIGA QARSHI.
+     `uid` = part.id + "#" + nusxa raqami. Faylda bir xil `id` li ikkita <part>
+     uchrasa (parser buni ID_TAKROR deb ogohlantiradi, lekin faylni rad etmaydi)
+     ikkala pozitsiya AYNAN bir xil uid beradi. Oqibati ogʻir: audit ularni
+     «bitta detal ikki marta joylashgan» deb TAKROR xatosi bilan koʻrsatadi,
+     saralash posti esa ikkinchi nusxani birinchisining yacheykasiga bogʻlaydi —
+     va bu holatdan chiqib boʻlmaydi.
+     Yechim: takror uchraganda pozitsiya indeksi qoʻshiladi. Tartib qatʼiy
+     (P.parts tartibi oʻzgarmaydi), demak uid barqaror — seansni tiklash
+     buzilmaydi. Takror boʻlmagan holatda uid eskicha qoladi. */
+  var uidSeen = {};
+  P.parts.forEach(function(p, pi){
+    /* uid asosi HAR pozitsiya uchun hisoblanadi — chiqarib tashlanganlar uchun
+       ham. Aks holda «modul oʻchirildi» kabi sozlama uid larni surib yuborardi. */
+    var idKey = String(p.id);
+    var base = uidSeen[idKey] ? (idKey + "@" + pi) : idKey;
+    uidSeen[idKey] = 1;
     // v11: birlik belgisi «good» kodidan yoki detal kodining prefiksidan olinadi
     var u = unitOf(p);
     if (S.rooms && S.rooms[u] === false) return;      // oʻchirilgan birlik
     var m = matOf(p.m);
-    var why = partSkipWhy(p, m);
+    var why = partSkipWhy(m);
     if (why){ skipped.push({ code:p.c, name:p.n, q:Math.max(1, p.q|0), why:why }); return; }
     var L = Math.max(p.l, p.w), W = Math.min(p.l, p.w);
     var area = (L*W)/1e6;                 // mm² -> m²
@@ -249,7 +270,7 @@ function buildItems(){
     for (var k=0;k<q;k++){
       // v12: part, area, idx, band maydonlari olib tashlandi — ular yozilardi,
       // lekin butun loyihada bir marta ham oʻqilmasdi
-      out.push({ uid:p.id+"#"+k, code:p.c, name:p.n, prod:p.p, prodCode:p.pc,
+      out.push({ uid:base+"#"+k, code:p.c, name:p.n, prod:p.p, prodCode:p.pc,
         unit:u, unitName:unitName(p), cls:classify(p.n),
         L:L, W:W, T:m?m.t:16, mat:m, matId:p.m, edges:p.e,
         kg:kg, of:q });

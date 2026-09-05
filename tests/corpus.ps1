@@ -81,7 +81,6 @@ $runner = @'
     var files = window.__FILES || [];
     for (var i = 0; i < files.length; i++){
       var f = files[i], row = { n: f.n };
-      var t0 = (window.performance && performance.now) ? performance.now() : Date.now();
       try {
         var data = parseProject(f.t);
         // yangi buyurtma — eski guruhlar boshqa faylning kodlariga tayangan
@@ -152,8 +151,6 @@ $runner = @'
         row.ok = 0;
         row.errCode = String(e && e.message ? e.message : e).slice(0, 90);
       }
-      var t1 = (window.performance && performance.now) ? performance.now() : Date.now();
-      row.ms = Math.round(t1 - t0);
       OUT.push(row);
     }
     var d = document.createElement("pre");
@@ -184,6 +181,8 @@ for ($b = 0; $b -lt $batches; $b++) {
   $items = @()
   foreach ($f in $slice) {
     $txt = [System.IO.File]::ReadAllText($f.FullName, [System.Text.Encoding]::UTF8)
+    # TrimStart('') bo'sh massiv beradi va faqat bo'shliqni kesadi — bosh
+    # teskari chiziq esa qolib ketardi. Kerak bo'lgani aynan u.
     $rel = $f.FullName.Substring($dirFull.Length).TrimStart('')
     $items += [pscustomobject]@{ n = $rel; t = $txt }
   }
@@ -200,7 +199,10 @@ for ($b = 0; $b -lt $batches; $b++) {
              "--disable-dev-shm-usage","--user-data-dir=$profile","--virtual-time-budget=600000",
              "--dump-dom", ("file:///" + $tmp.Replace("\","/")))
   $proc = Start-Process -FilePath $Browser -ArgumentList $bargs -NoNewWindow -PassThru -RedirectStandardOutput $outFile
-  $proc | Wait-Process -Timeout $TimeoutSec
+  # Vaqt tugashi kutilgan holat; $ErrorActionPreference="Stop" bilan u skriptni
+  # to'xtatib, vaqtinchalik sahifani (ichida mijoz ma'lumoti bor) va brauzer
+  # profilini tozalanmagan qoldirardi.
+  $proc | Wait-Process -Timeout $TimeoutSec -ErrorAction SilentlyContinue
   if (-not $proc.HasExited) { $proc | Stop-Process -Force }
 
   $dom = ""
@@ -217,7 +219,7 @@ for ($b = 0; $b -lt $batches; $b++) {
   } else {
     foreach ($f in $slice) {
       $rel = $f.FullName.Substring($dirFull.Length).TrimStart('')
-      [void]$rows.Add([pscustomobject]@{ n = $rel; ok = 0; errCode = "sahifa natija bermadi"; ms = 0 })
+      [void]$rows.Add([pscustomobject]@{ n = $rel; ok = 0; errCode = "sahifa natija bermadi" })
     }
   }
 
@@ -230,13 +232,13 @@ $swAll.Stop()
 
 # ---------------- hisobot ----------------
 ""
-"{0,-42} {1,5} {2,6} {3,7} {4,6} {5,5} {6,6} {7,5} {8,6}" -f "FAYL","DETAL","POCHKA","O'RT.KG","TO'LD","TOM","XATO","OGOH","MS"
+"{0,-42} {1,5} {2,6} {3,7} {4,6} {5,5} {6,6} {7,5}" -f "FAYL","DETAL","POCHKA","O'RT.KG","TO'LD","TOM","XATO","OGOH"
 "-" * 100
 foreach ($r in $rows) {
   if ($r.ok -eq 1) {
-    "{0,-42} {1,5} {2,6} {3,7} {4,5}% {5,5} {6,6} {7,5} {8,6}" -f `
+    "{0,-42} {1,5} {2,6} {3,7} {4,5}% {5,5} {6,6} {7,5}" -f `
       (Tail42 $r.n), $r.det, $r.packs, $r.avg, $r.fill,
-      ("$($r.openTom)/$($r.tops)"), $r.err, $r.warn, $r.ms
+      ("$($r.openTom)/$($r.tops)"), $r.err, $r.warn
   } else {
     "{0,-42} {1}" -f (Tail42 $r.n), ("O'QILMADI: " + $r.errCode)
   }
@@ -259,7 +261,6 @@ if ($good.Count) {
   $sumOvr = ($good | Measure-Object over -Sum).Sum
   $avgFil = [Math]::Round((($good | Measure-Object fill -Average).Average), 1)
   $maxKg  = ($good | Measure-Object maxKg -Maximum).Maximum
-  $maxMs  = ($good | Measure-Object ms -Maximum).Maximum
   "DETAL         : {0}   POCHKA: {1}   MASSA: {2} kg" -f $sumDet, $sumPk, [Math]::Round($sumKg)
   "O'RTACHA      : {0} kg/pochka   to'ldirish {1}%   eng og'ir pochka {2} kg" -f `
     ([Math]::Round($sumKg / [Math]::Max(1,$sumPk), 1)), $avgFil, $maxKg
@@ -268,7 +269,10 @@ if ($good.Count) {
   "POCHKALANMAGAN: {0} obyekt (xona devori, pol — Diagnostikada roʻyxati bor)" -f (($good | Measure-Object skip -Sum).Sum)
   "AUDIT XATOSI  : {0} faylda" -f $errF.Count
   "DETAL YO'QOLDI: {0} faylda" -f $lost.Count
-  "VAQT          : {0} s (eng sekin fayl {1} ms)" -f ([Math]::Round($swAll.Elapsed.TotalSeconds,1)), $maxMs
+  # Har fayl uchun vaqt O'LCHANMAYDI: brauzer --virtual-time-budget bilan
+  # yuritiladi, ya'ni sinxron ish virtual soatda 0 ms turadi. Ilgari shu sabab
+  # jadvalda "MS" ustuni har doim 0 chiqardi. Haqiqiy vaqt — butun yurish.
+  "VAQT          : {0} s (jami, {1} ta partiya)" -f ([Math]::Round($swAll.Elapsed.TotalSeconds,1)), $batches
 }
 if ($errF.Count) {
   ""

@@ -2538,7 +2538,11 @@ $bargs = @(
 "Ishga tushirilmoqda..."
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
 $proc = Start-Process -FilePath $Browser -ArgumentList $bargs -NoNewWindow -PassThru -RedirectStandardOutput $outFile
-$proc | Wait-Process -Timeout $TimeoutSec
+# Vaqt tugashi KUTILGAN holat, lekin Wait-Process bunda xato yozadi va
+# $ErrorActionPreference="Stop" uni terminating qilib skriptni to'xtatardi:
+# pastdagi majburan to'xtatish ham, Cleanup ham bajarilmasdi va -Http
+# rejimida lokal server portni band qilib qolardi.
+$proc | Wait-Process -Timeout $TimeoutSec -ErrorAction SilentlyContinue
 if (-not $proc.HasExited) {
   $proc | Stop-Process -Force
   "OGOHLANTIRISH: brauzer $TimeoutSec s ichida tugamadi, majburan to'xtatildi"

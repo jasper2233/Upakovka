@@ -75,9 +75,13 @@ Tanlov yo'q, raqam kiritilmaydi. `src/js/02-state.js` → `unitSrc()`, `unitOf()
 
 | Holat | P/M nima qiladi | Natija |
 |---|---|---|
-| **Har biri alohida** | «Har modul alohida pochkalansin» ✓ | **14 pochka**, 0 ta aralash |
-| **Ba'zilari birga** (ikki tumba `02`+`03`) | shu ikkisini belgilab «Xona yaratish» | **12 pochka**, shundan 2 tasi umumiy |
-| **Hammasi birga** | «Har modul alohida pochkalansin» ✗ | **9 pochka** — odatiy pochkalash |
+| **Har biri alohida** | «Har modul alohida pochkalansin» ✓ | **11 pochka**, 0 ta aralash |
+| **Ba'zilari birga** (ikki tumba `02`+`03`) | shu ikkisini belgilab «Xona yaratish» | modullar bitta pochkalash kalitini oladi |
+| **Hammasi birga** | «Har modul alohida pochkalansin» ✗ | odatiy pochkalash — kesim o'chiriladi, xolos |
+
+> Raqamlar `smoke.ps1` dagi «5modul» blokidan (`komplekt-5modul.project`,
+> 31 pozitsiya / 49 detal). Algoritm o'zgarsa ular ham o'zgaradi — testdagi
+> qiymat manba hisoblanadi.
 
 Uchinchi qatorda siz aytganingizdek: **qo'shib pochkalansa hech qanday qo'shimcha ish
 yo'q — odatiy pochkalash tizimida qoladi.** Kesim o'chiriladi, tamom.
@@ -120,19 +124,18 @@ detal soni, massasi va eng katta detali bilan ko'rsatadi. P/M har biriga **nom**
 `01 → Karavot`, `02 → Tumba chap`, `03 → Tumba o'ng`, `04 → Shkaf`, `05 → Tremo`.
 
 Nom loyiha bilan saqlanadi. Busiz chekda `01` turadi va upakovshik nima ekanini bilmaydi.
-**Hozir yo'q — yozilishi kerak.**
+**Bor** — `S.unitNames`, 6-bo'limdagi 3-band.
 
 ### 5.2 Modul kesimini belgilash
-Bitta katakcha: «Har modul alohida pochkalansin». Yoqiq — 23 pochka, o'chiq — 11 pochka.
-**Bor.**
+Bitta katakcha: «Har modul alohida pochkalansin». **Bor** (`S.split.prod`).
 
 ### 5.3 Modullarni birlashtirish
-Ikki tumbani (yoki tremo + tumba) belgilab «Birlashtirish» bosiladi — ular bitta
-pochkaga tushadi. **Bor**, lekin guruhga nom berilmaydi.
+Ikki tumbani (yoki tremo + tumba) belgilab «Xona yaratish» bosiladi — ular bitta
+pochkaga tushadi. **Bor**, guruh nom ham oladi (5.4).
 
 ### 5.4 Xona yaratish va modullarni taqsimlash
 Xona nomi + qaysi modullar kiradi + «birga pochkalansinmi» bayrog'i.
-**Hozir yo'q — 4-bo'limdagi kengaytma.**
+**Bor** — `S.modGroups` ga `name` va `join` maydonlari qo'shildi (6-bo'lim, 5-band).
 
 ### 5.5 Klass kesimi
 «Fasad alohida pochkalansin» — shu faylda `Fasad` (02, 03, 05 da) va `Фронтальная` (04 da)
@@ -144,8 +147,8 @@ ro'yxatidagi belgini olib tashlash. **Bor.**
 
 ### 5.7 Natijani ko'rish va tuzatish
 Pochkalar ro'yxati xona → modul bo'yicha tizilgan; kerak bo'lsa detalni qo'lda
-ko'chirish. **Qo'lda tahrirlash hozir Qadoqlash ekranida — TZ-v2 §1 ga zid,
-P/M ga ko'chirilishi kerak.**
+ko'chirish. **Bor va faqat P/M da** — menejerdagi «Pochkalarni tuzatish» bloki
+(6-bo'lim, 8-band). Qadoqlash ekranida tahrirlash yo'q.
 
 ---
 

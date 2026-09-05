@@ -4,7 +4,12 @@
 :root{
   --void:#16181c; --panel:#1e2127; --panel2:#262a31; --panel3:#2f343d;
   --line:#343943; --line2:#454b57;
-  --board:#c9a46c; --board-lo:#8d6c3d; --board-hi:#e2c48f;
+  /* v21: --board-lo / --board-hi olib tashlandi — ular hech qayerda
+     ishlatilmasdi (taxta soyalari 06-render3d.js dagi shade() bilan
+     hisoblanadi). --acc esa aksincha: chuqur yacheyka rangi uch joyda
+     zaxira qiymat bilan yozilardi, lekin palitrada eʼlon qilinmagandi —
+     yaʼni mavjud boʻlmagan tokenga havola turardi. */
+  --board:#c9a46c; --acc:#7aa2c8;
   --mark:#ffc629; --ok:#4ecb8e; --alert:#ff6b43; --info:#6fb5e8;
   /* v10c — KONTRAST. Eski qiymatlar: ink2 #98a0ad, ink3 #666e7c.
      ink3 sexdagi eng koʻp oʻqiladigan matnda (pochka roʻyxatining tagsatrlari,
@@ -234,6 +239,9 @@ table.dt tr:hover td{background:var(--panel)}
 h3{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink3);
    margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
 h3:first-child{margin-top:0}
+/* v21: h3 sarlavhasi yonidagi kichik izoh. Ilgari bu uslub HAR sarlavhada
+   inline yozilardi (12 marta), bittasini oʻzgartirsa qolgani ortda qolardi. */
+h3 .hint{color:var(--ink3);text-transform:none;letter-spacing:0}
 .fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
 /* uzun qiymatli maydon (material nomi) ikki ustunni egallaydi */
 .f.wide{grid-column:span 2}
@@ -260,7 +268,10 @@ h3:first-child{margin-top:0}
 @media print{
   body>*{display:none!important}
   #sheet{display:block!important;background:#fff}
-  @page{size:A4;margin:8mm}
+  /* v21: bu yerda `@page{size:A4;margin:8mm}` turardi. Chop etishdan oldin
+     `applyPageSize()` (10-ui.js) `#pageStyle` ni <head> oxiriga qoʻshadi va u
+     shu qoidani har doim ustidan yozadi — yaʼni eʼlon oʻlik edi, lekin
+     A4 chekining chetini ikkinchi joyda belgilagandek koʻrinardi. */
   .lbls{display:grid;grid-template-columns:repeat(2,1fr);gap:4mm}
   .label{width:auto;border:1px dashed #bbb;break-inside:avoid}
 
@@ -304,7 +315,9 @@ h3:first-child{margin-top:0}
   /* .work{height:100%} uch «auto» qatorni ekran boʻyiga siqib qoʻyardi va ustunlar
      bir-birining ustiga chiqib ketardi (qavat rejasi oʻng ustun matni ustiga chizilardi) */
   .work{grid-template-columns:1fr;grid-template-rows:auto auto auto;height:auto;min-height:100%;overflow:visible}
-  .col+.col{border-left:0;border-top:1px solid var(--line)}
+  /* border-top shu blokning pastida qayta belgilanadi (ustunlar tartibi
+     oʻzgaradi), shuning uchun bu yerda faqat yon chiziq olib tashlanadi */
+  .col+.col{border-left:0}
   body{overflow:auto}
   /* v10c: bir ustunli maketda .col{overflow:hidden} + .scroll{flex:1} juftligi
      ustunlarga balandlik bermasdi: qavat rejasi qirqilib, oʻng ustunning butun
@@ -336,15 +349,12 @@ h3:first-child{margin-top:0}
    1.8 v10 QOʻSHIMCHALARI — yuklash, jarayon, diagnostika, chek oʻlchami
    ================================================================ */
 
-/* --- fayl sudrab tashlash: butun oyna ustidagi qatlam --- */
-#dropzone{
-  position:fixed;inset:0;z-index:80;display:none;
-  align-items:center;justify-content:center;
-  background:rgba(10,12,15,.86);backdrop-filter:blur(2px);
-}
-/* v12: bu yerda #dropzone .dzin / b / small qoidalari turardi. upDropzone()
-   (12-upload.js) sudrab tashlash oynasini butunlay inline style bilan yasaydi —
-   .dzin ham, <b>/<small> ham chizilmaydi, yaʼni qoidalar hech qachon qoʻllanmasdi. */
+/* v12: bu yerda #dropzone va uning ichki elementlari uchun qoidalar turardi.
+   upDropzone() (12-upload.js) sudrab tashlash oynasini butunlay inline style
+   bilan yasaydi, yaʼni ular qoʻllanmasdi.
+   v21: #dropzone ning oʻzi ham shu sababdan olib tashlandi — undan faqat
+   `backdrop-filter` amalda edi, qolgan hamma eʼlon inline style bilan
+   ustidan yozilardi. Endi butun koʻrinish bitta joyda: upDropzone(). */
 
 /* --- menejerdagi yuklash maydoni --- */
 .drophint{
@@ -506,8 +516,8 @@ h3:first-child{margin-top:0}
 .cbox.off b,.cbox.off s{color:var(--ink3)}
 /* v12: KATTA (chuqur) yacheyka — tor, lekin 80 sm chuqur. Eni katta detallar
    shunga tushadi, shuning uchun u boshqa yacheykalardan ajralib turishi kerak. */
-.cbox.big{border-color:var(--acc,#7aa2c8);border-left-width:3px}
-.cbox.big u{display:block;text-decoration:none;font-size:9px;color:var(--acc,#7aa2c8);letter-spacing:.04em}
+.cbox.big{border-color:var(--acc);border-left-width:3px}
+.cbox.big u{display:block;text-decoration:none;font-size:9px;color:var(--acc);letter-spacing:.04em}
 /* Sexdagi haqiqiy oʻlchamlar — panel tepasida, bir qatorda */
 .rackgeo{
   display:flex;flex-wrap:wrap;gap:6px 16px;margin:0 0 11px;
@@ -515,7 +525,7 @@ h3:first-child{margin-top:0}
 }
 .rackgeo span{display:inline-flex;align-items:center;gap:6px}
 .rackgeo .sw{width:9px;height:9px;border:1px solid var(--line2);border-radius:2px;display:inline-block}
-.rackgeo .sw.big{border-color:var(--acc,#7aa2c8);border-left-width:3px}
+.rackgeo .sw.big{border-color:var(--acc);border-left-width:3px}
 
 /* Reja — brigadir uchun, odatda yopiq turadi */
 #sortPlanBox{display:none;margin-top:14px}
@@ -568,6 +578,9 @@ h3:first-child{margin-top:0}
 .grppick label.on{border-color:var(--mark);background:var(--panel3)}
 .grppick input{accent-color:var(--mark);width:18px;height:18px;flex:0 0 auto}
 .grppick label i{font-style:normal;color:var(--ink3);font-size:11px}
+/* «on» holatining foni panel3 — unda ink3 4:1 dan pastga tushadi
+   (.drophint kbd bilan aynan bir xil holat), shuning uchun ink2 */
+.grppick label.on i{color:var(--ink2)}
 .grpact{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
 .grphint{font-family:var(--mono);font-size:11px;color:var(--ink3)}
 .grplist{display:flex;flex-wrap:wrap;gap:8px;margin-top:11px}
@@ -669,7 +682,7 @@ select:focus-visible,
 
 /* --- qoʻlqopli barmoq uchun: kichik tugmalar biroz kattaroq --- */
 .stagetools .btn{min-height:28px}
-.stagetools input[type=checkbox],.colhead input[type=checkbox]{width:15px;height:15px}
+.colhead input[type=checkbox]{width:15px;height:15px}   /* «chiqishga ruxsat» */
 
 /* --- chek oʻlchami: termal printerlar uchun har chek alohida varaqda ---
    v20: ilgari har oʻlcham uchun alohida selektor bor edi (`sz-100x70`,
@@ -768,9 +781,9 @@ select:focus-visible,
   }
   .odoc .osign>div{flex:1}
   .odoc .osign span{
-    display:block; border-bottom:1px solid #000; height:8mm; margin-top:1mm;
+    display:flex; align-items:flex-end;
+    border-bottom:1px solid #000; height:8mm; margin-top:1mm; padding-bottom:.5mm;
     font-family:var(--mono); text-transform:none; color:#000; font-size:9px;
-    display:flex; align-items:flex-end; padding-bottom:.5mm;
   }
 }
 
@@ -818,10 +831,14 @@ select:focus-visible,
 .blk .f>label:first-child{min-height:24px}
 
 /* ---------- PODSKASKA («?» belgisi) ----------
-   Tooltip `.f` ga nisbatan joylashadi (shuning uchun `.f{position:relative}`),
-   `.q` ning oʻziga emas — 13 px li doiraga nisbatan 320 px li quti ekrandan
-   chiqib ketardi. Klaviatura bilan ham ochiladi: `tabindex="0"` + `:focus`. */
-.f{position:relative}
+   Tooltip joylashtirilgan AJDODGA nisbatan chiqadi, `.q` ning oʻziga emas —
+   13 px li doiraga nisbatan 320 px li quti ekrandan chiqib ketardi.
+   Klaviatura bilan ham ochiladi: `tabindex="0"` + `:focus`.
+
+   v21: roʻyxatga `.note` ham qoʻshildi. Sozlamalar boshidagi «ikki oqim»
+   izohida namunaviy «?» belgisi bor, u esa `.f` ichida emas — joylashtirilgan
+   ajdod topilmay, podskaska ekranning pastiga tushib koʻrinmay qolardi. */
+.f,.note{position:relative}
 .q{
   display:inline-block; width:14px; height:14px; line-height:13px; text-align:center;
   margin-left:5px; border:1px solid var(--line2); border-radius:50%;

@@ -27,7 +27,9 @@ var Store = (function(){
      turardi. U hech qachon ishga tusha olmasdi: pochkalash yadrosi ES6 generator
      ishlatadi (04-packer.js), 13-app.js esa toʻgʻridan-toʻgʻri Promise.resolve()
      chaqiradi — Promise yoʻq brauzerda sahifa allaqachon yuklanmasdi.
-     Minimal brauzer: Chrome/Edge 50+. */
+     JS boʻyicha minimal brauzer: Chrome/Edge 50+. Amaldagi chegara esa undan
+     yuqori va uni CSS qoʻyadi (`inset`, flex `gap`, `clamp()`) — Chrome/Edge
+     87+; batafsil README «Ishlab chiquvchiga» boʻlimida. */
   var Pr = Promise;
   function warn(m, e){
     try { console.warn("Store: " + m + (e ? " — " + (e.message || e) : "")); } catch(x){}
@@ -41,9 +43,14 @@ var Store = (function(){
 
   /* --- 3.11.2 bazani ochish. Har qanday nosozlikda — xotira rejimi --- */
   var IDB = null;
-  try {
-    IDB = window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || window.msIndexedDB || null;
-  } catch(e){ IDB = null; }                      // baʼzi brauzerlar file:// da shu yerda tashlaydi
+  /* v21: `mozIndexedDB` / `webkitIndexedDB` / `msIndexedDB` prefikslari olib
+     tashlandi — ular Firefox 15, Chrome 22 va IE10 uchun edi. Bu modulning
+     oʻz izohi minimal brauzerni Chrome/Edge 50+ deb belgilaydi (generator va
+     Promise shundan pastda ishlamaydi), yaʼni prefiksli yoʻllarga hech qachon
+     yetib borilmasdi. try/catch qoladi: baʼzi brauzer file:// da xossaga
+     murojaatning oʻzidayoq xato tashlaydi. */
+  try { IDB = window.indexedDB || null; }
+  catch(e){ IDB = null; }
   /* Boshlangʻich taxmin: obyektning oʻzi bor boʻlsa "bor" deb turamiz.
      Sabab: 12-upload.js Store.ready ni kutmasdan Store.available ni oʻqiydi —
      aks holda sahifa ochilishida "tarix saqlanmaydi" degan yolgʻon xabar chiqardi.
@@ -286,8 +293,22 @@ var Store = (function(){
    3.11.7 SNAPSHOT — pochkalarning kompakt tasviri
    Faqat uid va koordinata. Koordinatalar butun songa yaxlitlanadi.
    ============================================================ */
+/* Seans bilan birga saqlanadigan sozlamalar.
+
+   QOIDA: `buildItems()` natijasiga taʼsir qiladigan HAR sozlama shu yerda
+   boʻlishi SHART. Sabab: snapshot faqat `uid` va koordinatani saqlaydi,
+   qolgan hamma narsa tiklashda `buildItems()` bilan qayta yasaladi. Agar
+   sozlama oʻzgargan boʻlsa, oʻsha `uid` lar boshqacha chiqadi — birortasi
+   topilmasa `restoreSnapshot()` butun tiklashdan voz kechadi va operator
+   bir kunlik ishini yoʻqotadi.
+
+   v21: `maxPartT` shu sababdan qoʻshildi — u `partSkipWhy()` orqali qaysi
+   obyekt umuman pochkalanmasligini hal qiladi, yaʼni detallar roʻyxatining
+   OʻZINI oʻzgartiradi. Qolganlari (rooms, matCat, unitNames…) allaqachon
+   snapshotda alohida maydon boʻlib turadi. */
 var SNAP_CONF = ["maxKg","ovh","minBase","maxLen","minBaseT","tries","prefix","byThick",
-                 "minFill","lidFill","lidN","lidTol","oneMan","maxLayers","ovhOn"];
+                 "minFill","lidFill","lidN","lidTol","oneMan","maxLayers","ovhOn",
+                 "maxPartT"];
 
 function snapPacks(packs){
   return (packs || []).map(function(p){
@@ -348,7 +369,10 @@ function makeSnapshot(){
     uuid: P ? P.uuid : "",
     split: snapClone(S.split || {}, {}),   // v12: rejim oʻrniga bitta qoida
     cur: CUR,
-    step: STEP,
+    /* v21: `step` saqlanmaydi. U pochkaning oʻz `done` maydonida turardi va
+       snapshotda ikkinchi nusxa boʻlib yotardi — ikkovi ajralib ketishi
+       mumkin edi. Tiklashda qadam CUR pochkaning `done` idan olinadi
+       (`selectPack()` ham aynan shunday qiladi). */
     conf: conf,
     rooms:  snapClone(S.rooms  || {}, {}),
     sepCls: snapClone(S.sepCls || {}, {}),
@@ -401,6 +425,14 @@ function restoreSnapshot(snap){
     P = b.P; PACKS = b.PACKS; CUR = b.CUR; STEP = b.STEP;
   }
 
+  /* Snapshotdan keladigan ikki maydon: yigʻish progressi va terish reviziyasi.
+     v21: ikkovi ham oddiy va bogʻ pochka uchun soʻzma-soʻz takrorlanardi. */
+  function finishPack(p, s){
+    p.done = Math.max(0, Math.min(isFinite(+s.done) ? Math.round(+s.done) : 0, p.seq.length));
+    p.rev  = (s.rev != null) ? s.rev : (P.rev || 1);
+    return p;
+  }
+
   /* Seans localStorage'da ham turishi mumkin — u yerdagi matnni foydalanuvchi
      tahrirlashi yoki u buzilishi mumkin. Shu sabab har maydon turi tekshiriladi:
      bitta NaN yoki yoʻqolgan qoida butun pochkalash zanjirini zaharlaydi. */
@@ -442,11 +474,12 @@ function restoreSnapshot(snap){
     if (isArr(snap.modGroups)) S.modGroups = snapClone(snap.modGroups, []) || [];
     if (isArr(snap.clsGroups)) S.clsGroups = snapClone(snap.clsGroups, []) || [];
     if (isObj(snap.unitNames)) S.unitNames = snapClone(snap.unitNames, {}) || {};
-    /* v12: modul belgisi manbai tanlovi olib tashlandi — birlik har doim proekt
-       tuzilishidan olinadi. Eski seans kod prefiksi rejimida saqlangan boʻlsa,
-       undagi S.rooms va S.modGroups kalitlari («01», «02») endi mavjud boʻlmagan
-       birliklarga ishora qiladi — ular tozalanadi, aks holda hamma birlik
-       oʻchirilgandek koʻrinardi va buyurtma boʻsh chiqardi. */
+    /* v12: modul belgisi manbaini QOʻLDA tanlash olib tashlandi. Manba endi
+       avtomatik aniqlanadi (02-state.js `unitSrc()`): kod prefiksi tuzilishdan
+       koʻproq birlik bersa prefiks, aks holda `good` kodi. Eski seans qoʻlda
+       «kod» rejimida saqlangan boʻlsa, undagi S.rooms va S.modGroups kalitlari
+       endi mavjud boʻlmagan birliklarga ishora qilishi mumkin — ular
+       tozalanadi, aks holda hamma birlik oʻchirilgandek koʻrinardi. */
     if (snap.modSrc === "code"){ S.rooms = {}; S.modGroups = []; }
     if (isFinite(+snap.rackN)) S.rackN = Math.max(1, Math.min(60, Math.round(+snap.rackN)));
     if (isFinite(+snap.cellN)) S.cellN = Math.max(1, Math.min(40, Math.round(+snap.cellN)));
@@ -470,6 +503,13 @@ function restoreSnapshot(snap){
     // 3) itemlar va uid indeksi
     var items = buildItems(), byUid = {}, i, j;
     for (i=0;i<items.length;i++) byUid[items[i].uid] = items[i];
+    /* v21: ASOSIY QALINLIK qayta hisoblanadi. `MAIN_T` ni faqat `packAllGen()`
+       oʻrnatardi, yaʼni seans tiklangandan keyin u `null` boʻlib qolardi.
+       `thickKey()` esa unga qaraydi: matritsada birlashtirilgan qalinliklar
+       oʻz kalitini qaytarib yuborardi va saqlangan `p.key` bilan mos
+       kelmasdi — qoʻlda koʻchirish qonuniy harakatni «qalinlik mos emas»
+       deb rad etardi. Hisob detal soniga tayanadi, yaʼni qatʼiy. */
+    MAIN_T = mainThick(items);      // 04-packer.js — bu moduldan oldin yuklanadi
 
     // 4) pochkalar
     var sp = isArr(snap.packs) ? snap.packs : [], out = [], bad = false;
@@ -477,7 +517,7 @@ function restoreSnapshot(snap){
       /* Buzilgan yozuvni «boʻsh» deb qabul qilmaymiz: unda detallar jimgina
          yoʻqolib, operator toʻliqsiz pochka yigʻib yuborardi. Shubha boʻlsa —
          butun tiklashdan voz kechamiz (eski holat joyida qoladi). */
-      var s = sp[i], p = null, it, sum;
+      var s = sp[i], p = null, it;
       if (!isObj(s)){ bad = true; break; }
 
       if (s.odd){
@@ -490,7 +530,6 @@ function restoreSnapshot(snap){
         }
         if (bad) break;
         p = { odd:true, items:lst, no:(s.no || i+1),
-              kg: lst.reduce(function(a,x){ return a + x.kg; }, 0),
               t: (s.t != null ? s.t : (lst[0] ? lst[0].T : 0)),
               /* v14: bogʻ ham guruhga tegishli — nomi va xonasi boʻlmasa
                  roʻyxatda oʻz moduli ostidan chiqib ketadi */
@@ -498,13 +537,8 @@ function restoreSnapshot(snap){
               key:   (typeof s.key   === "string" ? s.key   : null),
               room:  (typeof s.room  === "string" ? s.room  : null),
               nst:   !!s.nst };
-        p.h = lst.reduce(function(a,x){ return a + x.T; }, 0);
-        p.gabL = lst.reduce(function(a,x){ return Math.max(a, x.L); }, 0);
-        p.gabW = lst.reduce(function(a,x){ return Math.max(a, x.W); }, 0);
-        p.seq = packSeq(p);
-        p.done = Math.max(0, Math.min(isFinite(+s.done) ? Math.round(+s.done) : 0, p.seq.length));
-        p.rev = (s.rev != null) ? s.rev : (P.rev || 1);
-        out.push(p);
+        packDerive(p);          // kg, h, gabarit, seq — 04-packer da bir joyda
+        out.push(finishPack(p, s));
         continue;
       }
 
@@ -538,7 +572,7 @@ function restoreSnapshot(snap){
         if (bad) break;
         var area = base.L * base.W;
         var L = { items:lit, kg:kg, fill:(area ? cov/area : 0), bb:bboxOf(lit),
-                  h:hh, flipped:!!ls.flipped, strips:0 };
+                  h:hh, flipped:!!ls.flipped };
         if (ls.lid)  L.lid  = true;
         if (ls.soft) L.soft = true;
         if (ls.weak) L.weak = true;
@@ -550,27 +584,17 @@ function restoreSnapshot(snap){
       if (bad) break;
 
       var off = isFinite(+s.off) ? +s.off : (s.allowOvh ? (+S.ovh || 0) : 0);
-      sum = layers.reduce(function(a,L){ return a + L.kg; }, 0);
-      p = { base:base, layers:layers, kg:(base.kg + sum),
+      p = { base:base, layers:layers,
             envL: base.L + 2*off, envW: base.W + 2*off, off:off,
             allowOvh: !!s.allowOvh, left: [], no:(s.no || i+1),
-            t: (s.t != null ? s.t : base.T),
             gname: (typeof s.gname === "string" ? s.gname : null),      // v11
             key:   (typeof s.key   === "string" ? s.key   : null),      // v13
             room:  (typeof s.room  === "string" ? s.room  : null),      // v13
             oddSrc: !!s.oddSrc,                                         // v14
             overKg: !!s.overKg,                                         // v16
             nst:    !!s.nst };                                          // v18
-      p.h = base.T + layers.reduce(function(a,L){ return a + L.h; }, 0);
-      var gL = base.L, gW = base.W;
-      layers.forEach(function(L){ if (L.bb){ gL = Math.max(gL, L.bb.L); gW = Math.max(gW, L.bb.W); } });
-      p.gabL = Math.round(gL); p.gabW = Math.round(gW);
-      p.fillAvg = layers.length
-        ? layers.reduce(function(a,L){ return a + L.fill; }, 0) / layers.length : 0;
-      p.seq = packSeq(p);
-      p.done = Math.max(0, Math.min(isFinite(+s.done) ? Math.round(+s.done) : 0, p.seq.length));
-      p.rev = (s.rev != null) ? s.rev : (P.rev || 1);
-      out.push(p);
+      packDerive(p);            // kg, t, h, gabarit, fillAvg, seq — bir joyda
+      out.push(finishPack(p, s));
     }
 
     if (bad){ putState(bak); return false; }     // moslik yoʻq — eski holat tegilmaydi
@@ -578,9 +602,8 @@ function restoreSnapshot(snap){
     PACKS = out;
     CUR  = (isFinite(+snap.cur) && +snap.cur >= -1 && +snap.cur < PACKS.length)
              ? Math.round(+snap.cur) : (PACKS.length ? 0 : -1);
-    STEP = isFinite(+snap.step) ? Math.max(0, Math.round(+snap.step)) : 0;
-    if (!PACKS[CUR]) STEP = 0;
-    else if (STEP > PACKS[CUR].seq.length) STEP = PACKS[CUR].seq.length;
+    STEP = PACKS[CUR]
+      ? Math.max(0, Math.min(PACKS[CUR].done || 0, PACKS[CUR].seq.length)) : 0;
     return true;
 
   } catch(e){
@@ -620,14 +643,10 @@ function autosave(){
       saveDot("err", "saqlanmadi: " + m);
       try { console.warn("autosave: " + m); } catch(x){}
     }
-    try {
-      var r = Store.putSession(makeSnapshot());
-      if (r && typeof r.then === "function"){
-        r.then(function(){ saveDot("ok", "seans saqlandi"); }, bad);
-      } else {
-        saveDot("ok", "seans saqlandi");
-      }
-    } catch(e){ bad(e); }
+    /* putSession() har doim Promise qaytaradi (withDb -> api.ready.then),
+       shuning uchun v21 da «Promise emasmi» tekshiruvi olib tashlandi. */
+    try { Store.putSession(makeSnapshot()).then(function(){ saveDot("ok", "seans saqlandi"); }, bad); }
+    catch(e){ bad(e); }
   }, AUTOSAVE_MS);
 }
 

@@ -1,4 +1,4 @@
-# ================================================================
+﻿# ================================================================
 #  SEED -> .project  — namuna XML fayllarni yaratadi
 #
 #  Nima uchun: bizda tayyor .project fayl yo'q, faqat allaqachon o'qib olingan
@@ -7,9 +7,11 @@
 #
 #  Ishlatish:  .\tools\seed-to-project.ps1
 #
-#  Natija:
-#     namuna\namuna.project        — to'liq buyurtma (SEED ning aynan o'zi)
-#     namuna\test-yupqa.project    — 0.6 / 3.2 / 16 mm materiallar sinovi
+#  Natija (to'rtta fayl):
+#     namuna\namuna.project           — to'liq buyurtma (SEED ning aynan o'zi)
+#     namuna\test-yupqa.project       — 0.6 / 3.2 / 16 mm materiallar sinovi
+#     namuna\konveyr-partiya.project  — 12 ta bir xil parta bitta kroyda
+#     namuna\komplekt-5modul.project  — 1 ta good, ichida 5 mustaqil modul
 #
 #  PowerShell 5.1. Node.js kerak emas.
 # ================================================================
@@ -239,7 +241,13 @@ if ($ts -notcontains "0.6") { Say "    XATO 0.6 mm qalinlik XML ga tushmadi"; $o
 #          990201|01   990201|02 ...   -> 1-parta
 #          990202|01   990202|02 ...   -> 2-parta
 #     Birinchi 6 belgi = parta raqami, 7-belgidan boshlab detal raqami.
-#     Ilovada: «Modul belgisi qayerdan» -> «Detal kodining boshi», 6 belgi.
+#
+#     DIQQAT: bu fayl ataylab TESKARI holatni beradi. Modul chegarasi kodda
+#     AJRATGICH bilan («01_001») belgilanadi, bu yerda esa ajratgich yo'q
+#     (99020101). Shuning uchun unitPrefix() hech narsa topmaydi va tizim
+#     good kodiga qaytadi: 12 ta parta BITTA modul bo'lib chiqadi. Aynan shu
+#     tekshiriladi — v12 dagi «Modul belgisi qayerdan» tanlovi olib
+#     tashlangan, o'rniga avtomatik qoida keldi (02-state.js -> unitSrc).
 # ================================================================
 $mats3 = @(
   [pscustomobject]@{ id="K1"; name="LDSP 16 mm buk"; l=2750; w=1830; t=16;  sheets=40 },
@@ -329,7 +337,7 @@ $MODULLAR = @(
     [pscustomobject]@{ n="FASAD";      l=430;  w=200;  q=2; m="S1"; e="TBLR"; eb="ABS 2mm oq" },
     [pscustomobject]@{ n="SOKOL";      l=420;  w=80;   q=1; m="S1"; e="T";    eb="ABS 0.8mm oq" },
     [pscustomobject]@{ n="XDF ORT";    l=470;  w=372;  q=1; m="S2"; e="";     eb="" }) },
-  [pscustomobject]@{ pre="03"; nom="tumba o`ng"; det=@(
+  [pscustomobject]@{ pre="03"; nom='tumba o''ng'; det=@(
     [pscustomobject]@{ n="BOK";        l=480;  w=382;  q=2; m="S1"; e="T";    eb="ABS 2mm oq" },
     [pscustomobject]@{ n="TOM";        l=420;  w=382;  q=1; m="S1"; e="TBLR"; eb="ABS 2mm oq" },
     [pscustomobject]@{ n="POL";        l=420;  w=382;  q=1; m="S1"; e="T";    eb="ABS 0.8mm oq" },

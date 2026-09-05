@@ -3,7 +3,9 @@
 Bu hujjat buyurtmachi bilan kelishilgan qarorlarni saqlaydi. Har bo'lim ikki qismdan iborat:
 **Kelishilgan** (qaror qabul qilingan) va **Ochiq** (hali javob kutilmoqda).
 
-Oxirgi yangilanish: 2026-08-29 (11 va 12-bo'limlar qo'shildi)
+Oxirgi yangilanish: 2026-08-29 (11 va 12-bo'limlar qo'shildi).
+Bajarilish holati v21 da tekshirildi — bajarilmagan talablar shu belgi bilan:
+**⏳ hali yo'q**.
 
 Guruhlash mantig'i, individual/konveyr modeli va dunyo amaliyoti bo'yicha tahlil —
 alohida hujjatda: **[TZ-v3-mantiq.md](TZ-v3-mantiq.md)**.
@@ -75,21 +77,31 @@ qaraydigan vaqt kam. Ofis ekranlari esa tinch sharoitda, sinchiklab o'qiladi. Sh
 **Kelishilgan**
 
 - ~~Modul chegarasi **detal kodining prefiksida** turadi.~~
-  **2026-08-29 da BEKOR QILINDI.** Modul chegarasi faqat **proekt tuzilishidan**
-  (`<good typeId="product">`) olinadi. Kod prefiksi rejimi konveyr partiyasi uchun
-  qo'shilgan edi; konveyr yo'nalishi olib tashlangach uning ma'nosi qolmadi.
-  Manba tanlovi ham yo'q — bitta manba, bitta mantiq.
+  ~~**2026-08-29 da BEKOR QILINDI.** Modul chegarasi faqat proekt tuzilishidan
+  olinadi.~~
+  **O'sha kunning o'zida qayta ko'rildi.** Haqiqiy Gib Lab eksportida
+  ko'pincha bitta `<good typeId="product">` bo'ladi-yu, ichida bir necha
+  mustaqil mebel turadi — tuzilishga tayanilsa ular bitta pochkaga aralashib
+  ketardi. Yakuniy qoida **avtomatik**, sozlama emas:
+
+  > Kod prefiksi (`01_001` → `01`) tuzilishdan **ko'proq** birlik bersa —
+  > prefiks olinadi, aks holda `good` kodi.
+
+  Manba tanlovi baribir yo'q (bu to'g'ri edi), lekin manbaning o'zi endi
+  faylga qarab hal qilinadi va qaror asosi P/M ekranida ko'rinadi.
+  Batafsil: [alohida-pochkalash.md](alohida-pochkalash.md) §2.
 - Ajratish/qo'shish **ixtiyoriy** — P/M **chek-list** ko'rinishida belgilaydi.
   Tizim universal bo'lishi uchun shu kerak.
 
-**Tekshirilgan raqamlar** (`komplekt-5modul.project`, 65 pozitsiya / 85 detal, 273.2 kg):
+**Tekshirilgan raqamlar.** Dastlabki o'lchov haqiqiy mijoz eksporti ustida
+bajarilgan edi (65 pozitsiya / 85 detal). U ochiq repoga chiqmaydi; o'sha
+faylning **shakli** `namuna\komplekt-5modul.project` da qayta yasalgan —
+31 pozitsiya / 49 detal, 5 modul.
 
-| Rejim | Pochka | Modul aralashgan | Audit |
-|---|---|---|---|
-| Modul ajratilmagan | 11 | 5 ta pochkada | xato 0 |
-| Modul bo'yicha (prefiks 2 belgi) | 23 | 0 | xato 0 |
-
-Modul bo'yicha taqsimot: `01`—5, `02`—3, `03`—3, `04`—7, `05`—5 pochka.
+Joriy raqamlar `tests\smoke.ps1` dagi «5modul» blokida yashaydi va har
+yurgizishda tekshiriladi: modul bo'yicha **11 pochka**, modul aralashgan
+pochka **0 ta**, audit xatosi **0**. Ikki tumbani birlashtirish pochka sonini
+kamaytiradi, kesimni butunlay o'chirish esa yana kamaytiradi.
 
 ---
 
@@ -137,7 +149,12 @@ Modul bo'yicha taqsimot: `01`—5, `02`—3, `03`—3, `04`—7, `05`—5 pochka
 - **Yaxlit list** (butun list bitta detal bo'lsa) stelajga emas, shu proyektga qarashli
   aniq belgilangan joyda — paddonda yoki shunga o'xshash joyda turadi.
 - **Yacheyka sig'imi: pochka balandligi 192 mm dan oshmasligi kerak.**
-  Bu pochkalash uchun qat'iy chegara.
+  ⏳ **Hali ulanmagan.** Mexanizm bor — `Pochka maks. balandligi` (`S.maxH`)
+  oddiy pochkaga ham, bog'ga ham qo'llanadi va audit `BALANDLIK` xatosini
+  beradi — lekin standart qiymati **0 (cheklovsiz)**, ya'ni 192 mm hech
+  qayerda yozilmagan. Sexda yacheyka o'lchami tasdiqlangach shu maydonga
+  kiritiladi. `14-sort.js` ham buni ochiq aytadi — yacheyka oʻlchamlari
+  faqat ma'lumot uchun koʻrsatiladi, terish algoritmiga ulanmagan.
 - Har stelaj va har yacheykaga **raqam qo'yiladi va QR kod biriktiriladi**.
 - Stelaj QR i **bir marta** skanerlanadi (smena/ish boshida). U haqidagi ma'lumot
   tizimda allaqachon bor.
@@ -151,8 +168,8 @@ Modul bo'yicha taqsimot: `01`—5, `02`—3, `03`—3, `04`—7, `05`—5 pochka
 
 ### Stelaj aylanmasi — eng muhim qoida
 
-**Stelaj to'lgach, o'sha stelajning O'ZI pochkalash bo'limiga o'tadi.** Hech kim kutib
-qolmaydi, «mashina to'lmaguncha yurmaydi» degan narsa yo'q:
+**Stelaj to'lgach, o'sha stelajning O'ZI pochkalash bo'limiga o'tadi.** Hech kim
+kutib qolmaydi, «mashina to'lmaguncha yurmaydi» degan narsa yo'q:
 
 1. Saralash A stelajni to'ldiradi
 2. A stelajda bo'sh yacheyka qolmadi → A stelaj **sortirovkadan pochkalash bo'limiga
@@ -162,6 +179,13 @@ qolmaydi, «mashina to'lmaguncha yurmaydi» degan narsa yo'q:
 5. A stelaj bo'shab saralashga qaytadi
 
 Ya'ni yacheyka «bo'shaydi» degan tushuncha emas — **butun stelaj aylanadi**.
+
+> **Holat.** Tizimda aylanma **yacheyka** darajasida ishlaydi: pochka
+> qadoqlanib bo'lgach uning yacheykasi darhol bo'shaydi va navbatdagi eng
+> katta pochkaga beriladi (`14-sort.js` → `sortFreeCell`, `sortPlan`).
+> Shu sabab 30 yacheyka bilan 55 pochkani to'lqin-to'lqin saralab chiqish
+> mumkin. ⏳ «Butun stelaj bir butun bo'lib ko'chadi» degan qism esa hali
+> yo'q — stelaj holati (saralashdami yoki pochkalashdami) tizimda saqlanmaydi.
 
 ### Nostandart va yirik detallar
 
@@ -176,21 +200,22 @@ Ya'ni yacheyka «bo'shaydi» degan tushuncha emas — **butun stelaj aylanadi**.
 - Nomni va joyning QR kodini tsexning o'zi joylashtiradi.
 - Skaner orqali shu proyektga tegishli detal o'sha joyga biriktirilib tizimga kiritiladi.
 
-**Tekshirilgan** (`komplekt-5modul`, modul bo'yicha 23 pochka):
+**Tekshirilgan** (`namuna\komplekt-5modul.project`, 49 detal):
 
 | Chegara | Natija |
 |---|---|
-| Pochka balandligi ≤ 192 mm | max **96 mm** — hammasi sig'adi ✓ |
-| Detal uzunligi | max 2100 mm — tepasi ochiq, muammo yo'q ✓ |
-| Detal eni ≤ 400 mm (kichik yacheyka) | 85 detaldan **67 tasi** sig'adi |
-| Eni 400–800 mm | 16 detal — katta yacheyka yoki chiqib turadi |
-| Eni 800 mm dan katta | 2 detal |
+| Detal uzunligi | max **2100 mm** — yacheyka tepasi ochiq, muammo yo'q ✓ |
+| Detal eni ≤ 400 mm (kichik yacheyka) | 49 detaldan **30 tasi** sig'adi |
+| Eni 400–800 mm | **17 detal** — chuqur yacheyka yoki oldinga chiqib turadi |
+| Eni 800 mm dan katta | **2 detal** |
 
 **Ochiq**
 
-- Eni 400–800 mm li detal (85 dan 16 tasi) kichik yacheykada oldinga **chiqib tursa
-  bo'ladimi**, yoki majburan katta yacheykaga tushishi kerakmi? Har stelajda katta
-  yacheyka bittagina — hammasi unga sig'masligi mumkin.
+- Eni 400–800 mm li detal (49 dan 17 tasi) kichik yacheykada oldinga **chiqib
+  tursa bo'ladimi**, yoki majburan chuqur yacheykaga tushishi kerakmi? Har
+  stelajda chuqur yacheyka bittagina — hammasi unga sig'masligi mumkin.
+  ⏳ Tizim hozir yacheyka o'lchamini **tekshirmaydi**: u faqat qaysi yacheyka
+  bo'shligini biladi va o'lchamlarni ma'lumot uchun ko'rsatadi.
 
 ---
 
@@ -218,7 +243,9 @@ Ya'ni yacheyka «bo'shaydi» degan tushuncha emas — **butun stelaj aylanadi**.
   - vaqti
   - **kim tomonidan yig'ilgani** — javobgar xodim (beyjigidagi ma'lumot)
 
-**Xodim identifikatsiyasi (kelishilgan)**
+**Xodim identifikatsiyasi (kelishilgan)**  ⏳ hali yo'q — tizimda foydalanuvchi
+tushunchasi yo'q, chekda «javobgar» qatori chiqmaydi. Bu serverli bosqichga
+qoldirilgan (README «Keyingi bosqichlar»).
 
 - Xodim **bo'limda ish boshlanishidan oldin o'zini skanerlaydi** (beyj).
 - MES tizimiga ham skaner yoki login/parol bilan kiradi.
@@ -233,7 +260,9 @@ Ya'ni yacheyka «bo'shaydi» degan tushuncha emas — **butun stelaj aylanadi**.
 
 - Buyurtma «tayyor» bo'lganini **tizim o'zi belgilaydi**: barcha detallar uchun
   qilinishi kerak bo'lgan ishlar bajarilgach, ya'ni hamma kerakli detal QR skanerdan
-  o'tgach.
+  o'tgach. **Bajarilgan:** `orderStatus()` har pochkaning `done` maydonini
+  sanaydi; buyurtma tayyor bo'lmaguncha A4 hujjat chop etilmaydi va nima
+  qolgani yozib ko'rsatiladi.
 - Mijoz TMO da turgan buyurtmaga pochkalash so'rasa — buyurtma qayta pochkalash
   bo'limidan o'tadi.
 
@@ -264,7 +293,7 @@ yo'l, asosiy oqim Gib Lab fayli.
 
 ---
 
-## 11. Qo'lda terish (tetris) — P/M da
+## 11. Qo'lda terish (tetris) — P/M da  ⏳ hali yo'q
 
 **Kelishilgan**
 
@@ -282,7 +311,7 @@ yo'l, asosiy oqim Gib Lab fayli.
 
 ---
 
-## 12. Fors major — qo'lda yig'ilgan pochkani tizimga kiritish
+## 12. Fors major — qo'lda yig'ilgan pochkani tizimga kiritish  ⏳ hali yo'q
 
 Bu tizim ishlamay turganda yoki tizimsiz bajarilgan ishni **keyin** qabul qilish yo'li.
 Bu funksiyasiz tizim real tsexda birinchi uzilishdayoq buyurtmani yo'qotadi.

@@ -261,16 +261,11 @@ function diagAuditText(){
   if (typeof PACKS === "undefined" || !PACKS || !PACKS.length) return "";
   try {
     var rep = auditPacks(PACKS, buildItems());
-    if (typeof auditText === "function"){
-      var t = auditText(rep);
-      if (t) return String(t);
-    }
-    var html = "";
-    if (typeof auditReportHTML === "function"){
-      try { html = auditReportHTML(rep); } catch(e1){ html = ""; }
-      if (!html){ try { html = auditReportHTML(); } catch(e2){ html = ""; } }
-    }
-    return diagStrip(html);
+    /* v21: bu yerda «auditText() boʻsh qaytarsa HTML hisobotni matnga
+       aylantiramiz» degan zaxira turardi. `auditText()` (05-audit.js) hech
+       qachon boʻsh qaytarmaydi — u eng yomon holatda ham «Audit oʻtkazilmadi»
+       satrini beradi, yaʼni zaxiraga hech qachon yetib borilmasdi. */
+    return String(auditText(rep));
   } catch(e){
     return "audit ishlamadi: " + (e && e.message ? e.message : String(e));
   }
@@ -376,7 +371,7 @@ function diagXmlHTML(){
 
 /* 3.12.7 renderDiag — #diagBox ni toʻldiradi */
 function renderDiag(){
-  var box = (typeof $ === "function") ? $("diagBox") : document.getElementById("diagBox");
+  var box = $("diagBox");     // $ — 08-labels.js, bu moduldan oldin yuklanadi
   if (!box) return;
   var h = diagSafe(diagFileHTML,    "Fayl") +
           diagSafe(diagWarnHTML,    "Parser ogohlantirishlari") +
@@ -474,13 +469,12 @@ function diagSave(){
 function diagText(){
   var L = [];
   function line(s){ L.push(s == null ? "" : String(s)); }
-  var d = new Date();
-  function p2(v){ return (v < 10 ? "0" : "") + v; }
+  var d = new Date();   // pad2() — 04-packer.js
 
   line("UPAKOFKA — DIAGNOSTIKA HISOBOTI");
   line("Tizim: UPK v" + (typeof APP_VER !== "undefined" ? APP_VER : "?"));
-  line("Sana: " + d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate()) +
-       " " + p2(d.getHours()) + ":" + p2(d.getMinutes()));
+  line("Sana: " + d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()) +
+       " " + pad2(d.getHours()) + ":" + pad2(d.getMinutes()));
   line("=".repeat ? "=".repeat(60) : "============================================================");
   line("");
 

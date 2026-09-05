@@ -283,9 +283,9 @@ foreach ($m in $hits) {
     if (($media -ne $null) -and ($media.Trim().Length -gt 0) -and ($media -notmatch '(?i)^\s*all\s*$')) {
       $mAttr = ' media="' + ($media -replace '"', '&quot;') + '"'
     }
-    $repl = "<style" + $mAttr + ">`r`n" + $head + "`r`n" + $body + "`r`n</style>"
+    $repl = "<style" + $mAttr + ">`n" + $head + "`n" + $body + "`n</style>"
   } else {
-    $repl = "<script>`r`n" + $head + "`r`n" + $body + "`r`n</script>"
+    $repl = "<script>`n" + $head + "`n" + $body + "`n</script>"
   }
   [void]$sb.Append($repl)
 
@@ -325,18 +325,26 @@ if ($rows.Count -eq 0) {
 #  4. <head> ichiga versiya izohi
 # ----------------------------------------------------------------------------
 
+# Barmoq izi: natija matnining (izohsiz) SHA-256 dan birinchi 8 belgi.
+# Nima uchun soat EMAS: soat bilan har yig'ish 490 KB li faylni o'zgartirardi
+# va git tarixida faqat bitta qator farq qiladigan kommitlar to'planardi.
+# Barmoq izi bilan aksincha: manba o'zgarmasa natija BAYT-MA-BAYT o'sha bo'ladi,
+# ya'ni "bu fayl o'sha versiyami?" degan savolga aynan shu qator javob beradi.
+$sha   = [System.Security.Cryptography.SHA256]::Create()
+$hash  = $sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($outText))
+$sha.Dispose()
+$stamp = -join ($hash[0..3] | ForEach-Object { $_.ToString("x2") })
 $dash  = [string][char]0x2014                          # uzun tire
-$stamp = (Get-Date).ToString("yyyy-MM-dd HH:mm")
 $verc  = "<!-- Upakofka tizimi " + $dash + " build " + $stamp + " -->"
 
 $mHead = [regex]::Match($outText, '(?is)<head\b[^>]*>')
 if ($mHead.Success) {
   $cut = $mHead.Index + $mHead.Length
-  $outText = $outText.Substring(0, $cut) + "`r`n" + $verc + $outText.Substring($cut)
+  $outText = $outText.Substring(0, $cut) + "`n" + $verc + $outText.Substring($cut)
 } else {
   $mHead = [regex]::Match($outText, '(?is)</head\s*>')
   if ($mHead.Success) {
-    $outText = $outText.Substring(0, $mHead.Index) + $verc + "`r`n" + $outText.Substring($mHead.Index)
+    $outText = $outText.Substring(0, $mHead.Index) + $verc + "`n" + $outText.Substring($mHead.Index)
   } else {
     Warn "<head> topilmadi -- versiya izohi qo'yilmadi."
   }
@@ -365,7 +373,8 @@ if (-not $Quiet) {
   Write-Host ("  singdirildi : " + $rows.Count + " fayl, jami " + (ToKb $totBytes) + " KB")
   Write-Host ("  natija      : " + $Dst)
   Write-Host ("  hajmi       : " + (ToKb $outLen) + " KB (" + $outLen + " bayt)")
-  Write-Host ("  vaqt        : " + $stamp)
+  Write-Host ("  build id    : " + $stamp + "   (manba o'zgarmasa o'zgarmaydi)")
+  Write-Host ("  yig'ildi     : " + (Get-Date).ToString("yyyy-MM-dd HH:mm"))
   if ($ext.Count -gt 0) {
     Write-Host ("  tashqi      : " + $ext.Count + " havola o'zgarishsiz qoldirildi")
     foreach ($u in $ext) { Write-Host ("                " + $u) -ForegroundColor DarkGray }

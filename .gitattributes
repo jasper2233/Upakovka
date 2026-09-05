@@ -1,8 +1,11 @@
 # Qator oxirlari QOTIRILGAN.
-# Sabab: git standart holatda Windows'da LF -> CRLF qiladi. Bu ikki joyda ogʻriydi:
-#   1. dist\upakofka-tizimi.html — build.ps1 uning HAJMINI tekshiradi; CRLF
-#      har qatorga bir bayt qoʻshib, hisobni va checksum'ni surib yuboradi.
-#   2. namuna\*.project — testlar bu fayllarni bayt-ma-bayt qayta oʻqiydi.
+# Sabab: git standart holatda Windows'da LF -> CRLF qiladi va bu YIGʻISHNI
+# TAKRORLANMAYDIGAN qiladi. build.ps1 natija matnining SHA-256 barmoq izini
+# hisoblab, uni «build» izohiga yozadi — ya'ni manba oʻzgarmasa dist ham
+# bayt-ma-bayt oʻzgarmaydi. Agar bir mashinada manba CRLF, boshqasida LF
+# boʻlsa, singdirilgan matn boshqa chiqadi va 490 KB li dist har klonda
+# «oʻzgargan» boʻlib koʻrinadi.
+# Ikkinchi sabab: namuna\*.project fayllarni testlar bayt-ma-bayt qayta oʻqiydi.
 # Shuning uchun matn fayllar repoda ham, ish nusxasida ham LF boʻlib qoladi.
 * text=auto eol=lf
 

@@ -6,15 +6,22 @@ Bu hujjat bitta savolga javob beradi:
 Sana: 2026-08-29. TZ-v2 kelishilgan qarorlarni saqlaydi; bu hujjat esa
 o'sha qarorlar ostidagi *modelni* tekshiradi va tuzatadi.
 
+> **Holat (v21).** 1-bo'limdagi tahlil **bajarildi**: `S.mode` va `S.rules`
+> olib tashlandi, o'rniga o'q vektori keldi. Nima bajarilgani va nima
+> qolgani 6-bo'limda belgilangan.
+
 ---
 
 ## 1. Asosiy xulosa: individual va konveyr — bu ikki rejim emas
 
-Hozir kodda `S.mode` bor: `"ind"` yoki `"conv"`. U `S.rules[mode]` orqali ikkita
-bayroqni yoqadi — `prod` (modul bo'yicha ajrat) va `mat` (material bo'yicha ajrat).
+~~Hozir kodda `S.mode` bor: `"ind"` yoki `"conv"`. U `S.rules[mode]` orqali
+ikkita bayroqni yoqadi.~~ **v12 da bajarildi:** `S.mode` va `S.rules` butunlay
+olib tashlandi, o'rnida bitta qoida — `S.split = { prod, mat }` — va uni P/M
+ekranidagi ikki katakcha bevosita belgilaydi. Eski saqlangan sozlama
+`splitFix()` orqali yangi shaklga ko'chiriladi.
 
-Lekin pochkalash yadrosi allaqachon **to'rt o'q** ustida ishlaydi
-(`packKey()`, `src/js/04-packer.js:339`):
+Quyidagi tahlil o'sha qarorning asosi. Pochkalash yadrosi allaqachon
+**to'rt o'q** ustida ishlaydi (`04-packer.js` → `packKey()`):
 
 ```
 modul / material / qalinlik / klass
@@ -45,8 +52,8 @@ Kerakli o'qlar ro'yxati:
 
 | O'q | Manba | Nega kerak |
 |---|---|---|
-| **buyurtma / mijoz** | loyiha uuid yoki kod | konveyrda 100 buyum bitta kroyda ketadi — ikki mijoz pochkasi aralashmasin ⚠️ **hozir yo'q** |
-| **xona** | P/M xaritasi | zal = kuxnya + pod-TV + shkaf birga; kuxnya alohida bo'lsa alohida ⚠️ **hozir yo'q** |
+| **buyurtma / mijoz** | loyiha uuid yoki kod | konveyrda 100 buyum bitta kroyda ketadi — ikki mijoz pochkasi aralashmasin ⏳ **hali yo'q** |
+| **xona** | P/M xaritasi | zal = kuxnya + pod-TV + shkaf birga; kuxnya alohida bo'lsa alohida ✅ **bor** (`S.modGroups`: `name` + `join`) |
 | **modul** | kod prefiksi yoki `<good typeId="product">` | s/p: tumba alohida, tremo alohida |
 | **klass** | parser (`classify`) | fasad alohida, bok alohida |
 | **material** | `<operation typeId="CS">` | konveyr uchun asosiy o'q |
@@ -149,12 +156,15 @@ Tamoyil (ISA-95 dan):
 | # | Manba | Ishonch | Qachon |
 |---|---|---|---|
 | 1 | Tuzilishdan — `<good typeId="product">` | yuqori | Gib Lab fayli to'g'ri bo'lsa |
-| 2 | Konvensiyadan — kod prefiksi (N belgi, sozlanadi) | o'rta | tuzilish yiqilganda (100 buyum = 1 good) |
+| 2 | Konvensiyadan — kod prefiksi (`XX_` yoki `XX-`) | o'rta | tuzilish yiqilganda (100 buyum = 1 good) |
 | 3 | Qo'lda — P/M xaritasi | aniq, lekin qimmat | qolgan hamma holatda |
 
-Bu allaqachon qisman bor (`unitOf`, prefiks rejimi). Yetishmayotgani — quyidagi ikkitasi.
+1 va 2 **bor va avtomatik**: `unitSrc()` ikkalasini sanab, ko'proq birlik
+berganini oladi (prefiksda uzunlik sozlanmaydi — ajratgich `_` yoki `-`).
+3 (P/M xaritasi) ⏳ hali yo'q; uning o'rnini qisman modul nomlari
+(`S.unitNames`) va xonalar bosadi.
 
-### 3.2 Manbani ko'rsatish (provenance) — eng muhim yetishmayotgan narsa
+### 3.2 Manbani ko'rsatish (provenance) ✅ bajarildi
 
 Tizim har doim javob bera olishi kerak:
 
@@ -167,7 +177,12 @@ ko'rmasa, u nimani o'zgartirayotganini bilmaydi. Bu bitta qator matn, lekin
 Va: tizim **taxmin qilishga majbur bo'lganini alohida aytishi kerak** —
 diagnostikada «5 modul kod prefiksidan olindi, tuzilishdan emas» degan qator.
 
-### 3.3 Profil — «bir marta sozlanadi»
+**Bajarildi.** `10-ui.js` → `renderUnitSrc()` P/M ekranida modullar ro'yxati
+tepasida aynan shu qatorni chiqaradi: *«5 ta modul — detal kodi prefiksidan.
+Faylda mahsulot tuzilishi faqat 1 ta birlik beradi, kod prefiksi esa 5 ta —
+shuning uchun kod olindi.»*
+
+### 3.3 Profil — «bir marta sozlanadi» ⏳ hali yo'q
 
 TZ-v2 §2: *«Konveyr sozlamasi bir marta qilinadi va eslab qolinadi… loyiha nomiga
 bog'lab.»* To'g'ri, lekin loyiha nomi — noto'g'ri kalit: har loyihaning nomi boshqacha.
@@ -186,7 +201,7 @@ Profil «Luiza s/p»
 Loyiha yuklanganda profil taklif qilinadi (nomi yoki tuzilishi bo'yicha),
 P/M tasdiqlaydi yoki almashtiradi.
 
-### 3.4 Uzoq muddatli yechim
+### 3.4 Uzoq muddatli yechim ⏳ hali yo'q
 
 Dunyo amaliyotida chegara **yuqorida e'lon qilinadi**, pastda taxmin qilinmaydi.
 Ya'ni asl yechim — bazis konstruktori bilan **nomlash standarti** bo'yicha
@@ -227,16 +242,18 @@ sochiladi, tizimga **tagdan tepaga** yoziladi — oxirgi olingan detal tag detal
 Guruh chegarasi qo'lda tahrirlashda umuman tekshirilmasdi: bir bosishda
 konveyrda material, individualda modul aralashib ketardi va audit yashil turaverardi.
 
-| # | O'zgarish | Fayl |
+| # | O'zgarish | Qayerda |
 |---|---|---|
-| 1 | Pochkaga guruh kaliti yoziladi (`p.key`) | `04-packer.js:420` |
-| 2 | `keyWhy()` — qaysi o'q mos kelmaganini aytadi | `04-packer.js:353` |
-| 3 | `moveDetail()` guruh chegarasini tekshiradi | `10-ui.js:623` |
-| 4 | Tanlov ro'yxati guruh bo'yicha filtrlanadi | `10-ui.js:644` |
-| 5 | «+ yangi pochka» guruhni meros oladi | `10-ui.js:616` |
-| 6 | Audit: `grpWhy()` + yangi `GURUH` xato kodi | `05-audit.js:131`, `:179` |
-| 7 | Ko'chirishdan keyin `sortPlan()` qayta hisoblanadi | `10-ui.js:689` |
+| 1 | Pochkaga guruh kaliti yoziladi (`p.key`) | `04-packer.js` → `packAllGen` |
+| 2 | `keyWhy()` — qaysi o'q mos kelmaganini aytadi | `04-packer.js` → `keyWhy` |
+| 3 | `moveDetail()` guruh chegarasini tekshiradi | `10-ui.js` → `moveDetail` |
+| 4 | Tanlov ro'yxati guruh bo'yicha filtrlanadi | `10-ui.js` → `renderMgrEdit` |
+| 5 | «+ yangi pochka» guruhni meros oladi | `10-ui.js` → `moveDetail` |
+| 6 | Audit: `grpWhy()` + yangi `GURUH` xato kodi | `05-audit.js` → `auditPacks` |
+| 7 | Ko'chirishdan keyin `sortPlan()` qayta hisoblanadi | `10-ui.js` → `renderMgrEdit` |
 | 8 | 4 ta yangi test | `tests/smoke.ps1` |
+
+> Qator raqamiga havola qilinmaydi — u birinchi tahrirdayoq eskiradi.
 
 Xato xabari endi aniq:
 `material mos emas: LMDF Krem / LDSP Oq`
@@ -245,14 +262,16 @@ Xato xabari endi aniq:
 
 ## 6. Keyingi qadamlar — tartib bilan
 
-| # | Ish | Nega shu tartibda |
+| # | Ish | Holat |
 |---|---|---|
-| 1 | **O'q vektori + chek-list** (§1) — `S.mode` o'rniga o'qlar, `ind`/`conv` preset bo'ladi | Universallikning o'zagi; qolgan hamma narsa shunga tayanadi |
-| 2 | **Buyurtma va xona o'qlari** (§1) | Oraliq holatlar (12 parta / 12 maktab) hozir umuman ishlamaydi |
-| 3 | **Provenance + profil** (§3.2, §3.3) | Chek-list bo'lsa-yu, manba ko'rinmasa — P/M uni ishlata olmaydi |
-| 4 | **`manba` maydoni + audit rejimi** (§4) | Fors majordan oldin kerak: busiz kiritilgan pochka qizil chiqadi |
-| 5 | **Fors major moduli** (TZ-v2 §12) | Yuqoridagi 4 tayyor bo'lgach |
-| 6 | **Qo'lda tetris terish** (TZ-v2 §11) | Eng katta interfeys ishi; mantiq barqarorlashgach |
+| 1 | **O'q vektori + chek-list** (§1) — `S.mode` o'rniga o'qlar | ✅ v12: `S.split` + P/M katakchalari |
+| 2a | **Xona o'qi** (§1) | ✅ v12: `S.modGroups` (`name` + `join`) |
+| 2b | **Buyurtma / mijoz o'qi** (§1) | ⏳ Oraliq holat (12 parta / 12 maktab) hali ishlamaydi |
+| 3a | **Provenance** (§3.2) | ✅ v12: `renderUnitSrc()` |
+| 3b | **Nomlangan profil** (§3.3) | ⏳ Sozlama hozir bitta, global |
+| 4 | **`manba` maydoni + audit rejimi** (§4) | ⏳ Fors majordan oldin kerak |
+| 5 | **Fors major moduli** (TZ-v2 §12) | ⏳ 4 tayyor bo'lgach |
+| 6 | **Qo'lda tetris terish** (TZ-v2 §11) | ⏳ Eng katta interfeys ishi |
 
 ---
 
