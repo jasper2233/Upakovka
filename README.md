@@ -1170,7 +1170,7 @@ chiqaradi, tarkibni emas.
 
 Oxirgi o'lchov (v22, 205 fayl, 16 132 detal, 62 112 kg):
 **205/205 o'qildi, audit xatosi 0, detal yo'qolmadi** — 4829 pochka
-(shundan 969 tasi bog' — nostandart va mo'rt), o'rtacha 12,9 kg, ochiq tom
+(shundan 977 tasi bog' — nostandart va mo'rt), o'rtacha 12,9 kg, ochiq tom
 435/2894 (15 %), zaxiradan foydalangan 78 pochka, pochkalanmagan obyekt 38 ta
 (xona devori, pol, soni 0 bo'lgan detal).
 
