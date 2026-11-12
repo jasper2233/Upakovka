@@ -148,6 +148,31 @@ aynan bir marta uchrashi.
 
 ---
 
+## Saralash posti — skan aniq detalni topadi (v22)
+
+Ishchi paddondagi detalni skanerlaydi, dastur yacheykani aytadi. v22 dan skan
+**kod emas, aniq detal** bo'yicha topiladi:
+
+| Skan | Qanday topiladi |
+|---|---|
+| MES cheki (`B-2026-047_100701_01_002-2_1`) | aynan shu detal; uning bir xil nusxalari almashinadi, `-2` (ko'zgu juftlik) — boshqa detal |
+| O'z chekimiz (`SM.…|P05|…|01_002|1868x350x16`) | chekdagi pochka + kod + o'lcham |
+| Oddiy kod (`01_002`) | faqat bitta detalga tegishli bo'lsa; bir nechta xil detalga tegishli bo'lsa — «QR ni skanerlang» |
+
+Ilgari faqat kod bo'yicha qidirilardi: chap/o'ng bok boshqa pochkaning yacheykasiga
+tushar (qadoqlash posti esa uni rad etardi), kodsiz detalni saralab bo'lmasdi.
+205 ta real faylning 112 tasida bir xil kodli, lekin har xil detallar bor.
+
+Yana:
+- **Yig'ilgan pochka** — detallari «qadoqlangan» bo'ladi va pochka qayta saralash
+  nishoniga aylanmaydi (ilgari yacheyka bo'shagach u yana «saralanmagan» bo'lib qolardi).
+- **Yacheyka yetmasa** reja qat'iy: rejada yo'q (kichikroq) pochka katta pochkaga
+  ajratilgan yaqin yacheykani egallamaydi — «keyingi to'lqin, paddonda qoldiring».
+- **Bitta MES chek ikki marta** skanerlansa ikkinchi nusxa belgilanmaydi, javobda
+  yacheyka aytiladi.
+- **Band yacheyka** stelyaj tahrirlash qoralamasida yopilmaydi; band yacheyka
+  bo'lsa stelyaj/yacheyka sonini kamaytirib bo'lmaydi (Sozlamalar XATO deb aytadi).
+
 ## Ish jarayoni (upakofka posti)
 
 1. Chapdan pochkani tanlang

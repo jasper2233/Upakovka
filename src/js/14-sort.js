@@ -25,8 +25,14 @@ var SORT = {
   pack: {},   // pochka no -> "A3"
   put:  {},   // detal uid -> "A3"   (aynan qaysi nusxa qoʻyilgani)
   plan: {},   // pochka no -> rejalashtirilgan yacheyka (hali band emas)
+  seen: {},   // v22: skanerlangan MES ID (buyurtmasiz) -> uid — bitta chek ikki marta sanalmasin
   last: null  // oxirgi skaner natijasi — katta yozuv uchun
 };
+/* v22: SORT.put dagi bu qiymat — detal saralangan VA pochkasi qadoqlangan.
+   Ilgari yacheyka boʻshaganda belgilar oʻchirilardi va yigʻib boʻlingan pochka
+   yana «saralanmagan» boʻlib qolardi: reja unga yangi yacheyka berar, keyingi
+   skan oʻralgan pochka uchun yacheyka ochardi. */
+var SORT_PACKED = "*";
 
 /* Stelyaj harfi: 0->A, 1->B … 25->Z, keyin AA, AB … */
 function rackLetter(i){
@@ -94,7 +100,12 @@ function rackEditCancel(){ RACK_EDIT = false; RACK_DRAFT = null; }
 function rackEditSave(){
   if (!RACK_EDIT) return 0;
   var before = Object.keys(S.cellOff || {}).length;
-  S.cellOff = RACK_DRAFT || {};
+  /* v22: qoralama ochiq turgan paytda skan yacheykani band qilgan boʻlishi
+     mumkin — band yacheyka yopilmaydi (aks holda u bir vaqtda yopiq va band
+     boʻlib qolardi, boʻsh yacheykalar soni notoʻgʻri chiqardi). */
+  var draft = RACK_DRAFT || {};
+  Object.keys(draft).forEach(function(c){ if (SORT.cell[c]) delete draft[c]; });
+  S.cellOff = draft;
   RACK_EDIT = false; RACK_DRAFT = null;
   sortPlan();
   if (typeof saveConf === "function") saveConf();
@@ -150,7 +161,9 @@ function freeCell(){
 }
 
 /* Pochkada nechta detal hali saralanmagan */
+function packFinished(p){ return !!p && !!p.seq && p.seq.length > 0 && (p.done || 0) >= p.seq.length; }
 function packLeft(p){
+  if (packFinished(p)) return 0;                // v22: yigʻib boʻlingan pochka saralanmaydi
   var its = packItems(p), n = 0;
   for (var i = 0; i < its.length; i++) if (!SORT.put[its[i].uid]) n++;
   return n;
@@ -198,8 +211,10 @@ function claimCell(no){
   if (SORT.pack[no]) return SORT.pack[no];
   sortPlan();
   var c = SORT.plan[no];
-  if (!c || SORT.cell[c]) c = freeCell();      // reja boʻlmasa — birinchi boʻsh
-  if (!c) return null;
+  /* v22: rejada yoʻq pochka KEYINGI TOʻLQINDA. Ilgari u birinchi boʻsh
+     yacheykani olardi va katta pochkaga atalgan yaqin yacheykani egallardi
+     (1 detalli pochka A1 ni olib, 16 detallisini A2 ga surardi). */
+  if (!c || SORT.cell[c]) return null;
   SORT.cell[c] = no; SORT.pack[no] = c;
   sortPlan();                                   // qolganlar uchun rejani yangilaymiz
   return c;
@@ -224,8 +239,8 @@ function sortFreeCell(no){
   var c = SORT.pack[no];
   if (!c) return false;
   delete SORT.cell[c]; delete SORT.pack[no];
-  // shu pochkaga qoʻyilgan detallar belgisi ham olinadi
-  Object.keys(SORT.put).forEach(function(uid){ if (SORT.put[uid] === c) delete SORT.put[uid]; });
+  // v22: detallar belgisi OʻCHIRILMAYDI — «qadoqlangan» boʻladi (SORT_PACKED)
+  Object.keys(SORT.put).forEach(function(uid){ if (SORT.put[uid] === c) SORT.put[uid] = SORT_PACKED; });
   sortPlan();          // boʻshagan yacheyka endi eng katta kutayotgan pochkaga tegadi
   return true;
 }
@@ -240,18 +255,15 @@ function cellDone(no){
 
 /* ---- 3.15.2 SKANER ---- */
 
-/* Skanerlangan matndan detal kodini ajratib olish.
-   Chek QR i «SM.5EED0000.R1|P01|Q0|01_021|1753x600x16» koʻrinishida —
-   kod 4-maydonda. Oddiy shtrix-kod boʻlsa matnning oʻzi. */
+/* Skanerlangan matndan detal kodini ajratib olish (eski yoʻl — tashqi
+   chaqiruvlar uchun qoldi). Chek QR i «SM.5EED0000.R1|P01|Q0|01_021|…»
+   koʻrinishida — kod 4-maydonda; MES cheki shu buyurtmadagi detal kodiga
+   oʻgiriladi; oddiy shtrix-kod boʻlsa matnning oʻzi. */
 function scanCode(v){
   v = String(v || "").trim();
   if (!v) return "";
   var f = v.split("|");
   if (f.length > 3 && f[3]) return f[3].trim();
-  /* v22: MES cheki — `B-2026-047_100701_03_002_1`. Saralash detalni KOD
-     bilan qidiradi, shuning uchun MES satri shu buyurtmadagi detal kodiga
-     oʻgiriladi. Topilmasa matn oʻzicha qaytadi — «buyurtmada yoʻq» javobi
-     odatdagi yoʻldan chiqadi. */
   for (var i = 0; i < PACKS.length; i++){
     var its = packItems(PACKS[i]);
     for (var j = 0; j < its.length; j++) if (mesMatch(v, its[j])) return its[j].code;
@@ -259,23 +271,69 @@ function scanCode(v){
   return v;
 }
 
-/* Shu kodli, hali qoʻyilmagan detalni topish.
-   Bir xil koddagi detallar oʻzaro ALMASHINADI (bu tizimda allaqachon shunday —
-   qadoqlash ekranidagi checkScan ham shunga tayanadi), shuning uchun qaysi
-   nusxani olish farq qilmaydi. Lekin tartib bejiz emas:
-     1) yacheykasi BOR pochka — ochiq yacheykani tezroq toʻldirib boʻshatamiz;
-     2) soʻng eng kichik raqamli pochka — natija oldindan aytib boʻladigan boʻlsin. */
-function findSortTarget(code){
-  var withCell = null, any = null;
-  for (var i = 0; i < PACKS.length; i++){
-    var p = PACKS[i], its = packItems(p);
-    for (var j = 0; j < its.length; j++){
-      var it = its[j];
-      if (it.code !== code) continue;
-      if (SORT.put[it.uid]) continue;              // bu nusxa allaqachon qoʻyilgan
-      if (SORT.pack[p.no]){ if (!withCell) withCell = { p:p, it:it }; }
-      else if (!any) any = { p:p, it:it };
+/* v22: SKAN -> DETAL (kod emas). Ilgari saralash faqat KOD bilan qidirardi:
+   - koʻzgu juftlik (chap/oʻng bok, MES da `-2`) BOSHQA pochkaning yacheykasiga
+     tushardi — qadoqlash posti esa uni rad etardi (205 faylning 112 tasida
+     bunday kodlar bor);
+   - oʻz chekimizdagi pochka raqami va oʻlcham eʼtiborsiz qolardi;
+   - kodsiz detalni umuman saralab boʻlmasdi.
+   Endi skan aniq detalga (yoki uning bir xil nusxalariga) aylanadi:
+     MES cheki    — `mesMatch` (nusxalar almashinadi, `-2` boshqa detal);
+     oʻz chekimiz — chekdagi pochka + kod + oʻlcham;
+     oddiy kod    — faqat bitta detalga (bitta MES kalitiga) tegishli boʻlsa.
+   Qaytadi: { cands:[{p,it}], label, err, mes } */
+function sortResolve(raw){
+  var v = String(raw || "").trim(), out = { cands:[], label:v, err:null, mes:false };
+  if (!v) return out;
+  var f = v.split("|"), hdr = f[0] ? f[0].split(".") : [];
+  var own = f.length >= 5 && hdr.length >= 3 && /^R\d+$/.test(hdr[hdr.length - 1]);
+  if (own){
+    if (hdr[1] !== projTag()){ out.err = "bu chek boshqa buyurtmaniki (" + hdr[1] + ")"; return out; }
+    var rev = +hdr[hdr.length - 1].slice(1);
+    if (P && P.rev && rev !== P.rev){
+      out.err = "bu chek ESKI terishdan (R" + rev + "), joriy R" + P.rev + " — cheklarni qayta chop eting";
+      return out;
     }
+    out.label = f[3];
+    PACKS.forEach(function(p){
+      if ("P" + pad2(p.no) !== f[1]) return;
+      packItems(p).forEach(function(it){
+        if (it.code === f[3] && (it.L + "x" + it.W + "x" + it.T) === f[4]) out.cands.push({ p:p, it:it });
+      });
+    });
+    return out;
+  }
+  PACKS.forEach(function(p){
+    packItems(p).forEach(function(it){ if (mesMatch(v, it)) out.cands.push({ p:p, it:it }); });
+  });
+  if (out.cands.length){ out.mes = true; out.label = out.cands[0].it.code || v; return out; }
+  // oddiy kod — bir nechta HAR XIL detalga tegishli boʻlsa, tanlab boʻlmaydi
+  var keys = {};
+  PACKS.forEach(function(p){
+    packItems(p).forEach(function(it){
+      if (it.code === v){ out.cands.push({ p:p, it:it }); keys[it.mesKey || it.code] = 1; }
+    });
+  });
+  var kn = Object.keys(keys).length;
+  if (kn > 1){
+    out.err = "«" + v + "» kodi " + kn + " xil detalga tegishli (masalan chap va oʻng bok) — chekdagi QR ni skanerlang";
+    out.cands = [];
+  }
+  return out;
+}
+
+/* Nomzodlar ichidan hali saralanmagan nusxa. Tartib:
+     1) yacheykasi BOR pochka — ochiq yacheykani tezroq toʻldirib boʻshatamiz;
+     2) soʻng eng kichik raqamli pochka — natija oldindan aytib boʻladigan boʻlsin.
+   Yigʻib boʻlingan pochka nomzod emas (v22). */
+function findSortTarget(cands){
+  if (typeof cands === "string") cands = sortResolve(cands).cands;   // eski chaqiruv: kod
+  var withCell = null, any = null;
+  for (var i = 0; i < cands.length; i++){
+    var c = cands[i];
+    if (SORT.put[c.it.uid] || packFinished(c.p)) continue;
+    if (SORT.pack[c.p.no]){ if (!withCell) withCell = c; }
+    else if (!any) any = c;
   }
   return withCell || any;
 }
@@ -283,34 +341,51 @@ function findSortTarget(code){
 /* Asosiy amal: detal skanerlandi -> qaysi yacheykaga qoʻyilsin.
    Qaytadi: {ok, cell, pack, item, msg, kind} */
 function sortScan(raw){
-  var code = scanCode(raw);
-  if (!code) return { ok:false, kind:"err", msg:"kod boʻsh" };
+  if (!String(raw || "").trim()) return { ok:false, kind:"err", msg:"kod boʻsh" };
   if (!PACKS.length) return { ok:false, kind:"err", msg:"pochkalar hisoblanmagan — avval «Pochkalash» ni bosing" };
+  var r = sortResolve(raw);
+  if (r.err) return { ok:false, kind:"err", msg:r.err };
+  var label = r.label;
 
-  var t = findSortTarget(code);
+  /* v22: bitta MES chek ikki marta skanerlansa ikkinchi nusxa belgilanmaydi —
+     aks holda bitta yacheyka bir detal kam, keyingi haqiqiy nusxa esa
+     «allaqachon saralangan» boʻlib qolardi. Javobda yacheyka aytiladi. */
+  var mkey = r.mes ? mesStrip(raw) : null;
+  if (mkey && SORT.seen[mkey] && SORT.put[SORT.seen[mkey]]){
+    var wc = SORT.put[SORT.seen[mkey]];
+    return { ok:false, kind:"ok", msg:"«" + label + "» — bu chek allaqachon skanerlangan" +
+             (wc !== SORT_PACKED ? ": " + wc + " yacheykada" : ", pochkasi qadoqlangan") };
+  }
+
+  var t = findSortTarget(r.cands);
   if (!t){
-    // kod umuman buyurtmada bormi — ishchiga aniq javob beramiz
-    var exists = false;
-    for (var i = 0; i < PACKS.length && !exists; i++)
-      packItems(PACKS[i]).forEach(function(it){ if (it.code === code) exists = true; });
-    return exists
-      ? { ok:false, kind:"ok",  msg:"«"+code+"» — bu koddagi hamma detal allaqachon saralangan" }
-      : { ok:false, kind:"err", msg:"«"+code+"» — bu detal buyurtmada yoʻq" };
+    if (r.cands.length){
+      var cellsOf = {};
+      r.cands.forEach(function(c){ var x = SORT.put[c.it.uid]; if (x && x !== SORT_PACKED) cellsOf[x] = 1; });
+      var where = Object.keys(cellsOf);
+      return { ok:false, kind:"ok", msg:"«" + label + "» — bu detalning hamma nusxasi allaqachon saralangan" +
+               (where.length ? " (" + where.join(", ") + ")" : "") };
+    }
+    return { ok:false, kind:"err", msg:"«" + label + "» — bu detal buyurtmada yoʻq" };
   }
 
   var cell = claimCell(t.p.no);
   if (!cell){
-    /* Hamma yacheyka band. Ishchi shu detal bilan NIMA qilishini bilishi kerak —
-       «boʻsh joy yoʻq» degan quruq xabar uni ekran oldida qoldiradi. Detal
-       paddonda qoladi va keyingi toʻlqinda saralanadi. Ochiq yacheykalarga
-       tegishli detallarni esa u davom ettiraveradi. */
-    var open = Object.keys(SORT.cell).map(function(c){ return c+"=P"+pad2(SORT.cell[c]); }).join(", ");
+    /* Yacheyka yoʻq yoki boʻsh yacheykalar kattaroq pochkalarga ajratilgan.
+       Ishchi shu detal bilan NIMA qilishini bilishi kerak: detal paddonda qoladi
+       va keyingi toʻlqinda saralanadi. Ochiq yacheykalarga tegishli detallarni
+       esa u davom ettiraveradi. */
+    var open = Object.keys(SORT.cell).map(function(c){ return c + "=P" + pad2(SORT.cell[c]); }).join(", ");
+    var freeN = openCells().filter(function(c){ return !SORT.cell[c]; }).length;
     return { ok:false, kind:"err",
-      msg:"«"+code+"» P"+pad2(t.p.no)+" ga tegishli, lekin boʻsh yacheyka yoʻq — "+
-          "detalni paddonda qoldiring. Ochiq: "+open };
+      msg:"«" + label + "» P" + pad2(t.p.no) + " ga tegishli, lekin " +
+          (freeN ? "boʻsh yacheykalar kattaroq pochkalarga ajratilgan (keyingi toʻlqin)"
+                 : "boʻsh yacheyka yoʻq") +
+          " — detalni paddonda qoldiring." + (open ? " Ochiq: " + open : "") };
   }
 
   SORT.put[t.it.uid] = cell;
+  if (mkey) SORT.seen[mkey] = t.it.uid;
   var n = packItems(t.p).length;
   SORT.last = { cell:cell, no:t.p.no, code:t.it.code, item:t.it,
                 done:cellDone(t.p.no), n:n, gname:(t.p.gname || (t.p.base && t.p.base.prod) || "") };
@@ -517,7 +592,7 @@ function rackSaved(what){
 
 /* Saralashni noldan boshlash */
 function sortReset(){
-  SORT.cell = {}; SORT.pack = {}; SORT.put = {}; SORT.plan = {}; SORT.last = null;
+  SORT.cell = {}; SORT.pack = {}; SORT.put = {}; SORT.plan = {}; SORT.seen = {}; SORT.last = null;
   sortPlan();
   renderSort(); renderPlanBox(); sortFlash("", "");
   if (typeof autosave === "function") autosave();

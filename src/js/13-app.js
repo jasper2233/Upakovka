@@ -99,6 +99,8 @@ function confCheck(){
   var maxKg = +S.maxKg || 0, over = +S.tailKgOver || 0, odd = oddKgCap();
   var eff = maxKg + over, tare = +S.tare || 0;
 
+  if (S._sortLost)
+    add("err", "Stelyaj/yacheyka soni kamaytirilmadi: " + S._sortLost + " da saralangan detallar turibdi — avval ularni qadoqlang.");
   if (S.minBase > (S.baseWMax || 1e9))
     add("err", "Tag eni min (" + S.minBase + " mm) maks (" + S.baseWMax + " mm) dan katta — hech bir detal tag boʻlolmaydi.");
   if ((S.baseLMin || 0) > S.maxLen)
@@ -301,8 +303,24 @@ function readConf(){
   /* terish logikasi (doimiy Avto) va variantlar soni endi 04-packer.js dagi
      PACK_TRIES konstantasida — ular sozlama emas, shuning uchun S da turmaydi */
   // v11: saralash posti sigʻimi
+  var prevR = S.rackN, prevC = S.cellN;            // v22: kamaytirish himoyasi uchun
   if ($("cRackN")) S.rackN = Math.max(1, Math.min(60, parseInt($("cRackN").value,10) || 5));
   if ($("cCellN")) S.cellN = Math.max(1, Math.min(40, parseInt($("cCellN").value,10) || 6));
+  /* v22: STELYAJ/YACHEYKA SONINI KAMAYTIRISH band yacheykani «yoʻq qilib»
+     yubormasin. Ilgari 2 stelyaj 1 taga tushirilsa B1 dagi pochka detallari
+     yoʻq yacheyka B1 ga yuborilaverardi va hisob notoʻgʻri chiqardi. Detallar
+     jismonan oʻsha yacheykada turibdi — avval pochka qadoqlanishi kerak. */
+  S._sortLost = "";
+  if (typeof SORT === "object" && SORT && typeof allCells === "function" && prevR != null){
+    var allc = {}; allCells().forEach(function(c){ allc[c] = 1; });
+    var lost = Object.keys(SORT.cell).filter(function(c){ return !allc[c]; });
+    if (lost.length){
+      S._sortLost = lost.map(function(c){ return c + " (P" + pad2(SORT.cell[c]) + ")"; }).join(", ");
+      S.rackN = prevR; S.cellN = prevC;
+      if ($("cRackN")) $("cRackN").value = prevR;
+      if ($("cCellN")) $("cCellN").value = prevC;
+    }
+  }
   // v12: yacheykaning fizik oʻlchamlari
   var cellNums = { cBigN:["bigN",0,20,1], cCellW:["cellW",20,2000,250], cCellD:["cellD",50,3000,400],
                    cCellH:["cellH",100,5000,1500],

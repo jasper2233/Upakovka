@@ -2565,6 +2565,84 @@ $tester = @'
       sortReset(); S.rackN = sR; S.cellN = sC;
     } catch(e){ chk("saralash posti", false, e.message); }
 
+    /* ================= v22: SARALASH — skan detal identifikatori bo'yicha =================
+       Ilgari faqat KOD bo'yicha qidirilardi: oʻz chekimizdagi pochka raqami eʼtiborsiz,
+       koʻzgu juftlik boshqa pochkaga, yigʻib boʻlingan pochka yana nishon edi. */
+    try {
+      var sR2 = S.rackN, sC2 = S.cellN, sOff2 = S.cellOff;
+      S.rackN = 6; S.cellN = 10; S.cellOff = {}; sortReset();
+      // bir xil kod + oʻlcham IKKI pochkada — oʻz cheki aynan chekdagi pochkaga yuboradi
+      var dup = null, firstPack = {};
+      PACKS.forEach(function(p){
+        packItems(p).forEach(function(it){
+          var k = it.code + "|" + it.L + "x" + it.W + "x" + it.T;
+          if (!firstPack[k]) firstPack[k] = p; else if (!dup && firstPack[k] !== p) dup = { a:firstPack[k], b:p, it:it };
+        });
+      });
+      chk("saralash: ikki pochkada bir xil detal topildi", !!dup, dup ? dup.it.code + " · P" + dup.a.no + " / P" + dup.b.no : "yoʻq");
+      if (dup){
+        var stB = null;
+        dup.b.seq.forEach(function(s){ if (!stB && s.it.code === dup.it.code) stB = s; });
+        claimCell(dup.a.no);                                  // A pochkada yacheyka bor — eski mantiq shunga yuborardi
+        var rOwn = sortScan(qrText(dup.b, stB));
+        chk("saralash: oʻz cheki chekdagi pochkaga yuboradi", rOwn.ok && rOwn.pack === dup.b,
+            rOwn.ok ? "P" + rOwn.pack.no + " (kutilgan P" + dup.b.no + ")" : rOwn.msg);
+      }
+      // oddiy kod bir nechta HAR XIL detalga tegishli boʻlsa — tanlanmaydi
+      var it0 = packItems(PACKS[0])[0], svKey = it0.mesKey, svMes = it0.mes;
+      var twin = null;
+      PACKS.forEach(function(p){ packItems(p).forEach(function(x){ if (!twin && x !== it0 && x.code === it0.code) twin = x; }); });
+      var fakeIt = twin || packItems(PACKS[1])[0], svCode = fakeIt.code, svFK = fakeIt.mesKey, svFM = fakeIt.mes;
+      fakeIt.code = it0.code; fakeIt.mesKey = "990999_" + it0.code + "-2"; fakeIt.mes = fakeIt.mesKey;
+      var rAmb = sortScan(it0.code);
+      fakeIt.code = svCode; fakeIt.mesKey = svFK; fakeIt.mes = svFM;
+      chk("saralash: bir nechta xil detalga tegishli kod rad etiladi", !rAmb.ok && /xil detalga/.test(rAmb.msg), rAmb.msg);
+      // bir xil MES chek ikki marta — ikkinchi nusxa belgilanmaydi, yacheyka aytiladi
+      sortReset();
+      var multi = null;
+      PACKS.forEach(function(p){ packItems(p).forEach(function(x){ if (!multi && x.of > 1) multi = x; }); });
+      var mr1 = sortScan("B-2026-047_" + multi.mes), putN1 = Object.keys(SORT.put).length;
+      var mr2 = sortScan("B-2026-047_" + multi.mes), putN2 = Object.keys(SORT.put).length;
+      chk("saralash: bitta MES chek ikki marta — ikkinchi nusxa belgilanmaydi",
+          mr1.ok && !mr2.ok && putN1 === putN2 && /allaqachon skanerlangan/.test(mr2.msg) && mr2.msg.indexOf(mr1.cell) > 0,
+          mr2.msg);
+      // yigʻib boʻlingan pochka saralash nishoni boʻlmaydi
+      sortReset();
+      var fin = PACKS.filter(function(p){ return !p.odd && p.seq.length >= 2; })[0], finI = PACKS.indexOf(fin);
+      fin.seq.forEach(function(s){ sortScan(qrText(fin, s)); });
+      var doneBefore = sortStats().done;
+      selectPack(finI); setStep(fin.seq.length);              // pochka yigʻildi — yacheyka boʻshaydi
+      sortPlan();
+      chk("saralash: yigʻilgan pochka qayta nishon boʻlmaydi",
+          packLeft(fin) === 0 && !SORT.plan[fin.no] && !SORT.pack[fin.no] && sortStats().done === doneBefore,
+          "left=" + packLeft(fin) + " plan=" + (SORT.plan[fin.no] || "—") + " done " + doneBefore + "→" + sortStats().done);
+      var rFin = sortScan(qrText(fin, fin.seq[0]));
+      chk("saralash: yigʻilgan pochka detali yangi yacheyka ochmaydi", !rFin.ok && !SORT.pack[fin.no], rFin.msg);
+      setStep(0);
+      // yacheyka yetmaganda reja qatʼiy: kichik pochka katta pochkaning yacheykasini olmaydi
+      S.rackN = 1; S.cellN = 2; sortReset(); sortPlan();
+      var planned = Object.keys(SORT.plan).map(Number);
+      var small = PACKS.filter(function(p){ return planned.indexOf(p.no) < 0 && packLeft(p) > 0; })[0];
+      var rSm = sortScan(qrText(small, small.seq ? small.seq[0] : { it:packItems(small)[0], layer:1 }));
+      chk("saralash: reja tashqarisidagi pochka keyingi toʻlqinda", !rSm.ok && !SORT.pack[small.no] && /toʻlqin|boʻsh yacheyka/.test(rSm.msg),
+          rSm.msg.slice(0, 90));
+      // tahrirlash qoralamasida yopilgan yacheyka band boʻlib qolsa — saqlashda yopilmaydi
+      S.rackN = 6; S.cellN = 10; sortReset();
+      rackEditStart(); toggleCell("A1");
+      var big1 = PACKS.slice().sort(function(a, b){ return packItems(b).length - packItems(a).length; })[0];
+      SORT.cell["A1"] = big1.no; SORT.pack[big1.no] = "A1";
+      rackEditSave();
+      chk("saralash: band yacheyka qoralamadan yopilmaydi", !cellOff("A1") && SORT.cell["A1"] === big1.no,
+          "A1 yopiq=" + cellOff("A1"));
+      // stelyaj sonini kamaytirish band yacheykani yoʻqotmaydi
+      sortReset(); SORT.cell["B1"] = big1.no; SORT.pack[big1.no] = "B1";
+      writeConf(); el("cRackN").value = "1"; readConf();
+      var cwS = confCheck().filter(function(w){ return /kamaytirilmadi/.test(w.msg); });
+      chk("saralash: band yacheyka boʻlsa stelyaj soni kamaymaydi", S.rackN === 6 && el("cRackN").value === "6" && cwS.length === 1,
+          "rackN=" + S.rackN + " · " + (cwS[0] ? cwS[0].msg.slice(0, 60) : "ogohlantirish yoʻq"));
+      sortReset(); S.rackN = sR2; S.cellN = sC2; S.cellOff = sOff2; writeConf(); readConf();
+    } catch(e){ chk("saralash (v22)", false, e.message); }
+
     /* ================= v22: MebeliX MES DETAL ID SI =================
        Qadoqlash postida MES chiqargan chek skanerlanadi:
        {buyurtma}_{mahsulot}_{detal}[-N][_n]. Qoidalar MES parseridan koʻchirilgan —

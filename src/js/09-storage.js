@@ -402,7 +402,8 @@ function makeSnapshot(){
        holda ishchi butun paddonni qaytadan saralashga majbur boʻlardi. */
     sort: (typeof SORT === "object" && SORT)
       ? { cell:snapClone(SORT.cell||{},{}), pack:snapClone(SORT.pack||{},{}),
-          put:snapClone(SORT.put||{},{}) }
+          put:snapClone(SORT.put||{},{}),
+          seen:snapClone(SORT.seen||{},{}) }       // v22: skanerlangan MES cheklar
       : null,
     /* P ning sof nusxasi: name, uuid, materials, parts (+ rev kabi qoʻshimcha
        maydonlar ham oʻz-oʻzidan tushadi — P da faqat oddiy maʼlumot turadi) */
@@ -513,6 +514,7 @@ function restoreSnapshot(snap){
       SORT.cell = snapClone(snap.sort.cell, {}) || {};
       SORT.pack = snapClone(snap.sort.pack, {}) || {};
       SORT.put  = snapClone(snap.sort.put,  {}) || {};
+      SORT.seen = snapClone(snap.sort.seen || {}, {}) || {};   // v22
       SORT.last = null;                 // katta yozuv qayta koʻrsatilmaydi
     }
     // 2) loyiha — snapshot obyektiga tegmaslik uchun yana nusxa olinadi
