@@ -157,6 +157,26 @@ aynan bir marta uchrashi.
 4. Detalni qo'ying va QR ni skanerlang (yoki <kbd>Space</kbd> bosing)
 5. Pochka tugagach — «rulondan qog'oz yechib o'rang, 2 tasma, chek yopishtiring»
 
+**Qavat ichida erkin tartib (v22, MES g'oyasi — «qaror qadoqlovchida»).** Shu
+qavatdagi hali qo'yilmagan istalgan detalni skanerlash mumkin — u qabul qilinadi
+va yig'ish tartibi shunga moslanadi (seansda saqlanadi). Bitta qavat detallari bir
+balandlikda yotadi, ularning tartibi fizik jihatdan ahamiyatsiz. **Qavatlar tartibi
+esa qat'iy**: keyingi qavat detali skanerlansa «avval joriy qavatni tugating»
+deyiladi. Allaqachon qo'yilgan detal yana skanerlansa — «allaqachon qo'yilgan».
+
+**Skaner fokussiz ham ishlaydi (v22).** Ishchi 3D ni yoki tugmani bosgan bo'lsa ham
+skaner yozgan satr skan maydoniga tushadi va tekshiruvdan o'tadi — ilgari belgilar
+yo'qolar, oxirgi Enter esa detalni **tekshiruvsiz** «qo'yildi» deb belgilardi.
+Bosilgandan keyin fokus skan maydoniga qaytadi. Bo'sh maydonda Enter — qo'lda
+«Qo'yildi» (skaner hech qachon bo'sh satr yubormaydi).
+
+**3D va 2D bir xil (v22).** 3D ko'rinish ilgari detalni old-orqa teskari
+ko'rsatardi (matn va 2D reja to'g'ri edi) — endi uchalasi bir xil: y tagning
+**orqa** chetidan o'lchanadi.
+
+**O'z chekimiz boshqa buyurtmada qabul qilinmaydi (v22)** — chekdagi loyiha
+belgisi va o'lcham ham tekshiriladi (ilgari faqat pochka raqami va kod).
+
 **Klaviatura:** <kbd>Space</kbd>/<kbd>Enter</kbd> — qo'yildi · <kbd>Backspace</kbd> — orqaga ·
 <kbd>Ctrl</kbd>+<kbd>O</kbd> — fayl yuklash · <kbd>Esc</kbd> — ochiq oynani yopish
 
@@ -881,9 +901,18 @@ Sozlamalar → «QR chek va chop etish» → *Chek o'lchami*:
 - **100 × 70**, **80 × 60**, **58 × 40** mm — termal printer, har chek alohida varaqda
 - **Boshqa — qo'lda (mm)** — o'lchamni o'zingiz kiritasiz (*Qo'lda: eni* va *Qo'lda: bo'yi*), 20…300 mm
 
-Chek bo'yi **62 mm dan past** bo'lsa tizim shriftni avtomatik kichraytiradi va
-pochka chekidagi detallar ro'yxatini 12 tagacha qisqartiradi — kesilgani
-«+N ta» bo'lib yozib qo'yiladi, ya'ni ishchi ro'yxat to'liq emasligini biladi.
+**v22: termal chek bitta stikerga sig'adi.** Ilgari pochka cheki A4 uchun
+qurilgan edi va termalda **har pochka cheki 2 stiker** yeyardi (51 ta chek → 102
+sahifa, 58×40 da 237), «2 KISHI» va detallar ro'yxati ikkinchi stikerga tushardi.
+Endi termal o'lchamda **ixcham chek**: xona, modul, «N dona · M qavat», gabarit,
+brutto (ko'tarish darajasi shu qatorda). Material, qalinlik, netto va QR ostidagi
+uzun matn faqat A4 da. Chek balandligi stikerga qat'iy bog'langan; detallar
+ro'yxati stiker geometriyasidan hisoblangan sig'im bilan kesiladi va kesilgani
+«+N ta» bo'lib yoziladi. Kichik stikerda (bo'yi 62 mm dan past) detal chekining
+birinchi qatori — **pochka va qavat**.
+
+Tekshiruv — `tests\labels.ps1`: hamma chekni PDF ga chop etib sahifalarni
+sanaydi (58×40, 80×60, 100×70 va qo'lda o'lcham: har chek = bitta sahifa).
 
 ### Avtomatik pochka cheki
 

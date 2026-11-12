@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-<!-- Upakofka tizimi — build bd54be3c -->
+<!-- Upakofka tizimi — build c246e898 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Upakofka tizimi</title>
@@ -732,6 +732,13 @@ select:focus-visible,
   #sheet.sz-lbl.tiny .label table{font-size:7px}
   #sheet.sz-lbl.tiny .label .big{font-size:9px}
   #sheet.sz-lbl.tiny .label canvas{width:64px;height:64px}
+  /* v22: QR ustuni QR oʻlchamiga teng. Ilgari ustun 94 px (A4 dagidek) qolib,
+     QR esa 64 px edi — matn ustuni torayib «1753 × / 600 × / 16» boʻlib
+     buzilar va pastdagi «Pochka P01 · ENG TAG» qatori stikerdan tushib qolardi. */
+  #sheet.sz-lbl.tiny .label{grid-template-columns:1fr 17mm;gap:2mm}
+  #sheet.sz-lbl.tiny .label canvas{width:17mm;height:17mm}
+  #sheet.sz-lbl.tiny .label td:first-child{width:9mm;padding-right:1mm}
+  #sheet.sz-lbl.tiny .label td.big{white-space:nowrap}
 
   /* --- v20: pochka chekidagi DETALLAR ROʻYXATI.
      Ilgari etakda kodlar « · » bilan ulangan bitta uzun qator turardi va 300
@@ -746,6 +753,30 @@ select:focus-visible,
   .plabel .pf span b{font-weight:700}
   .plabel .pf .more{font-style:italic}
   #sheet.sz-lbl.tiny .plabel .pf{font-size:6px;gap:0 4px}
+
+  /* v22: TERMAL POCHKA CHEKI (`.plabel.thermal`, 08-labels.js) — oʻlchamlar mm da,
+     stikerga bogʻlangan. A4 dagi 330 px li chek 80×60 ga sigʻmasdi. */
+  /* .label dagi max-width:300px (A4 ikki ustunli varaq uchun) termalda stikerning
+     faqat ~80 mm qismini egallatardi — 100×70 va kattasida chek torayib qolardi */
+  #sheet.sz-lbl .label{max-width:none}
+  #sheet.sz-lbl .plabel.thermal{width:auto;padding:0;display:block!important}
+  #sheet.sz-lbl .plabel.thermal .ph{padding-bottom:.8mm;margin-bottom:1mm;border-bottom-width:1.5px}
+  #sheet.sz-lbl .plabel.thermal .ph b{font-size:15px}
+  #sheet.sz-lbl .plabel.thermal .ph span{font-size:7px}
+  #sheet.sz-lbl .plabel.thermal .pb{display:grid;grid-template-columns:1fr 24mm;gap:2mm;align-items:start}
+  #sheet.sz-lbl .plabel.thermal .pb canvas{width:24mm;height:24mm}
+  #sheet.sz-lbl .plabel.thermal table{font-size:8px;margin-top:0}
+  #sheet.sz-lbl .plabel.thermal td{padding:.3mm 0}
+  #sheet.sz-lbl .plabel.thermal td:first-child{width:11mm;padding-right:1.5mm}
+  #sheet.sz-lbl .plabel.thermal .big{font-size:9.5px}
+  #sheet.sz-lbl .plabel.thermal .pill{font-size:7.5px;padding:0 3px}
+  #sheet.sz-lbl.tiny .plabel.thermal .ph b{font-size:12px}
+  #sheet.sz-lbl.tiny .plabel.thermal .ph span{font-size:6px}
+  #sheet.sz-lbl.tiny .plabel.thermal .pb{grid-template-columns:1fr 18mm;gap:1.5mm}
+  #sheet.sz-lbl.tiny .plabel.thermal .pb canvas{width:18mm;height:18mm}
+  #sheet.sz-lbl.tiny .plabel.thermal table{font-size:7px}
+  #sheet.sz-lbl.tiny .plabel.thermal .big{font-size:8px}
+  #sheet.sz-lbl.tiny .plabel.thermal td:first-child{width:9mm;padding-right:1mm}
 }
 
 /* ============================================================
@@ -4672,11 +4703,23 @@ function draw3D(){
   } else {
     cxx = p.base.L/2; cyy = p.base.W/2;
     var z = 0, st = 1;
+    /* v22: qadam raqami `seq` dagi O'RNIDAN olinadi, qavat tartibidan emas —
+       ishchi qavat ichida detallarni istalgan tartibda qo'ya oladi va `seq`
+       shunga qarab qayta tartiblanadi (10-ui `checkScan`). */
+    var stepOf = new Map();
+    p.seq.forEach(function(s, i){ if (s.pos) stepOf.set(s.pos, i); });
     boxes.push({ x:-cxx, y:-cyy, z:0, a:p.base.L, b:p.base.W, h:p.base.T*zex, it:p.base, step:0 });
     z = p.base.T*zex;
     p.layers.forEach(function(L){
       L.items.forEach(function(q){
-        boxes.push({ x:q.x-cxx, y:q.y-cyy, z:z, a:q.a, b:q.b, h:q.it.T*zex, it:q.it, step:st++ });
+        /* v22: y AKS ETTIRILADI. Matn («orqa chetdan Y mm»), 2D reja va MES
+           rejasi y ni tagning ORQA chetidan oʻlchaydi; kamera esa tagni oldidan
+           koʻradi va y = 0 old chetga tushardi — 3D dagi sariq soya detalni
+           teskari tomonda koʻrsatardi (matn va 2D bilan zid). Tag simmetrik,
+           shuning uchun faqat qavat detallari aks ettiriladi. */
+        boxes.push({ x:q.x-cxx, y:cyy-q.y-q.b, z:z, a:q.a, b:q.b, h:q.it.T*zex, it:q.it,
+                     step: stepOf.has(q) ? stepOf.get(q) : st });
+        st++;
       });
       z += L.h*zex;
     });
@@ -5036,21 +5079,27 @@ function drawQR(cv, text){
    mebel boʻlsa mahsulot nomi hammasi uchun bir xil, modul esa farq qiladi. */
 function labelHTML(p, step, id){
   var it = step.it, m = it.mat;
+  /* v22: kichik termal stikerda (boʻyi 62 mm dan past) material qatori va QR
+     ostidagi uzun matn tushiriladi — 58×40 da har detal cheki 2 stikerga
+     chiqardi. Kod va QR — asosiysi, ular qoladi. */
+  var mmL = (typeof labelMM === "function") ? labelMM() : null, tinyL = !!(mmL && mmL.h < 62);
   var role = step.role==="tag" ? "ENG TAG" : step.role==="ust" ? ("QOPQOQ"+(step.of>1?" "+step.n+"/"+step.of:"")) : step.role==="noodatiy" ? "NOODATIY" : (step.layer+"-QAVAT"+(step.of>1?" "+step.n+"/"+step.of:""));
   return '<div class="label">'+
     '<div>'+
       '<div class="lc">'+esc(it.code)+'</div>'+
       '<div class="ln">'+esc(it.name)+'</div>'+
       '<table>'+
+        // v22: kichik stikerda POCHKA qatori birinchi — ishchiga eng kerakli maʼlumot
+        (tinyL ? '<tr><td>Pochka</td><td><span class="pill">P'+pad2(p.no)+' · '+role+'</span></td></tr>' : '')+
         '<tr><td>Oʻlcham</td><td class="big">'+it.L+' × '+it.W+' × '+it.T+'</td></tr>'+
         '<tr><td>Massa</td><td class="big">'+it.kg.toFixed(2)+' kg</td></tr>'+
-        '<tr><td>Material</td><td>'+esc(m?m.name:"—")+'</td></tr>'+
+        (tinyL ? '' : '<tr><td>Material</td><td>'+esc(m?m.name:"—")+'</td></tr>')+
         '<tr><td>Modul</td><td>'+esc(unitLabel(it.unit, it.unitName || it.prod))+'</td></tr>'+
-        '<tr><td>Pochka</td><td><span class="pill">P'+pad2(p.no)+' · '+role+'</span></td></tr>'+
+        (tinyL ? '' : '<tr><td>Pochka</td><td><span class="pill">P'+pad2(p.no)+' · '+role+'</span></td></tr>')+
       '</table>'+
     '</div>'+
     '<div style="text-align:center"><canvas id="'+id+'"></canvas>'+
-      '<div style="font-size:7.5px;letter-spacing:.02em;margin-top:2px;word-break:break-all">'+esc(qrText(p,step))+'</div></div>'+
+      (tinyL ? '' : '<div style="font-size:7.5px;letter-spacing:.02em;margin-top:2px;word-break:break-all">'+esc(qrText(p,step))+'</div>')+'</div>'+
   '</div>';
 }
 function packQR(p){
@@ -5068,6 +5117,29 @@ function packLabelHTML(p, id){
   var mods = {}; p.seq.forEach(function(s){ mods[unitLabel(s.it.unit, s.it.unitName)] = 1; });
   var room = (typeof packRoom === "function") ? packRoom(p)
            : (typeof p.room === "string" ? p.room : "");
+  /* v22: TERMAL STIKER — ixcham chek. A4 uchun qurilgan toʻliq chek 80×60 va
+     100×70 stikerga sigʻmasdi: hamma 51 ta pochka cheki 2 stikerga chiqardi
+     (58×40 da 4–5 taga), «2 KISHI» ogohlantirishi va detallar roʻyxati
+     ikkinchi stikerga tushardi. Termalda faqat ishchiga va omborga keraklisi
+     qoladi; koʻtarish darajasi brutto qatorida. A4 chek oʻzgarmaydi. */
+  if (typeof labelMM === "function" && labelMM()){
+    var lay = p.odd ? p.items.length : (p.layers.length + 1);
+    return '<div class="label plabel thermal">'+
+      '<div class="ph"><b>POCHKA P'+pad2(p.no)+'</b><span>'+esc(cut(P.name, 28))+' · R'+(p.rev||1)+'</span></div>'+
+      '<div class="pb">'+
+        '<table>'+
+        (room ? '<tr><td>Xona</td><td class="big">'+esc(cut(room, 24))+'</td></tr>' : '')+
+        '<tr><td>Modul</td><td class="big">'+esc(cut(Object.keys(mods).join(", "), 30))+'</td></tr>'+
+        '<tr><td>Detal</td><td class="big">'+p.seq.length+' dona · '+lay+' qavat</td></tr>'+
+        '<tr><td>Gabarit</td><td>'+(p.odd?"—":p.gabL+"×"+p.gabW+"×"+Math.round(p.h))+'</td></tr>'+
+        '<tr><td>Brutto</td><td class="big">'+brutto.toFixed(1)+' kg'+
+          (tier > 1 ? ' <span class="pill">'+liftText(brutto)+'</span>' : '')+'</td></tr>'+
+        '</table>'+
+        '<canvas id="'+id+'"></canvas>'+
+      '</div>'+
+      '<div class="pf">'+packListHTML(p)+'</div>'+
+    '</div>';
+  }
   return '<div class="label plabel">'+
     '<div class="ph"><b>POCHKA P'+pad2(p.no)+'</b><span>'+esc(P.name)+' · R'+(p.rev||1)+'</span></div>'+
     '<div class="pb">'+
@@ -5103,7 +5175,21 @@ function packLabelHTML(p, id){
    «+N ta» turadi, ya'ni roʻyxat toʻliq emasligi YOZIB qoʻyiladi. */
 function packListHTML(p){
   var mm  = (typeof labelMM === "function") ? labelMM() : null;
-  var cap = !mm ? 0 : (mm.h < 62 ? 12 : 20);
+  /* v22: sigʻim stiker GEOMETRIYASIDAN. Termal chekda (08 `.plabel.thermal`)
+     sarlavha + jadval + QR yuqorida taxminan `top` mm oladi, roʻyxatning har
+     qatori `lineH` mm, har katakcha (kod + oʻlcham) ~`itemW` mm. Raqamlar
+     PDF ga chop etilgan chekdan oʻlchangan (58×40, 80×60, 100×70, 70×50,
+     120×80) — sigʻim «+N ta» bilan birga stikerga sigʻadi. Chek balandligi
+     baribir stikerga qatʼiy bogʻlangan (10-ui `applyPageSize`), bu yerdagi
+     kesish esa roʻyxat oxiri koʻrinib turishi uchun. */
+  var cap = 0;
+  if (mm){
+    var tiny = mm.h < 62, mg = tiny ? 2 : 3;
+    var top = tiny ? 28 : 35, lineH = tiny ? 2.3 : 2.95, itemW = tiny ? 16 : 19;
+    var lines = Math.floor((mm.h - 2 * mg - top) / lineH);
+    var per = Math.max(1, Math.floor((mm.w - 2 * mg) / itemW));
+    cap = Math.max(2, lines * per - 1);
+  }
   var seq = p.seq, n = seq.length;
   var show = (cap && n > cap) ? cap : n;
   var out = "";
@@ -5602,6 +5688,16 @@ function snapPacks(packs){
               oddSrc:!!p.oddSrc,     // v14: nostandart oqim limitlari shunga bogʻliq
               overKg:!!p.overKg,     // v16: qoldiq zaxirasidan foydalangan
               nst:!!p.nst };         // v18: qaysi oqim (standart / nostandart)
+    /* v22: QAVAT ICHIDA ERKIN TARTIB — ishchi shu qavatning detallarini istalgan
+       tartibda qoʻyadi va `seq` shunga qarab qayta tartiblanadi. `seq` esa
+       hosila maydon (packDerive), tiklashda kanonik tartibda qayta quriladi —
+       shuning uchun haqiqiy tartib alohida saqlanadi. Kanonikdan farq qilmasa
+       yozilmaydi (snapshot kichik qoladi). */
+    if (p.seq && p.seq.length){
+      var ordNow = p.seq.map(function(st){ return st.it.uid; });
+      var ordCan = packSeq(p).map(function(st){ return st.it.uid; });
+      if (ordNow.join("|") !== ordCan.join("|")) o.ord = ordNow;
+    }
     if (p.odd){
       o.itemUids = (p.items || []).map(function(it){ return it.uid; });
       return o;
@@ -5702,6 +5798,19 @@ function restoreSnapshot(snap){
   /* Snapshotdan keladigan ikki maydon: yigʻish progressi va terish reviziyasi.
      v21: ikkovi ham oddiy va bogʻ pochka uchun soʻzma-soʻz takrorlanardi. */
   function finishPack(p, s){
+    /* v22: saqlangan yigʻish tartibi (qavat ichida erkin tartib). Faqat aynan
+       oʻsha detallarning oʻrin almashtirishi boʻlsa qabul qilinadi — aks holda
+       kanonik tartib qoladi (eski yoki buzilgan seans). */
+    if (isArr(s.ord) && s.ord.length === p.seq.length){
+      var byU = {}, re = [], okOrd = true;
+      p.seq.forEach(function(st){ byU[st.it.uid] = st; });
+      for (var oi = 0; oi < s.ord.length && okOrd; oi++){
+        var st = byU[s.ord[oi]];
+        if (!st){ okOrd = false; break; }
+        re.push(st); delete byU[s.ord[oi]];
+      }
+      if (okOrd) p.seq = re;
+    }
     p.done = Math.max(0, Math.min(isFinite(+s.done) ? Math.round(+s.done) : 0, p.seq.length));
     p.rev  = (s.rev != null) ? s.rev : (P.rev || 1);
     return p;
@@ -5971,6 +6080,9 @@ document.addEventListener("beforeinput", function(e){
 function setStep(n){
   var p = PACKS[CUR];
   if (!p){ STEP = 0; return; }
+  /* v22: qadam oʻzgarganda eski xabar ham ketadi. Oxirgi qadamdagi «toʻgʻri ✓»
+     PEND da kutib turar va ishchi «Orqaga» bossa qaytgan qadamda chiqib qolardi. */
+  if (Math.max(0, Math.min(n, p.seq.length)) !== STEP && typeof flashClear === "function") flashClear();
   STEP = Math.max(0, Math.min(n, p.seq.length));
   p.done = STEP;
   /* v11: pochka toʻliq terilgach uning stelyaj yacheykasi boʻshaydi — detallar
@@ -6282,7 +6394,15 @@ function renderStep(){
     $("bOk").onclick = advance;
     $("bBack").onclick = function(){ setStep(STEP-1); WRAP=false; renderStep(); renderPacks(); };
     var sc = $("scan");
-    sc.onkeydown = function(e){ if (e.key==="Enter"){ checkScan(sc.value.trim()); sc.value=""; } };
+    /* v22: boʻsh maydonda Enter — qoʻlda «Qoʻyildi» (skaner hech qachon boʻsh satr
+       yubormaydi). Fokus endi doim shu yerda turadi, shuning uchun qoʻlda
+       tasdiqlash ham shu maydondan ishlashi kerak. */
+    sc.onkeydown = function(e){
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      var val = sc.value.trim(); sc.value = "";
+      if (val) checkScan(val); else if (PACKS[CUR]) advance();
+    };
     setTimeout(function(){ sc.focus(); }, 30);
     if (PEND){ var m=$("msg"); m.className="msg "+PEND.k; m.textContent=PEND.t; PEND=null; }
     $("lblwrap").innerHTML = labelHTML(p, step, "qrLive");
@@ -6331,37 +6451,69 @@ function flashClear(){
    skanerlansa operator buni darhol biladi, aks holda notoʻgʻri pochka yigʻiladi. */
 function checkScan(v){
   var p = PACKS[CUR]; if (!p || !v) return;
+  v = String(v).trim();
   if (STEP >= p.seq.length){ flash("ok","pochka allaqachon tayyor"); return; }
-  var step = p.seq[STEP], want = qrText(p, step);
-  var f = v.split("|");
+  var step = p.seq[STEP], f = v.split("|");
 
-  // eski terishdan chop etilgan chekmi?
+  /* v22: OʻZ CHEKIMIZ — «PREFIKS.LOYIHA.Rn|Pnn|Qn|KOD|LxWxT». Reviziya va loyiha
+     FAQAT shu formatda tekshiriladi. Ilgari: (1) loyiha belgisi solishtirilmasdi —
+     har buyurtma P01 dan boshlanadi va kodlar takrorlanadi, shuning uchun BOSHQA
+     buyurtmaning cheki «toʻgʻri» deb qabul qilinardi; (2) oddiy kod «R12» ham
+     reviziya deb oʻqilib «ESKI terishdan» deyilardi. */
   var hdr = f[0] ? f[0].split(".") : [];
-  var rev = null;
-  for (var z=0; z<hdr.length; z++) if (/^R\d+$/.test(hdr[z])) rev = +hdr[z].slice(1);
-  if (rev !== null && P && P.rev && rev !== P.rev){
-    flash("err","bu chek ESKI terishdan (R"+rev+"), joriy terish R"+P.rev+" — cheklarni qayta chop eting");
+  var own = f.length >= 5 && hdr.length >= 3 && /^R\d+$/.test(hdr[hdr.length - 1]);
+  if (own){
+    if (hdr[1] !== projTag()){
+      flash("err","bu chek boshqa buyurtmaniki ("+hdr[1]+"), joriy buyurtma "+projTag());
+      return;
+    }
+    var rev = +hdr[hdr.length - 1].slice(1);
+    if (P && P.rev && rev !== P.rev){
+      flash("err","bu chek ESKI terishdan (R"+rev+"), joriy terish R"+P.rev+" — cheklarni qayta chop eting");
+      return;
+    }
+  }
+  /* Skan shu detalgami? Bir xil detalning nusxalari oʻzaro almashinadi:
+     oʻz chekida — pochka + kod + oʻlcham, MES chekida — MES kaliti (`-2` ko'zgu
+     juftlik BOSHQA detal), oddiy kodda — kod. */
+  function sizeOf(it){ return it.L + "x" + it.W + "x" + it.T; }
+  function hitIn(pk, s){
+    if (own) return f[1] === "P" + pad2(pk.no) && f[3] === s.it.code && f[4] === sizeOf(s.it);
+    return s.it.code === v || mesMatch(v, s.it);
+  }
+
+  if (hitIn(p, step)){ advance(); flash("ok","toʻgʻri — qoʻyildi ✓"); return; }
+
+  /* v22: QAVAT ICHIDA ERKIN TARTIB (MES gʻoyasi: qaror qadoqlovchida). Shu
+     qavatdagi hali qoʻyilmagan detal skanerlansa — qabul qilinadi va yigʻish
+     tartibi almashtiriladi: bitta qavat detallari bir balandlikda yotadi,
+     ularning tartibi fizik jihatdan ahamiyatsiz. Qavatlar tartibi esa qatʼiy. */
+  var later = -1;
+  for (var i = STEP + 1; i < p.seq.length; i++){
+    if (!hitIn(p, p.seq[i])) continue;
+    if (p.seq[i].layer === step.layer){
+      var sw = p.seq.splice(i, 1)[0];
+      p.seq.splice(STEP, 0, sw);
+      advance(); flash("ok","toʻgʻri — qoʻyildi ✓ (shu qavat, boshqa tartibda)");
+      return;
+    }
+    if (later < 0) later = i;
+  }
+  if (later >= 0){
+    flash("err","bu detal shu pochkaning "+p.seq[later].layer+"-qavatida ("+(later+1)+"-qadam) — avval joriy qavatni tugating");
     return;
   }
-
-  // bir xil koddagi detallar oʻzaro almashinadi: pochka + kod mos kelsa yetarli
-  var sameCode = f.length>3 && f[1]==="P"+pad2(p.no) && f[3]===step.it.code;
-  /* v22: MES cheki (`B-2026-047_100701_03_002_1`) — detalga MES chiqargan chek.
-     Qadoqlash postida asosan shu skanerlanadi, oʻz chekimiz esa zaxira. */
-  function hit(s){ return qrText(p, s) === v || s.it.code === v || mesMatch(v, s.it); }
-  if (v === want || v === step.it.code || sameCode || mesMatch(v, step.it)){
-    advance(); flash("ok","toʻgʻri — qoʻyildi ✓"); return;
+  // v22: hali qoʻyilmagan nusxa qolmagan — allaqachon qoʻyilgan (ilgari 1-qadamdan qidirilib, qoʻyilgan nusxaga ishora qilinardi)
+  for (var d = 0; d < STEP; d++){
+    if (hitIn(p, p.seq[d])){ flash("err","bu detal allaqachon qoʻyilgan ("+(d+1)+"-qadam) — ikkinchi nusxa yoʻq"); return; }
   }
-  var at = -1;
-  for (var i=0;i<p.seq.length;i++){ if (hit(p.seq[i])){ at=i; break; } }
-  if (at>=0){ flash("err","bu detal shu pochkada, lekin "+(at+1)+"-qadamda"); return; }
 
   // boshqa pochkada bormi? — operatorga aniq yoʻl koʻrsatamiz
-  for (var k=0;k<PACKS.length;k++){
-    if (k===CUR) continue;
+  for (var k = 0; k < PACKS.length; k++){
+    if (k === CUR) continue;
     var q = PACKS[k];
-    for (var j=0;j<q.seq.length;j++){
-      if (qrText(q,q.seq[j])===v || q.seq[j].it.code===v || mesMatch(v, q.seq[j].it)){
+    for (var j = 0; j < q.seq.length; j++){
+      if (hitIn(q, q.seq[j])){
         flash("err","bu detal P"+pad2(q.no)+" pochkasiga tegishli ("+(j+1)+"-qadam)");
         return;
       }
@@ -6530,9 +6682,14 @@ function applyPageSize(){
   sheet.className = mm ? ("sz-lbl" + (mm.h < 62 ? " tiny" : "")) : "sz-a4";
   var st = document.getElementById("pageStyle");
   if (!st){ st = document.createElement("style"); st.id = "pageStyle"; document.head.appendChild(st); }
+  /* v22: chek balandligi stikerga QATʼIY bogʻlanadi. Mazmun sigʻmasa ham
+     ikkinchi stikerga toshib chiqmaydi (ilgari termalda har pochka cheki 2
+     stiker yeyardi); detallar roʻyxati esa packListHTML da oldindan qisqartiriladi,
+     «+N ta» koʻrinib turadi. */
+  var mg = mm ? (mm.h < 62 ? LBL_MARGIN_TINY : LBL_MARGIN) : 0;
   st.textContent = mm
-    ? "@media print{@page{size:" + mm.w + "mm " + mm.h + "mm;margin:" +
-      (mm.h < 62 ? LBL_MARGIN_TINY : LBL_MARGIN) + "mm}}"
+    ? "@media print{@page{size:" + mm.w + "mm " + mm.h + "mm;margin:" + mg + "mm}" +
+      "#sheet.sz-lbl .label{height:" + (mm.h - 2 * mg - 0.8).toFixed(1) + "mm;overflow:hidden;box-sizing:border-box}}"
     : "@media print{@page{size:A4;margin:" + A4_MARGIN + "mm}}";
 }
 function printSteps(list, title){
@@ -6858,7 +7015,7 @@ function renderMgrEdit(){
     '<div class="edhead">'+
       '<select id="mgrEditPack">'+pickOpts+'</select>'+
       '<span class="grphint">'+(room ? esc(room)+' · ' : '')+esc(packGrpName(p))+' · '+
-        p.kg.toFixed(1)+' / '+S.maxKg+' kg · '+p.seq.length+' detal</span>'+
+        p.kg.toFixed(1)+' / '+packKgCap(p)+' kg · '+p.seq.length+' detal</span>'+   // v22: haqiqiy limit (zaxira, NS)
     '</div>'+
     '<div class="msg" id="emsg"></div>'+
     '<div class="edlist">'+rows+'</div>';
@@ -9220,15 +9377,44 @@ document.addEventListener("keydown", function(e){
 
   if (e.key === "Escape" && closeTopOverlay()){ e.preventDefault(); return; }
 
-  // matn kiritilayotgan joy — tegmaymiz
-  if (tag==="INPUT" || tag==="SELECT" || tag==="TEXTAREA" || t.isContentEditable) return;
-  // fokus tugmada boʻlsa Enter/Probel OʻSHA tugmaniki (brauzer oʻzi bosadi)
-  if (tag==="BUTTON" || tag==="A" || (t.getAttribute && t.getAttribute("role")==="button")) return;
+  // matn kiritilayotgan joy — tegmaymiz (katak, slayder, tugma — matn maydoni EMAS)
+  var textual = (tag==="INPUT" && !/^(checkbox|radio|range|button|submit|reset)$/i.test(t.type || "")) ||
+                tag==="SELECT" || tag==="TEXTAREA" || t.isContentEditable;
+  if (textual) return;
   // faqat pochkalash ekranida va hech qanday oyna ochiq boʻlmaganda
   if (!isWorkTab() || anyOverlayOpen()) return;
+  /* v22: SKANER FOKUSSIZ. Skaner klaviatura boʻlib «yozadi». Fokus skan
+     maydonida boʻlmasa (ishchi 3D ni yoki tugmani bosgan) belgilar yoʻqolar,
+     oxirgi Enter esa `advance()` ni TEKSHIRUVSIZ chaqirardi; satrdagi har probel
+     yana bir qadam surardi, tugmada esa Enter oʻsha tugmani bosardi (chek
+     chiqardi). Endi birinchi bosiladigan belgi skan maydoniga yoʻnaltiriladi —
+     qolgani (probel va Enter bilan) oʻsha yerga tushadi va tekshiruvdan oʻtadi. */
+  var printable = e.key && e.key.length === 1 && e.key !== " " && !e.ctrlKey && !e.metaKey && !e.altKey;
+  var sc = $("scan");
+  if (printable && sc){
+    e.preventDefault();
+    sc.focus({ preventScroll:true });
+    sc.value += e.key;
+    return;
+  }
+  // fokus tugmada yoki katakda boʻlsa Enter/Probel OʻSHANIKI (brauzer oʻzi bosadi)
+  if (tag==="BUTTON" || tag==="A" || tag==="INPUT" || (t.getAttribute && t.getAttribute("role")==="button")) return;
 
   if (e.key===" " || e.key==="Enter"){ e.preventDefault(); if(PACKS[CUR]) advance(); }
   if (e.key==="Backspace"){ e.preventDefault(); setStep(STEP-1); renderStep(); renderPacks(); }
+});
+/* v22: bosilgandan keyin fokus skan maydoniga qaytadi — keyingi skan yoʻqolmasin
+   va Enter tasodifan tugmani bosmasin. Matn maydoni va roʻyxatlarga tegilmaydi. */
+document.addEventListener("pointerup", function(e){
+  if (!isWorkTab() || anyOverlayOpen()) return;
+  var t = e.target || {}, tag = t.tagName;
+  if (tag==="INPUT" || tag==="SELECT" || tag==="TEXTAREA" || t.isContentEditable) return;
+  setTimeout(function(){
+    var sc = $("scan"), a = document.activeElement;
+    if (!sc || a === sc) return;
+    if (a && (a.tagName==="INPUT" || a.tagName==="SELECT" || a.tagName==="TEXTAREA")) return;
+    sc.focus({ preventScroll:true });
+  }, 0);
 });
 
 /* --- 3.14.9 ISHGA TUSHISH ---

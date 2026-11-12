@@ -718,6 +718,13 @@ select:focus-visible,
   #sheet.sz-lbl.tiny .label table{font-size:7px}
   #sheet.sz-lbl.tiny .label .big{font-size:9px}
   #sheet.sz-lbl.tiny .label canvas{width:64px;height:64px}
+  /* v22: QR ustuni QR oʻlchamiga teng. Ilgari ustun 94 px (A4 dagidek) qolib,
+     QR esa 64 px edi — matn ustuni torayib «1753 × / 600 × / 16» boʻlib
+     buzilar va pastdagi «Pochka P01 · ENG TAG» qatori stikerdan tushib qolardi. */
+  #sheet.sz-lbl.tiny .label{grid-template-columns:1fr 17mm;gap:2mm}
+  #sheet.sz-lbl.tiny .label canvas{width:17mm;height:17mm}
+  #sheet.sz-lbl.tiny .label td:first-child{width:9mm;padding-right:1mm}
+  #sheet.sz-lbl.tiny .label td.big{white-space:nowrap}
 
   /* --- v20: pochka chekidagi DETALLAR ROʻYXATI.
      Ilgari etakda kodlar « · » bilan ulangan bitta uzun qator turardi va 300
@@ -732,6 +739,30 @@ select:focus-visible,
   .plabel .pf span b{font-weight:700}
   .plabel .pf .more{font-style:italic}
   #sheet.sz-lbl.tiny .plabel .pf{font-size:6px;gap:0 4px}
+
+  /* v22: TERMAL POCHKA CHEKI (`.plabel.thermal`, 08-labels.js) — oʻlchamlar mm da,
+     stikerga bogʻlangan. A4 dagi 330 px li chek 80×60 ga sigʻmasdi. */
+  /* .label dagi max-width:300px (A4 ikki ustunli varaq uchun) termalda stikerning
+     faqat ~80 mm qismini egallatardi — 100×70 va kattasida chek torayib qolardi */
+  #sheet.sz-lbl .label{max-width:none}
+  #sheet.sz-lbl .plabel.thermal{width:auto;padding:0;display:block!important}
+  #sheet.sz-lbl .plabel.thermal .ph{padding-bottom:.8mm;margin-bottom:1mm;border-bottom-width:1.5px}
+  #sheet.sz-lbl .plabel.thermal .ph b{font-size:15px}
+  #sheet.sz-lbl .plabel.thermal .ph span{font-size:7px}
+  #sheet.sz-lbl .plabel.thermal .pb{display:grid;grid-template-columns:1fr 24mm;gap:2mm;align-items:start}
+  #sheet.sz-lbl .plabel.thermal .pb canvas{width:24mm;height:24mm}
+  #sheet.sz-lbl .plabel.thermal table{font-size:8px;margin-top:0}
+  #sheet.sz-lbl .plabel.thermal td{padding:.3mm 0}
+  #sheet.sz-lbl .plabel.thermal td:first-child{width:11mm;padding-right:1.5mm}
+  #sheet.sz-lbl .plabel.thermal .big{font-size:9.5px}
+  #sheet.sz-lbl .plabel.thermal .pill{font-size:7.5px;padding:0 3px}
+  #sheet.sz-lbl.tiny .plabel.thermal .ph b{font-size:12px}
+  #sheet.sz-lbl.tiny .plabel.thermal .ph span{font-size:6px}
+  #sheet.sz-lbl.tiny .plabel.thermal .pb{grid-template-columns:1fr 18mm;gap:1.5mm}
+  #sheet.sz-lbl.tiny .plabel.thermal .pb canvas{width:18mm;height:18mm}
+  #sheet.sz-lbl.tiny .plabel.thermal table{font-size:7px}
+  #sheet.sz-lbl.tiny .plabel.thermal .big{font-size:8px}
+  #sheet.sz-lbl.tiny .plabel.thermal td:first-child{width:9mm;padding-right:1mm}
 }
 
 /* ============================================================

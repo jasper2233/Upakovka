@@ -35,6 +35,9 @@ document.addEventListener("beforeinput", function(e){
 function setStep(n){
   var p = PACKS[CUR];
   if (!p){ STEP = 0; return; }
+  /* v22: qadam oʻzgarganda eski xabar ham ketadi. Oxirgi qadamdagi «toʻgʻri ✓»
+     PEND da kutib turar va ishchi «Orqaga» bossa qaytgan qadamda chiqib qolardi. */
+  if (Math.max(0, Math.min(n, p.seq.length)) !== STEP && typeof flashClear === "function") flashClear();
   STEP = Math.max(0, Math.min(n, p.seq.length));
   p.done = STEP;
   /* v11: pochka toʻliq terilgach uning stelyaj yacheykasi boʻshaydi — detallar
@@ -346,7 +349,15 @@ function renderStep(){
     $("bOk").onclick = advance;
     $("bBack").onclick = function(){ setStep(STEP-1); WRAP=false; renderStep(); renderPacks(); };
     var sc = $("scan");
-    sc.onkeydown = function(e){ if (e.key==="Enter"){ checkScan(sc.value.trim()); sc.value=""; } };
+    /* v22: boʻsh maydonda Enter — qoʻlda «Qoʻyildi» (skaner hech qachon boʻsh satr
+       yubormaydi). Fokus endi doim shu yerda turadi, shuning uchun qoʻlda
+       tasdiqlash ham shu maydondan ishlashi kerak. */
+    sc.onkeydown = function(e){
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      var val = sc.value.trim(); sc.value = "";
+      if (val) checkScan(val); else if (PACKS[CUR]) advance();
+    };
     setTimeout(function(){ sc.focus(); }, 30);
     if (PEND){ var m=$("msg"); m.className="msg "+PEND.k; m.textContent=PEND.t; PEND=null; }
     $("lblwrap").innerHTML = labelHTML(p, step, "qrLive");
@@ -395,37 +406,69 @@ function flashClear(){
    skanerlansa operator buni darhol biladi, aks holda notoʻgʻri pochka yigʻiladi. */
 function checkScan(v){
   var p = PACKS[CUR]; if (!p || !v) return;
+  v = String(v).trim();
   if (STEP >= p.seq.length){ flash("ok","pochka allaqachon tayyor"); return; }
-  var step = p.seq[STEP], want = qrText(p, step);
-  var f = v.split("|");
+  var step = p.seq[STEP], f = v.split("|");
 
-  // eski terishdan chop etilgan chekmi?
+  /* v22: OʻZ CHEKIMIZ — «PREFIKS.LOYIHA.Rn|Pnn|Qn|KOD|LxWxT». Reviziya va loyiha
+     FAQAT shu formatda tekshiriladi. Ilgari: (1) loyiha belgisi solishtirilmasdi —
+     har buyurtma P01 dan boshlanadi va kodlar takrorlanadi, shuning uchun BOSHQA
+     buyurtmaning cheki «toʻgʻri» deb qabul qilinardi; (2) oddiy kod «R12» ham
+     reviziya deb oʻqilib «ESKI terishdan» deyilardi. */
   var hdr = f[0] ? f[0].split(".") : [];
-  var rev = null;
-  for (var z=0; z<hdr.length; z++) if (/^R\d+$/.test(hdr[z])) rev = +hdr[z].slice(1);
-  if (rev !== null && P && P.rev && rev !== P.rev){
-    flash("err","bu chek ESKI terishdan (R"+rev+"), joriy terish R"+P.rev+" — cheklarni qayta chop eting");
+  var own = f.length >= 5 && hdr.length >= 3 && /^R\d+$/.test(hdr[hdr.length - 1]);
+  if (own){
+    if (hdr[1] !== projTag()){
+      flash("err","bu chek boshqa buyurtmaniki ("+hdr[1]+"), joriy buyurtma "+projTag());
+      return;
+    }
+    var rev = +hdr[hdr.length - 1].slice(1);
+    if (P && P.rev && rev !== P.rev){
+      flash("err","bu chek ESKI terishdan (R"+rev+"), joriy terish R"+P.rev+" — cheklarni qayta chop eting");
+      return;
+    }
+  }
+  /* Skan shu detalgami? Bir xil detalning nusxalari oʻzaro almashinadi:
+     oʻz chekida — pochka + kod + oʻlcham, MES chekida — MES kaliti (`-2` ko'zgu
+     juftlik BOSHQA detal), oddiy kodda — kod. */
+  function sizeOf(it){ return it.L + "x" + it.W + "x" + it.T; }
+  function hitIn(pk, s){
+    if (own) return f[1] === "P" + pad2(pk.no) && f[3] === s.it.code && f[4] === sizeOf(s.it);
+    return s.it.code === v || mesMatch(v, s.it);
+  }
+
+  if (hitIn(p, step)){ advance(); flash("ok","toʻgʻri — qoʻyildi ✓"); return; }
+
+  /* v22: QAVAT ICHIDA ERKIN TARTIB (MES gʻoyasi: qaror qadoqlovchida). Shu
+     qavatdagi hali qoʻyilmagan detal skanerlansa — qabul qilinadi va yigʻish
+     tartibi almashtiriladi: bitta qavat detallari bir balandlikda yotadi,
+     ularning tartibi fizik jihatdan ahamiyatsiz. Qavatlar tartibi esa qatʼiy. */
+  var later = -1;
+  for (var i = STEP + 1; i < p.seq.length; i++){
+    if (!hitIn(p, p.seq[i])) continue;
+    if (p.seq[i].layer === step.layer){
+      var sw = p.seq.splice(i, 1)[0];
+      p.seq.splice(STEP, 0, sw);
+      advance(); flash("ok","toʻgʻri — qoʻyildi ✓ (shu qavat, boshqa tartibda)");
+      return;
+    }
+    if (later < 0) later = i;
+  }
+  if (later >= 0){
+    flash("err","bu detal shu pochkaning "+p.seq[later].layer+"-qavatida ("+(later+1)+"-qadam) — avval joriy qavatni tugating");
     return;
   }
-
-  // bir xil koddagi detallar oʻzaro almashinadi: pochka + kod mos kelsa yetarli
-  var sameCode = f.length>3 && f[1]==="P"+pad2(p.no) && f[3]===step.it.code;
-  /* v22: MES cheki (`B-2026-047_100701_03_002_1`) — detalga MES chiqargan chek.
-     Qadoqlash postida asosan shu skanerlanadi, oʻz chekimiz esa zaxira. */
-  function hit(s){ return qrText(p, s) === v || s.it.code === v || mesMatch(v, s.it); }
-  if (v === want || v === step.it.code || sameCode || mesMatch(v, step.it)){
-    advance(); flash("ok","toʻgʻri — qoʻyildi ✓"); return;
+  // v22: hali qoʻyilmagan nusxa qolmagan — allaqachon qoʻyilgan (ilgari 1-qadamdan qidirilib, qoʻyilgan nusxaga ishora qilinardi)
+  for (var d = 0; d < STEP; d++){
+    if (hitIn(p, p.seq[d])){ flash("err","bu detal allaqachon qoʻyilgan ("+(d+1)+"-qadam) — ikkinchi nusxa yoʻq"); return; }
   }
-  var at = -1;
-  for (var i=0;i<p.seq.length;i++){ if (hit(p.seq[i])){ at=i; break; } }
-  if (at>=0){ flash("err","bu detal shu pochkada, lekin "+(at+1)+"-qadamda"); return; }
 
   // boshqa pochkada bormi? — operatorga aniq yoʻl koʻrsatamiz
-  for (var k=0;k<PACKS.length;k++){
-    if (k===CUR) continue;
+  for (var k = 0; k < PACKS.length; k++){
+    if (k === CUR) continue;
     var q = PACKS[k];
-    for (var j=0;j<q.seq.length;j++){
-      if (qrText(q,q.seq[j])===v || q.seq[j].it.code===v || mesMatch(v, q.seq[j].it)){
+    for (var j = 0; j < q.seq.length; j++){
+      if (hitIn(q, q.seq[j])){
         flash("err","bu detal P"+pad2(q.no)+" pochkasiga tegishli ("+(j+1)+"-qadam)");
         return;
       }
@@ -594,9 +637,14 @@ function applyPageSize(){
   sheet.className = mm ? ("sz-lbl" + (mm.h < 62 ? " tiny" : "")) : "sz-a4";
   var st = document.getElementById("pageStyle");
   if (!st){ st = document.createElement("style"); st.id = "pageStyle"; document.head.appendChild(st); }
+  /* v22: chek balandligi stikerga QATʼIY bogʻlanadi. Mazmun sigʻmasa ham
+     ikkinchi stikerga toshib chiqmaydi (ilgari termalda har pochka cheki 2
+     stiker yeyardi); detallar roʻyxati esa packListHTML da oldindan qisqartiriladi,
+     «+N ta» koʻrinib turadi. */
+  var mg = mm ? (mm.h < 62 ? LBL_MARGIN_TINY : LBL_MARGIN) : 0;
   st.textContent = mm
-    ? "@media print{@page{size:" + mm.w + "mm " + mm.h + "mm;margin:" +
-      (mm.h < 62 ? LBL_MARGIN_TINY : LBL_MARGIN) + "mm}}"
+    ? "@media print{@page{size:" + mm.w + "mm " + mm.h + "mm;margin:" + mg + "mm}" +
+      "#sheet.sz-lbl .label{height:" + (mm.h - 2 * mg - 0.8).toFixed(1) + "mm;overflow:hidden;box-sizing:border-box}}"
     : "@media print{@page{size:A4;margin:" + A4_MARGIN + "mm}}";
 }
 function printSteps(list, title){
@@ -922,7 +970,7 @@ function renderMgrEdit(){
     '<div class="edhead">'+
       '<select id="mgrEditPack">'+pickOpts+'</select>'+
       '<span class="grphint">'+(room ? esc(room)+' · ' : '')+esc(packGrpName(p))+' · '+
-        p.kg.toFixed(1)+' / '+S.maxKg+' kg · '+p.seq.length+' detal</span>'+
+        p.kg.toFixed(1)+' / '+packKgCap(p)+' kg · '+p.seq.length+' detal</span>'+   // v22: haqiqiy limit (zaxira, NS)
     '</div>'+
     '<div class="msg" id="emsg"></div>'+
     '<div class="edlist">'+rows+'</div>';

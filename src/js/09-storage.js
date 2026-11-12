@@ -328,6 +328,16 @@ function snapPacks(packs){
               oddSrc:!!p.oddSrc,     // v14: nostandart oqim limitlari shunga bogʻliq
               overKg:!!p.overKg,     // v16: qoldiq zaxirasidan foydalangan
               nst:!!p.nst };         // v18: qaysi oqim (standart / nostandart)
+    /* v22: QAVAT ICHIDA ERKIN TARTIB — ishchi shu qavatning detallarini istalgan
+       tartibda qoʻyadi va `seq` shunga qarab qayta tartiblanadi. `seq` esa
+       hosila maydon (packDerive), tiklashda kanonik tartibda qayta quriladi —
+       shuning uchun haqiqiy tartib alohida saqlanadi. Kanonikdan farq qilmasa
+       yozilmaydi (snapshot kichik qoladi). */
+    if (p.seq && p.seq.length){
+      var ordNow = p.seq.map(function(st){ return st.it.uid; });
+      var ordCan = packSeq(p).map(function(st){ return st.it.uid; });
+      if (ordNow.join("|") !== ordCan.join("|")) o.ord = ordNow;
+    }
     if (p.odd){
       o.itemUids = (p.items || []).map(function(it){ return it.uid; });
       return o;
@@ -428,6 +438,19 @@ function restoreSnapshot(snap){
   /* Snapshotdan keladigan ikki maydon: yigʻish progressi va terish reviziyasi.
      v21: ikkovi ham oddiy va bogʻ pochka uchun soʻzma-soʻz takrorlanardi. */
   function finishPack(p, s){
+    /* v22: saqlangan yigʻish tartibi (qavat ichida erkin tartib). Faqat aynan
+       oʻsha detallarning oʻrin almashtirishi boʻlsa qabul qilinadi — aks holda
+       kanonik tartib qoladi (eski yoki buzilgan seans). */
+    if (isArr(s.ord) && s.ord.length === p.seq.length){
+      var byU = {}, re = [], okOrd = true;
+      p.seq.forEach(function(st){ byU[st.it.uid] = st; });
+      for (var oi = 0; oi < s.ord.length && okOrd; oi++){
+        var st = byU[s.ord[oi]];
+        if (!st){ okOrd = false; break; }
+        re.push(st); delete byU[s.ord[oi]];
+      }
+      if (okOrd) p.seq = re;
+    }
     p.done = Math.max(0, Math.min(isFinite(+s.done) ? Math.round(+s.done) : 0, p.seq.length));
     p.rev  = (s.rev != null) ? s.rev : (P.rev || 1);
     return p;

@@ -778,15 +778,44 @@ document.addEventListener("keydown", function(e){
 
   if (e.key === "Escape" && closeTopOverlay()){ e.preventDefault(); return; }
 
-  // matn kiritilayotgan joy — tegmaymiz
-  if (tag==="INPUT" || tag==="SELECT" || tag==="TEXTAREA" || t.isContentEditable) return;
-  // fokus tugmada boʻlsa Enter/Probel OʻSHA tugmaniki (brauzer oʻzi bosadi)
-  if (tag==="BUTTON" || tag==="A" || (t.getAttribute && t.getAttribute("role")==="button")) return;
+  // matn kiritilayotgan joy — tegmaymiz (katak, slayder, tugma — matn maydoni EMAS)
+  var textual = (tag==="INPUT" && !/^(checkbox|radio|range|button|submit|reset)$/i.test(t.type || "")) ||
+                tag==="SELECT" || tag==="TEXTAREA" || t.isContentEditable;
+  if (textual) return;
   // faqat pochkalash ekranida va hech qanday oyna ochiq boʻlmaganda
   if (!isWorkTab() || anyOverlayOpen()) return;
+  /* v22: SKANER FOKUSSIZ. Skaner klaviatura boʻlib «yozadi». Fokus skan
+     maydonida boʻlmasa (ishchi 3D ni yoki tugmani bosgan) belgilar yoʻqolar,
+     oxirgi Enter esa `advance()` ni TEKSHIRUVSIZ chaqirardi; satrdagi har probel
+     yana bir qadam surardi, tugmada esa Enter oʻsha tugmani bosardi (chek
+     chiqardi). Endi birinchi bosiladigan belgi skan maydoniga yoʻnaltiriladi —
+     qolgani (probel va Enter bilan) oʻsha yerga tushadi va tekshiruvdan oʻtadi. */
+  var printable = e.key && e.key.length === 1 && e.key !== " " && !e.ctrlKey && !e.metaKey && !e.altKey;
+  var sc = $("scan");
+  if (printable && sc){
+    e.preventDefault();
+    sc.focus({ preventScroll:true });
+    sc.value += e.key;
+    return;
+  }
+  // fokus tugmada yoki katakda boʻlsa Enter/Probel OʻSHANIKI (brauzer oʻzi bosadi)
+  if (tag==="BUTTON" || tag==="A" || tag==="INPUT" || (t.getAttribute && t.getAttribute("role")==="button")) return;
 
   if (e.key===" " || e.key==="Enter"){ e.preventDefault(); if(PACKS[CUR]) advance(); }
   if (e.key==="Backspace"){ e.preventDefault(); setStep(STEP-1); renderStep(); renderPacks(); }
+});
+/* v22: bosilgandan keyin fokus skan maydoniga qaytadi — keyingi skan yoʻqolmasin
+   va Enter tasodifan tugmani bosmasin. Matn maydoni va roʻyxatlarga tegilmaydi. */
+document.addEventListener("pointerup", function(e){
+  if (!isWorkTab() || anyOverlayOpen()) return;
+  var t = e.target || {}, tag = t.tagName;
+  if (tag==="INPUT" || tag==="SELECT" || tag==="TEXTAREA" || t.isContentEditable) return;
+  setTimeout(function(){
+    var sc = $("scan"), a = document.activeElement;
+    if (!sc || a === sc) return;
+    if (a && (a.tagName==="INPUT" || a.tagName==="SELECT" || a.tagName==="TEXTAREA")) return;
+    sc.focus({ preventScroll:true });
+  }, 0);
 });
 
 /* --- 3.14.9 ISHGA TUSHISH ---

@@ -325,6 +325,7 @@ bayroqlariga **ishonmasin** — geometriyani o'zi hisoblasin (2-bo'lim).
 | `tests/smoke.ps1` | haqiqiy brauzerda 394 tekshiruv | **har o'zgarishdan keyin** |
 | `tests/corpus.ps1` | 205 ta real `.project` fayl bo'yicha regressiya | algoritm o'zgarganda |
 | `tests/shot.ps1` | interfeys skrinshoti | ko'rinish o'zgarganda |
+| `tests/labels.ps1` | termal chek stikerga sig'adimi (PDF sahifalari = chek soni) | chek yoki chop etish uslubi o'zgarganda |
 | `tools/seed-to-project.ps1` | namuna `.project` fayllarni qayta yasaydi | SEED yoki parser o'zgarganda |
 | `build.ps1` | bir faylli versiya + beshta tekshiruv | chiqarishdan oldin |
 

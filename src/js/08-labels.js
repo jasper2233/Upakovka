@@ -20,21 +20,27 @@ function drawQR(cv, text){
    mebel boʻlsa mahsulot nomi hammasi uchun bir xil, modul esa farq qiladi. */
 function labelHTML(p, step, id){
   var it = step.it, m = it.mat;
+  /* v22: kichik termal stikerda (boʻyi 62 mm dan past) material qatori va QR
+     ostidagi uzun matn tushiriladi — 58×40 da har detal cheki 2 stikerga
+     chiqardi. Kod va QR — asosiysi, ular qoladi. */
+  var mmL = (typeof labelMM === "function") ? labelMM() : null, tinyL = !!(mmL && mmL.h < 62);
   var role = step.role==="tag" ? "ENG TAG" : step.role==="ust" ? ("QOPQOQ"+(step.of>1?" "+step.n+"/"+step.of:"")) : step.role==="noodatiy" ? "NOODATIY" : (step.layer+"-QAVAT"+(step.of>1?" "+step.n+"/"+step.of:""));
   return '<div class="label">'+
     '<div>'+
       '<div class="lc">'+esc(it.code)+'</div>'+
       '<div class="ln">'+esc(it.name)+'</div>'+
       '<table>'+
+        // v22: kichik stikerda POCHKA qatori birinchi — ishchiga eng kerakli maʼlumot
+        (tinyL ? '<tr><td>Pochka</td><td><span class="pill">P'+pad2(p.no)+' · '+role+'</span></td></tr>' : '')+
         '<tr><td>Oʻlcham</td><td class="big">'+it.L+' × '+it.W+' × '+it.T+'</td></tr>'+
         '<tr><td>Massa</td><td class="big">'+it.kg.toFixed(2)+' kg</td></tr>'+
-        '<tr><td>Material</td><td>'+esc(m?m.name:"—")+'</td></tr>'+
+        (tinyL ? '' : '<tr><td>Material</td><td>'+esc(m?m.name:"—")+'</td></tr>')+
         '<tr><td>Modul</td><td>'+esc(unitLabel(it.unit, it.unitName || it.prod))+'</td></tr>'+
-        '<tr><td>Pochka</td><td><span class="pill">P'+pad2(p.no)+' · '+role+'</span></td></tr>'+
+        (tinyL ? '' : '<tr><td>Pochka</td><td><span class="pill">P'+pad2(p.no)+' · '+role+'</span></td></tr>')+
       '</table>'+
     '</div>'+
     '<div style="text-align:center"><canvas id="'+id+'"></canvas>'+
-      '<div style="font-size:7.5px;letter-spacing:.02em;margin-top:2px;word-break:break-all">'+esc(qrText(p,step))+'</div></div>'+
+      (tinyL ? '' : '<div style="font-size:7.5px;letter-spacing:.02em;margin-top:2px;word-break:break-all">'+esc(qrText(p,step))+'</div>')+'</div>'+
   '</div>';
 }
 function packQR(p){
@@ -52,6 +58,29 @@ function packLabelHTML(p, id){
   var mods = {}; p.seq.forEach(function(s){ mods[unitLabel(s.it.unit, s.it.unitName)] = 1; });
   var room = (typeof packRoom === "function") ? packRoom(p)
            : (typeof p.room === "string" ? p.room : "");
+  /* v22: TERMAL STIKER — ixcham chek. A4 uchun qurilgan toʻliq chek 80×60 va
+     100×70 stikerga sigʻmasdi: hamma 51 ta pochka cheki 2 stikerga chiqardi
+     (58×40 da 4–5 taga), «2 KISHI» ogohlantirishi va detallar roʻyxati
+     ikkinchi stikerga tushardi. Termalda faqat ishchiga va omborga keraklisi
+     qoladi; koʻtarish darajasi brutto qatorida. A4 chek oʻzgarmaydi. */
+  if (typeof labelMM === "function" && labelMM()){
+    var lay = p.odd ? p.items.length : (p.layers.length + 1);
+    return '<div class="label plabel thermal">'+
+      '<div class="ph"><b>POCHKA P'+pad2(p.no)+'</b><span>'+esc(cut(P.name, 28))+' · R'+(p.rev||1)+'</span></div>'+
+      '<div class="pb">'+
+        '<table>'+
+        (room ? '<tr><td>Xona</td><td class="big">'+esc(cut(room, 24))+'</td></tr>' : '')+
+        '<tr><td>Modul</td><td class="big">'+esc(cut(Object.keys(mods).join(", "), 30))+'</td></tr>'+
+        '<tr><td>Detal</td><td class="big">'+p.seq.length+' dona · '+lay+' qavat</td></tr>'+
+        '<tr><td>Gabarit</td><td>'+(p.odd?"—":p.gabL+"×"+p.gabW+"×"+Math.round(p.h))+'</td></tr>'+
+        '<tr><td>Brutto</td><td class="big">'+brutto.toFixed(1)+' kg'+
+          (tier > 1 ? ' <span class="pill">'+liftText(brutto)+'</span>' : '')+'</td></tr>'+
+        '</table>'+
+        '<canvas id="'+id+'"></canvas>'+
+      '</div>'+
+      '<div class="pf">'+packListHTML(p)+'</div>'+
+    '</div>';
+  }
   return '<div class="label plabel">'+
     '<div class="ph"><b>POCHKA P'+pad2(p.no)+'</b><span>'+esc(P.name)+' · R'+(p.rev||1)+'</span></div>'+
     '<div class="pb">'+
@@ -87,7 +116,21 @@ function packLabelHTML(p, id){
    «+N ta» turadi, ya'ni roʻyxat toʻliq emasligi YOZIB qoʻyiladi. */
 function packListHTML(p){
   var mm  = (typeof labelMM === "function") ? labelMM() : null;
-  var cap = !mm ? 0 : (mm.h < 62 ? 12 : 20);
+  /* v22: sigʻim stiker GEOMETRIYASIDAN. Termal chekda (08 `.plabel.thermal`)
+     sarlavha + jadval + QR yuqorida taxminan `top` mm oladi, roʻyxatning har
+     qatori `lineH` mm, har katakcha (kod + oʻlcham) ~`itemW` mm. Raqamlar
+     PDF ga chop etilgan chekdan oʻlchangan (58×40, 80×60, 100×70, 70×50,
+     120×80) — sigʻim «+N ta» bilan birga stikerga sigʻadi. Chek balandligi
+     baribir stikerga qatʼiy bogʻlangan (10-ui `applyPageSize`), bu yerdagi
+     kesish esa roʻyxat oxiri koʻrinib turishi uchun. */
+  var cap = 0;
+  if (mm){
+    var tiny = mm.h < 62, mg = tiny ? 2 : 3;
+    var top = tiny ? 28 : 35, lineH = tiny ? 2.3 : 2.95, itemW = tiny ? 16 : 19;
+    var lines = Math.floor((mm.h - 2 * mg - top) / lineH);
+    var per = Math.max(1, Math.floor((mm.w - 2 * mg) / itemW));
+    cap = Math.max(2, lines * per - 1);
+  }
   var seq = p.seq, n = seq.length;
   var show = (cap && n > cap) ? cap : n;
   var out = "";

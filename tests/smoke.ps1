@@ -1455,10 +1455,19 @@ $tester = @'
       chk("chekda detallar roʻyxati bor", lh80.indexOf('class="pf"') > 0 &&
           lh80.indexOf(big.seq[0].it.code) > 0, big.seq.length + " detal");
       var shown = pfCount(lh80);
-      chk("80×60 da roʻyxat 12 tadan oshmaydi", shown > 0 && shown <= 13,
-          shown + " ta koʻrsatildi (12 detal + «+N ta»)");
-      if (big.seq.length > 12)
-        chk("kesilgani yozildi", lh80.indexOf('class="more"') > 0, "+N ta belgisi");
+      /* v22: sigʻim stiker geometriyasidan (08-labels packListHTML). Chekning
+         stikerga sigʻishini bu yerda emas, tests\labels.ps1 PDF orqali tekshiradi. */
+      var capM = /\+(\d+) ta/.exec(lh80), cap80 = capM ? shown - 1 : shown;
+      chk("80×60 da roʻyxat sigʻim bilan cheklangan", shown > 0 && (capM ? cap80 + (+capM[1]) === big.seq.length : shown === big.seq.length),
+          shown + " ta koʻrsatildi" + (capM ? " (+" + capM[1] + " ta)" : " — hammasi"));
+      chk("termal chek ixcham: Netto/Qalinlik yoʻq, Brutto bor",
+          lh80.indexOf("Netto") < 0 && lh80.indexOf("Qalinlik") < 0 && lh80.indexOf("Brutto") > 0 &&
+          lh80.indexOf("thermal") > 0, "80×60");
+      var fake = Object.assign({}, big); fake.seq = [];
+      PACKS.forEach(function(q){ q.seq.forEach(function(st){ if (fake.seq.length < 80) fake.seq.push(st); }); });
+      var lhF = packLabelHTML(fake, "tqf");
+      chk("koʻp detalli chekda kesilgani yozildi", lhF.indexOf('class="more"') > 0 && pfCount(lhF) < 80,
+          pfCount(lhF) + " / 80 · +N ta belgisi");
 
       // A4 da chegara yoʻq — hamma detal chiqadi
       S.labelSize = "a4";
@@ -2634,6 +2643,50 @@ $tester = @'
           scanCode("B-2026-047_" + wantIt.mes) + " vs " + wantIt.code);
     } catch(e){ chk("MES detal ID", false, e.message); }
 
+    /* v22: QAVAT ICHIDA ERKIN TARTIB — namuna loyihada (sinov loyihasida mos qavat yoʻq) */
+    try {
+      // qavat ichida erkin tartib (MES gʻoyasi) — shu qavatdagi boshqa detal qabul qilinadi
+      var fx = null;
+      PACKS.forEach(function(p, pi){
+        if (fx) return;
+        for (var i = 1; i + 1 < p.seq.length; i++){
+          var a = p.seq[i], b = p.seq[i + 1];
+          if (a.layer > 0 && a.layer === b.layer && a.it.code !== b.it.code){ fx = { pi:pi, i:i }; return; }
+        }
+      });
+      chk("erkin tartib sinovi uchun qavat topildi", !!fx, fx ? "P" + PACKS[fx.pi].no + " · " + (fx.i + 1) + "-qadam" : "yoʻq");
+      if (fx){
+        selectPack(fx.pi); setStep(fx.i);
+        var pp = PACKS[fx.pi], curIt = pp.seq[fx.i].it, nxIt = pp.seq[fx.i + 1].it;
+        checkScan(nxIt.code);
+        chk("shu qavatdagi boshqa detal qabul qilinadi, tartib almashadi",
+            STEP === fx.i + 1 && pp.seq[fx.i].it === nxIt && pp.seq[fx.i + 1].it === curIt,
+            "STEP=" + STEP + " · " + pp.seq[fx.i].it.code + " / " + pp.seq[fx.i + 1].it.code);
+        var ordB = pp.seq.map(function(x){ return x.it.uid; }).join(",");
+        restoreSnapshot(makeSnapshot());
+        var pr = PACKS[fx.pi];
+        chk("almashgan tartib seansda saqlanadi",
+            pr.seq.map(function(x){ return x.it.uid; }).join(",") === ordB && pr.done === fx.i + 1,
+            "done=" + pr.done);
+        selectPack(fx.pi); setStep(0);
+      }
+      // keyingi qavat detali hali erta — rad etiladi va sababi aytiladi
+      var lx = null;
+      PACKS.forEach(function(p, pi){
+        if (lx || p.odd || p.layers.length < 2) return;
+        var cur = p.seq[1], last = p.seq[p.seq.length - 1];
+        var curCodes = {};
+        p.seq.forEach(function(x){ if (x.layer === cur.layer) curCodes[x.it.code] = 1; });
+        if (last.layer > cur.layer && !curCodes[last.it.code]) lx = { pi:pi, code:last.it.code };
+      });
+      if (lx){
+        selectPack(lx.pi); setStep(1);
+        checkScan(lx.code);
+        chk("keyingi qavat detali rad etiladi", STEP === 1 && /qavatida/.test(el("msg").textContent), el("msg").textContent);
+        setStep(0);
+      }
+    } catch(e){ chk("qavat ichida erkin tartib", false, e.message); }
+
     /* v11: klass sinonimlari */
     try {
       chk("sinonim: SOKL -> SOKOL", classify("01_055 SOKL CHAP") === "SOKOL", classify("01_055 SOKL CHAP"));
@@ -2778,6 +2831,37 @@ $tester = @'
           chk("orqaga qaytganda progress kamaydi", PACKS[0].done === afterFwd - 1,
               "done=" + PACKS[0].done);
         } catch(e){ chk("qadam boshqaruvi", false, e.message); }
+
+        /* ================= v22: QADOQLASH POSTI — ishchi xavfsizligi ================= */
+        try {
+          document.querySelector('.tabs button[data-v="work"]').click();
+          selectPack(0);
+          var p0 = PACKS[0], s0 = STEP, st0 = p0.seq[s0];
+          // boshqa buyurtmaning (boshqa loyiha belgisi) oʻz cheki — kod va pochka bir xil boʻlsa ham
+          var alienQR = S.prefix + ".DEADBEEF.R" + (P.rev || 1) + "|P" + pad2(p0.no) + "|Q" + st0.layer +
+                        "|" + st0.it.code + "|" + st0.it.L + "x" + st0.it.W + "x" + st0.it.T;
+          checkScan(alienQR);
+          chk("boshqa buyurtmaning oʻz cheki rad etiladi", STEP === s0 && /boshqa buyurtma/.test(el("msg").textContent),
+              el("msg").textContent);
+          checkScan(qrText(p0, st0));
+          chk("oʻz cheki qabul qilinadi", STEP === s0 + 1, "STEP " + s0 + "→" + STEP);
+          setStep(s0);
+          checkScan("R12");
+          chk("«R12» kodi reviziya deb oʻqilmaydi", !/ESKI/.test(el("msg").textContent), el("msg").textContent);
+
+          // skaner fokussiz: belgi skan maydoniga yoʻnaltiriladi, qadam surilmaydi
+          selectPack(0); setStep(0);
+          var scEl = el("scan"); scEl.value = ""; scEl.blur();
+          var sK = STEP;
+          document.body.dispatchEvent(new KeyboardEvent("keydown", { key:"S", bubbles:true, cancelable:true }));
+          chk("fokussiz skaner belgisi skan maydoniga tushadi",
+              el("scan").value === "S" && STEP === sK && document.activeElement === el("scan"),
+              "value=«" + el("scan").value + "» STEP=" + STEP);
+          el("scan").value = "";
+          el("scan").onkeydown({ key:"Enter", preventDefault:function(){} });
+          chk("boʻsh skan maydonida Enter — qoʻlda «Qoʻyildi»", STEP === sK + 1, "STEP " + sK + "→" + STEP);
+          setStep(sK);
+        } catch(e){ chk("qadoqlash posti (v22)", false, e.message); }
 
         chk("test oxirida yangi JS xatosi yo'q", window.__ERRORS.length === 0,
             window.__ERRORS.slice(0,4).join(" ; "));

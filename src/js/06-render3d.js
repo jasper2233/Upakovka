@@ -74,11 +74,23 @@ function draw3D(){
   } else {
     cxx = p.base.L/2; cyy = p.base.W/2;
     var z = 0, st = 1;
+    /* v22: qadam raqami `seq` dagi O'RNIDAN olinadi, qavat tartibidan emas —
+       ishchi qavat ichida detallarni istalgan tartibda qo'ya oladi va `seq`
+       shunga qarab qayta tartiblanadi (10-ui `checkScan`). */
+    var stepOf = new Map();
+    p.seq.forEach(function(s, i){ if (s.pos) stepOf.set(s.pos, i); });
     boxes.push({ x:-cxx, y:-cyy, z:0, a:p.base.L, b:p.base.W, h:p.base.T*zex, it:p.base, step:0 });
     z = p.base.T*zex;
     p.layers.forEach(function(L){
       L.items.forEach(function(q){
-        boxes.push({ x:q.x-cxx, y:q.y-cyy, z:z, a:q.a, b:q.b, h:q.it.T*zex, it:q.it, step:st++ });
+        /* v22: y AKS ETTIRILADI. Matn («orqa chetdan Y mm»), 2D reja va MES
+           rejasi y ni tagning ORQA chetidan oʻlchaydi; kamera esa tagni oldidan
+           koʻradi va y = 0 old chetga tushardi — 3D dagi sariq soya detalni
+           teskari tomonda koʻrsatardi (matn va 2D bilan zid). Tag simmetrik,
+           shuning uchun faqat qavat detallari aks ettiriladi. */
+        boxes.push({ x:q.x-cxx, y:cyy-q.y-q.b, z:z, a:q.a, b:q.b, h:q.it.T*zex, it:q.it,
+                     step: stepOf.has(q) ? stepOf.get(q) : st });
+        st++;
       });
       z += L.h*zex;
     });

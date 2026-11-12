@@ -29,6 +29,7 @@ tests/corpus-*.csv
 _*-run.html
 # shot.ps1 chiqargan skrinshotlar — kerak bo'lsa qayta yasaladi (.\tests\shot.ps1)
 tests/shot-*.png
+tests/lbl-*.pdf
 # chop etish ko'rinishini tekshirish uchun yasalgan fayllar
 tests/prev-*.png
 tests/out-*.pdf
