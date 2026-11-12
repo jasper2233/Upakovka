@@ -47,6 +47,7 @@ seed.js         namuna loyiha          — sof ma'lumot
 14-sort.js      saralash posti         — 02, 04, 08, 10
 15-post.js      postlar, reja fayli    — 04, 08, 09, 10, 13, 14
 16-server.js    server orqali postlar  — 08, 14, 15 (server bo'lmasa jim)
+17-profile.js   nomlangan profil       — 03, 08, 10, 13
 ```
 
 `server/upk-server.py` — ixtiyoriy server (Python 3 standart kutubxonasi): tizim
@@ -248,6 +249,7 @@ Yangi modul qo'shayotgan bo'lsangiz, bu nomlar **band**.
 | 14-sort | `RACK_EDIT` `RACK_DRAFT` `RACK_T` `SEND_ARM` `SEND_T` `RACK_QR` |
 | 15-post | `POST_KEY` `POST_MEM` `POSTS` `POST_HIDE` `PLAN_FMT` |
 | 16-server | `SRV` `SRV_TICK_MS` `SRV_TV_MS` |
+| 17-profile | `PROF_KEY` `PROF_SKIP` `PROF_DEL_ARM` |
 
 Funksiya nomlari ham global. Yangi modulda **prefiks** ishlating —
 `12-upload.js` dagi `up*`, `11-diag.js` dagi `diag*`, `14-sort.js` dagi

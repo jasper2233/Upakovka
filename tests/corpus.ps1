@@ -28,7 +28,8 @@ param(
   [string]$Csv     = "",
   [string]$Compare = "",
   [string]$Browser = "",
-  [int]$TimeoutSec = 600
+  [int]$TimeoutSec = 600,
+  [string]$Js = ""               # har fayldan oldin bajariladigan JS (sozlama variantlarini o'lchash)
 )
 
 $ErrorActionPreference = "Stop"
@@ -63,6 +64,7 @@ if (-not $files) { "XATO: .project fayl topilmadi"; exit 1 }
 $idx  = Join-Path $root "index.html"
 $html = [System.IO.File]::ReadAllText($idx, [System.Text.Encoding]::UTF8)
 
+$setupB64 = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($Js))
 $catcher = '<script>window.__ERRORS=[];window.addEventListener("error",function(e){window.__ERRORS.push((e.message||"xato")+" @ "+(e.filename||"?").split("/").pop()+":"+(e.lineno||"?"))});</script>'
 
 # Bir tirnoqli here-string: PowerShell ichiga tegmaydi
@@ -79,6 +81,7 @@ $runner = @'
 
   until(function(){ return typeof PACKS !== "undefined" && PACKS && PACKS.length > 0; }, function(){
     var files = window.__FILES || [];
+    var SETUP = decodeURIComponent(escape(atob("__SETUPB64__")));
     for (var i = 0; i < files.length; i++){
       var f = files[i], row = { n: f.n };
       try {
@@ -86,6 +89,7 @@ $runner = @'
         // yangi buyurtma — eski guruhlar boshqa faylning kodlariga tayangan
         S.rooms = {}; S.sepCls = {}; S.modGroups = []; S.clsGroups = [];
         S.unitNames = {}; S.thickMix = {};
+        if (SETUP) (new Function(SETUP))();       // -Js: sozlama varianti
         P = data; CUR = -1; STEP = 0;
         if (!P.rev) P.rev = 0;
         applyCat();
@@ -189,7 +193,7 @@ for ($b = 0; $b -lt $batches; $b++) {
   $dataJs = "<script>window.__FILES = " + (ConvertTo-Json $items -Compress -Depth 4) + ";</script>"
 
   $page = $html.Insert($iBody + 6, "`n" + $catcher)
-  $page = $page.Insert($page.LastIndexOf("</body>"), $dataJs + "`n" + $runner + "`n")
+  $page = $page.Insert($page.LastIndexOf("</body>"), $dataJs + "`n" + $runner.Replace("__SETUPB64__", $setupB64) + "`n")
   $tmp = Join-Path $root "_corpus-run.html"
   [System.IO.File]::WriteAllText($tmp, $page, $enc)
 

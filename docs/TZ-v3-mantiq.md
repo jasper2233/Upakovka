@@ -182,7 +182,12 @@ tepasida aynan shu qatorni chiqaradi: *«5 ta modul — detal kodi prefiksidan.
 Faylda mahsulot tuzilishi faqat 1 ta birlik beradi, kod prefiksi esa 5 ta —
 shuning uchun kod olindi.»*
 
-### 3.3 Profil — «bir marta sozlanadi» ⏳ hali yo'q
+### 3.3 Profil — «bir marta sozlanadi» ✅ v22
+
+> **Bajarildi (v22, `17-profile.js`).** Sozlamalar → «Profil»: joriy me'yorlar nomlangan
+> profil qilib saqlanadi (me'yorlar, kesim, material katalogi, qalinlik matritsasi, klass
+> guruhlari; kompyuter va buyurtmaga xos narsalar kirmaydi). Profilning kalit so'zi loyiha
+> yoki fayl nomida bo'lsa (kirillcha ham) — yuklash oynasida o'zi taklif qilinadi.
 
 TZ-v2 §2: *«Konveyr sozlamasi bir marta qilinadi va eslab qolinadi… loyiha nomiga
 bog'lab.»* To'g'ri, lekin loyiha nomi — noto'g'ri kalit: har loyihaning nomi boshqacha.
@@ -268,7 +273,7 @@ Xato xabari endi aniq:
 | 2a | **Xona o'qi** (§1) | ✅ v12: `S.modGroups` (`name` + `join`) |
 | 2b | **Buyurtma / mijoz o'qi** (§1) | ⏳ Oraliq holat (12 parta / 12 maktab) hali ishlamaydi |
 | 3a | **Provenance** (§3.2) | ✅ v12: `renderUnitSrc()` |
-| 3b | **Nomlangan profil** (§3.3) | ⏳ Sozlama hozir bitta, global |
+| 3b | **Nomlangan profil** (§3.3) | ✅ v22: `17-profile.js`, yuklashda kalit so'z bo'yicha taklif |
 | 4 | **`manba` maydoni + audit rejimi** (§4) | ⏳ Fors majordan oldin kerak |
 | 5 | **Fors major moduli** (TZ-v2 §12) | ⏳ 4 tayyor bo'lgach |
 | 6 | **Qo'lda tetris terish** (TZ-v2 §11) | ⏳ Eng katta interfeys ishi |

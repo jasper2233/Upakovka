@@ -30,6 +30,7 @@ var CONF_IDS = (function(){
       var e = els[i];
       if (!e.id) continue;
       if (e.type === "file" || e.type === "button" || e.type === "submit") continue;
+      if (e.getAttribute("data-noconf")) continue;     // v22: profil tanlovi va nomi — sozlama emas
       out.push(e.id);
     }
   }
@@ -108,8 +109,6 @@ function confCheck(){
     add("err", "Stelyaj/yacheyka soni kamaytirilmadi: " + S._sortLost + " da saralangan detallar turibdi — avval ularni qadoqlang.");
   if (S.minBase > (S.baseWMax || 1e9))
     add("err", "Tag eni min (" + S.minBase + " mm) maks (" + S.baseWMax + " mm) dan katta — hech bir detal tag boʻlolmaydi.");
-  if ((S.baseLMin || 0) > S.maxLen)
-    add("err", "Tag boʻyi min (" + S.baseLMin + " mm) maks (" + S.maxLen + " mm) dan katta — hech bir detal tag boʻlolmaydi.");
   if (S.minPartW && S.minPartW > (S.baseWMax || 1e9))
     add("err", "Standart detal min. eni (" + S.minPartW + " mm) tag eni maks (" + S.baseWMax + " mm) dan katta — hamma detal nostandartga oʻtadi.");
   if (S.minPartL && S.minPartL > S.maxLen)
@@ -135,8 +134,6 @@ function confCheck(){
     add("info", "Tom ostidagi qavat " + S.lidBed + " % — qavat toʻldirish (" + S.minFill + " %) dan qatʼiy boʻlolmaydi, amalda " + S.minFill + " % ishlatiladi.");
   if (S.ovhOn && S.baseCover >= 100)
     add("info", "Paddon qamrovi 100 % — «Chiqishga ruxsat» yoqilgan boʻlsa ham chiqish amalda boʻlmaydi.");
-  if (S.ovhOn && S.ovh > (S.baseInset != null ? S.baseInset : S.ovh))
-    add("info", "Chiqish " + S.ovh + " mm, chetdan qochish " + S.baseInset + " mm — amalda " + S.baseInset + " mm ishlatiladi.");
 
   var box = $("confWarn");
   if (box){
@@ -166,22 +163,73 @@ function saveConf(){
   o._modGroups = S.modGroups;   // v11
   o._clsGroups = S.clsGroups;
   o._unitNames = S.unitNames;   // v12: modul nomlari
-  o._split = S.split;           // v12: bitta pochkalash qoidasi (rejim oʻrniga)
+  /* v22: kesim FORMADAN — avtomatik saqlash qayta pochkalash tasdiq kutayotganda
+     ham ishlaydi, u paytda S.split hali eski (joriy pochkalarniki) boʻladi. */
+  o._split = ($("mgrByRoom") && $("mgrByMat"))
+    ? { prod:$("mgrByRoom").checked, mat:$("mgrByMat").checked } : S.split;
+  o._profile = S.profile || "";  // v22: oxirgi qoʻllangan profil
   o._splitV = 22;               // v22: standart buyurtma boʻyicha — eski saqlov bir marta koʻchiriladi
   o._cellOff = S.cellOff;       // yopiq yacheykalar — sexning fizik holati
   o._thickMix = S.thickMix;     // v20: qalinlik matritsasi ham meʼyor edi, saqlanmasdi
   o._thickMixV = 22;            // v22: «false» endi tsexning ANIQ tanlovi (pastda restoreConf)
   try {
     localStorage.setItem("upk_conf", JSON.stringify(o));
-    DEVICE_CONF = confCapture(); CONF_FROM_SNAP = false;   // v22: endi shular — tsex meʼyorlari
-    var n = $("saveNote"); n.style.display = "block";
-    setTimeout(function(){ n.style.display = "none"; }, 3500);
+    DEVICE_CONF = confCaptureForm(); CONF_FROM_SNAP = false;   // v22: endi shular — tsex meʼyorlari
+    var n = $("saveNote");
+    if (n){
+      var d = new Date(), p2 = function(x){ return (x < 10 ? "0" : "") + x; };
+      n.style.borderLeftColor = "var(--ok)";
+      n.textContent = "Avtomatik saqlandi ✓ " + p2(d.getHours()) + ":" + p2(d.getMinutes()) + ":" + p2(d.getSeconds()) +
+                      " — har oʻzgarish shu kompyuterda saqlanadi.";
+    }
   } catch(e){
     var n2 = $("saveNote");
-    n2.style.display = "block";
-    n2.style.borderLeftColor = "var(--alert)";
-    n2.textContent = "Bu brauzerda saqlash imkoni yoʻq: " + e.message;
+    if (n2){
+      n2.style.borderLeftColor = "var(--alert)";
+      n2.textContent = "Bu brauzerda saqlash imkoni yoʻq: " + e.message;
+    }
   }
+}
+/* v22: FORMADAGI meʼyorlar (S koʻrinishida) — S ga tegmasdan. Avtomatik saqlash
+   qayta pochkalash tasdiq kutayotganda ham ishlaydi; u paytda S joriy
+   pochkalarniki, saqlangani esa formada. readConf() bir zum formadan oʻqiydi,
+   S keyin oʻz holiga qaytadi. */
+function confCaptureForm(){
+  var bak = {}, k;
+  for (k in S) if (S.hasOwnProperty(k)) bak[k] = S[k];
+  var sp = JSON.parse(JSON.stringify(S.split || splitDefault()));
+  var tm = JSON.parse(JSON.stringify(S.thickMix || {}));
+  S.split = JSON.parse(JSON.stringify(sp)); S.thickMix = JSON.parse(JSON.stringify(tm));
+  try { readConf(); return confCapture(); }
+  finally {
+    for (k in S) if (S.hasOwnProperty(k) && !bak.hasOwnProperty(k)) delete S[k];
+    for (k in bak) S[k] = bak[k];
+    S.split = sp; S.thickMix = tm;
+  }
+}
+/* v22: tom sifati — eski saqlovda tanlov yoʻq: 6 qiymat qaysi darajaga mos */
+function tomPresetOf(o){
+  var map = { lidFill:"cLidFill", lidN:"cLidN", lidBal:"cLidBal", lidTol:"cLidTol", lidSupp:"cLidSupp", lidBed:"cLidBed" };
+  var names = Object.keys(TOM_PRESETS);
+  for (var i = 0; i < names.length; i++){
+    var pr = TOM_PRESETS[names[i]], same = true;
+    Object.keys(map).forEach(function(k){
+      var v = (o && map[k] in o) ? +o[map[k]] : TOM_PRESETS.orta[k];
+      if (Math.abs(v - pr[k]) > 1e-9) same = false;
+    });
+    if (same) return names[i];
+  }
+  return "qolda";
+}
+/* Tom maydonlari: daraja tanlangan boʻlsa — uning qiymatlari, oʻchirilgan holda */
+var TOM_IDS = { lidFill:"cLidFill", lidN:"cLidN", lidBal:"cLidBal", lidTol:"cLidTol", lidSupp:"cLidSupp", lidBed:"cLidBed" };
+function tomFields(q){
+  var pr = TOM_PRESETS[q];
+  Object.keys(TOM_IDS).forEach(function(k){
+    var e = $(TOM_IDS[k]); if (!e) return;
+    if (pr) e.value = pr[k];
+    e.disabled = !!pr;
+  });
 }
 function restoreConf(){
   try {
@@ -191,6 +239,13 @@ function restoreConf(){
       var e = $(id); if (!e || !(id in o)) return;
       if (e.type === "checkbox") e.checked = !!o[id]; else e.value = o[id];
     });
+    /* v22: «Chetdan qochish» olib tashlandi. Chiqish chegarasi ikkalasining
+       kichigi edi — tsex uni «Chiqish» dan kichik qoʻygan boʻlsa, amaldagi
+       qiymat saqlansin. */
+    if (o.cBaseInset != null && o.cOvh != null && +o.cBaseInset < +o.cOvh && $("cOvh")) $("cOvh").value = o.cBaseInset;
+    // v22: tom sifati — eski saqlovda tanlov yoʻq: qiymatlar qaysi darajaga mos boʻlsa oʻsha, aks holda «Qoʻlda»
+    if (!("cTomQ" in o) && $("cTomQ")) $("cTomQ").value = tomPresetOf(o);
+    S.profile = typeof o._profile === "string" ? o._profile : "";
     /* v12: eski saqlangan sozlamada rejim («b2c/b2b» yoki «ind/conv») va ikki
        qoida turgan boʻlishi mumkin — ular bitta qoidaga koʻchiriladi. Katakchalar
        shundan keyin toʻldiriladi, aks holda eski rejimning qiymati koʻrinmasdi. */
@@ -267,15 +322,19 @@ function readConf(){
   /* v14: TAG OYNASI — qolgan ikki chegara. baseLMin 0 boʻlishi MUMKIN
      («cheklovsiz»), shuning uchun `|| N` shakli ishlatilmaydi. */
   S.baseWMax  = numOr($("cBaseWMax"),  1900, 100, 4000);
-  S.baseLMin  = numOr($("cBaseLMin"),     0,   0, 4000);
+  S.baseLMin  = 0;                                  // v22: doimiy (02-state TRIES_FIXED izohi)
   /* Quyi chegara 80: maydonning `min="80"` atributi, yorligʻi va podskaskasi
      ham «80…100» deydi. Ilgari bu yerda 50 turardi — yagona haqiqiy chegara
      shu funksiyada, yaʼni interfeys yolgʻon gapirardi. */
   S.baseCover = numOr($("cBaseCover"),   90,  80,  100);
-  S.baseInset = numOr($("cBaseInset"),   40,   0,  500);
+  S.baseInset = null;                               // v22: «Chiqish» bilan birlashtirildi
   S.maxH      = numOr($("cMaxH"),         0,   0, 5000);
   /* v22: 50 dan katta ulush matematik imkonsiz — 2+ detalli qopqoqda eng
      kichik detal ulushi 50 % dan oshmaydi, yaʼni qopqoq umuman yasalmasdi */
+  /* v22: TOM SIFATI — daraja tanlangan boʻlsa oltita maydon uning qiymatini oladi
+     (oʻchirilgan holda koʻrinadi), «Qoʻlda» boʻlsa — kiritilgani. */
+  S.tomQ = ($("cTomQ") && $("cTomQ").value) || "orta";
+  tomFields(S.tomQ);
   S.lidBal    = numOr($("cLidBal"),      40,   0,   50);
   S.maxPartT  = numOr($("cMaxPartT"),    60,   0, 5000);
   // v14: nostandart oqim
@@ -291,10 +350,10 @@ function readConf(){
   S.minPartW   = numOr($("cMinPartW"),    0,   0, 4000);   // v18
   S.minPartL   = numOr($("cMinPartL"),    0,   0, 9000);
   readThickMix();
-  S.tries    = Math.max(1, Math.min(40, +$("cTries").value || 4));
+  S.tries    = TRIES_FIXED;                         // v22: doimiy
   S.prefix   = $("cPrefix").value || "SM";
   S.ovhOn    = $("cOvhOn").checked;
-  S.byThick  = $("cThick").checked;
+  S.byThick  = true;                                // v22: doimiy — qalinlikni matritsa boshqaradi
 
   /* v12: KESIM OʻQLARI — bitta umumiy qoida. Rejim tanlovi yoʻq: ikki katak
      bevosita S.split ni belgilaydi. Ikkalasini ham oʻchirish RUXSAT —
@@ -368,10 +427,10 @@ function showCellTot(){
 function writeConf(){
   var m = { cMaxKg:S.maxKg, cOvh:S.ovh, cMinBase:S.minBase, cMaxLen:S.maxLen, cBaseT:S.minBaseT,
             cFill:S.minFill, cLidFill:S.lidFill, cLidN:S.lidN, cLidTol:S.lidTol, cOneMan:S.oneMan, cTwoMan:S.twoMan, cPartKgMax:S.partKgMax,
-            cTare:S.tare, cMaxLay:S.maxLayers, cTries:S.tries, cPrefix:S.prefix, cLabel:S.labelSize,
+            cTare:S.tare, cMaxLay:S.maxLayers, cPrefix:S.prefix, cLabel:S.labelSize,
             // v14
-            cBaseWMax:S.baseWMax, cBaseLMin:S.baseLMin, cBaseCover:S.baseCover,
-            cBaseInset:S.baseInset, cMaxH:S.maxH, cLidBal:S.lidBal, cMaxPartT:S.maxPartT,
+            cBaseWMax:S.baseWMax, cBaseCover:S.baseCover,
+            cMaxH:S.maxH, cLidBal:S.lidBal, cMaxPartT:S.maxPartT,
             cOddKg:S.oddKg, cOddLMax:S.oddLMax, cOddWMax:S.oddWMax, cOddTol:S.oddTol,
             cTailOver:S.tailKgOver, cTailGap:S.tailGap, cTailSpan:S.tailSpan,
             cLidSupp:S.lidSupp, cLidBed:S.lidBed,
@@ -388,7 +447,7 @@ function writeConf(){
   });
   showCellTot();
   if ($("cOvhOn")) $("cOvhOn").checked = !!S.ovhOn;
-  if ($("cThick")) $("cThick").checked = !!S.byThick;
+  if ($("cTomQ")){ $("cTomQ").value = S.tomQ || "orta"; tomFields($("cTomQ").value); }   // v22
   if ($("cAutoLbl")) $("cAutoLbl").checked = !!S.autoLbl;
   if ($("cSepMat")) $("cSepMat").value = S.sepMat || "";       // v22
   var sp = S.split || splitDefault();
@@ -452,6 +511,7 @@ function renderThickMix(){
     el.onchange = function(){
       S.thickMix[el.getAttribute("data-tmix")] = el.checked;
       recomputeSoon();
+      saveConf();                                      // v22: avtomatik saqlash
     };
   });
 }
@@ -650,6 +710,8 @@ function askAndBoot(data, fname){
   /* v12: modul tanlovlari oynadan olib tashlandi. Oyna endi FAKTNI koʻrsatadi —
      joriy sozlama bilan qanaqa modullar chiqishini. Tanlov P/M menejerida. */
   modalUnits(data.parts);
+  // v22: profil — loyiha yoki fayl nomidagi kalit soʻz boʻyicha taklif (TZ-v3 §3.3)
+  if (typeof profModal === "function") profModal((fname || "") + " " + (data.name || ""));
   // detal klasslari
   var cls = {};
   data.parts.forEach(function(p){ var c = classify(p.n); cls[c] = (cls[c]||0) + p.q; });
@@ -686,6 +748,8 @@ $("mOk").onclick = function(){
   });
   $("modal").style.display = "none";
   var data = PENDING; PENDING = null;
+  // v22: oynada tanlangan profil — yangi buyurtma shu meʼyorlar bilan pochkalanadi
+  if (typeof profModalApply === "function") profModalApply();
   boot(data);
   showTab("work");                     // v22: post rejimida — postning oʻz ekrani
 };
@@ -742,18 +806,24 @@ if ($("btnClsGrp")) $("btnClsGrp").onclick = makeClsGroup;
    Endi ular ham boshqa har qanday meʼyor kabi qayta terishni chaqiradi. */
 CONF_IDS.forEach(function(id){
   var e = $(id); if (!e) return;
+  /* v22: AVTOMATIK SAQLASH. «Sozlamalarni saqlash» tugmasi xato manbai edi:
+     unutilsa qayta yuklashda oʻzgarish yoʻqolardi. Endi har oʻzgarish darhol
+     shu kompyuterda saqlanadi. */
   e.onchange = CONF_VIEW_ONLY[id]
     ? function(){
         readConf();
         if (typeof showCellTot === "function") showCellTot();
         if (typeof renderPacks === "function") renderPacks();
         if (typeof renderStep === "function") renderStep();
+        saveConf();
       }
-    : function(){ recompute(); };
+    : function(){
+        if (id === "cTomQ") tomFields(e.value);      // daraja almashdi — maydonlar darhol
+        recompute(); saveConf();
+      };
 });
 
 $("btnRepack").onclick   = function(){ recompute(); };
-$("btnSave").onclick     = function(){ readConf(); saveConf(); };
 $("btnReset").onclick    = resetConf;
 $("btnCsv").onclick      = csv;
 /* v22: MES buyurtma raqami — loyihaga tegishli (P.mesOrder), sozlama emas:
@@ -768,8 +838,9 @@ $("mgrMesOrder").onchange = function(){
 $("btnAddMat").onclick   = function(){ if (typeof addMaterial === "function") addMaterial(); };
 $("btnAddCat").onclick   = function(){
   S.matCat.push({ key:"YANGI", t:SHEET_DEFAULT.t, l:SHEET_DEFAULT.l,
-                  w:SHEET_DEFAULT.w, kgm2:SHEET_DEFAULT.kgm2 });
+                  w:SHEET_DEFAULT.w, kgm2:SHEET_DEFAULT.kgm2, dens:0 });
   renderCat();
+  saveConf();                                          // v22: avtomatik saqlash
 };
 $("btnClearSes").onclick = function(){
   if (typeof Store === "undefined") return;
@@ -778,10 +849,9 @@ $("btnClearSes").onclick = function(){
      bevosita Store chaqirilardi va taymer keyin ishlab, endigina tozalangan
      seansni qaytarib yozib qoʻyishi mumkin edi. */
   clearSession().then(function(){
-    var n = $("saveNote");
-    n.style.display = "block"; n.style.borderLeftColor = "var(--ok)";
-    n.textContent = "Seans tozalandi — keyingi ochilishda namuna loyiha yuklanadi.";
-    setTimeout(function(){ n.style.display = "none"; }, 3500);
+    var n = $("saveNote");                 // v22: doimiy yozuv — yashirilmaydi, faqat matni
+    if (n){ n.style.borderLeftColor = "var(--ok)";
+            n.textContent = "Seans tozalandi — keyingi ochilishda namuna loyiha yuklanadi. Sozlamalar joyida."; }
   });
 };
 

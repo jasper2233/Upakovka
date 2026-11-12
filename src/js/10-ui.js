@@ -1483,12 +1483,14 @@ function renderCat(){
     d.innerHTML = '<div class="cathead"><b>'+esc(c.key || "—")+'</b>'+
         '<button class="btn del" data-del="'+i+'">Oʻchirish</button></div>'+
       '<div class="fields" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">'+
-      '<div class="f"><label>Kalit soʻz</label><input data-k="key" value="'+esc(c.key)+'"><small>nomda shu soʻz boʻlsa qoʻllanadi</small></div>'+
+      '<div class="f"><label>Kalit soʻz</label><input data-k="key" value="'+esc(c.key)+'"><small>nomda shu soʻz boʻlsa (kirillcha ham: ЛДСП = LDSP)</small></div>'+
       '<div class="f"><label>Qalinlik, mm</label><input data-k="t" type="number" step="0.1" value="'+c.t+'"><small>0 = istalgan</small></div>'+
+      // v22: zichlik — bitta yozuv hamma qalinlikni qoplaydi
+      '<div class="f"><label>Zichlik, kg/m³</label><input data-k="dens" type="number" step="10" min="0" value="'+(+c.dens || 0)+'"><small>0 = kg/m² ishlatiladi</small></div>'+
       '<div class="f"><label>List uzunligi</label><input data-k="l" type="number" value="'+c.l+'"></div>'+
       '<div class="f"><label>List eni</label><input data-k="w" type="number" value="'+c.w+'"></div>'+
       '<div class="f"><label>List kilosi</label><input data-k="sheet" type="number" step="0.1" value="'+sheetKg.toFixed(2)+'"></div>'+
-      '<div class="f"><label>kg/m²</label><input data-k="kgm2" type="number" step="0.01" value="'+c.kgm2+'"><small>oʻzaro bogʻliq</small></div>'+
+      '<div class="f"><label>kg/m²</label><input data-k="kgm2" type="number" step="0.01" value="'+c.kgm2+'"'+(+c.dens > 0 ? ' disabled' : '')+'><small>'+(+c.dens > 0 ? 'zichlikdan — materialning oʻz qalinligida' : 'oʻzaro bogʻliq')+'</small></div>'+
       '</div>';
     d.querySelectorAll("input").forEach(function(inp){
       inp.oninput = function(){
@@ -1496,14 +1498,17 @@ function renderCat(){
         if (k==="key"){ c.key = v; return; }
         if (k==="sheet"){ var ar = (c.l*c.w/1e6)||1; c.kgm2 = +(parseFloat(v||0)/ar).toFixed(4); }
         else c[k] = parseFloat(v||0) || 0;
+        // v22: zichlik va qalinlik bor — kg/m² shundan (koʻrinish uchun; qidiruv baribir catKgm2)
+        if ((k === "dens" || k === "t") && +c.dens > 0 && +c.t > 0) c.kgm2 = catKgm2(c, c.t);
       };
       // qayta chizish faqat fokus tark etilganda — aks holda yozayotganda kursor yoʻqoladi
       inp.onchange = function(){
         var k = inp.dataset.k;
-        if (k==="sheet"||k==="kgm2"||k==="l"||k==="w"||k==="key") renderCat();
+        if (k==="sheet"||k==="kgm2"||k==="l"||k==="w"||k==="key"||k==="dens"||k==="t") renderCat();
+        if (typeof saveConf === "function") saveConf();      // v22: katalog ham avtomatik saqlanadi
       };
     });
-    d.querySelector("[data-del]").onclick = function(){ S.matCat.splice(i,1); renderCat(); };
+    d.querySelector("[data-del]").onclick = function(){ S.matCat.splice(i,1); renderCat(); if (typeof saveConf === "function") saveConf(); };   // v22: avtomatik saqlash
     box.appendChild(d);
   });
   if (typeof fixNumberInputs === "function") fixNumberInputs(box);
@@ -1515,7 +1520,7 @@ function applyCat(){
   var hit = 0;
   P.materials.forEach(function(m){
     var c = catLookup(m.name, m.t);
-    if (c){ m.kgm2 = c.kgm2; m.cat = c.key; hit++; }
+    if (c){ m.kgm2 = catKgm2(c, m.t); m.cat = c.key; hit++; }   // v22: zichlik boʻlsa — qalinlikdan
   });
   return hit;
 }

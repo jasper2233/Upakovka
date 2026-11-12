@@ -10,11 +10,33 @@ var DENS = {3:900, 4:850, 6:850, 8:800, 10:700, 16:700, 18:700, 22:680, 25:680};
    tarkibi har xil materialni tsex katalogga oʻzi qoʻshadi. */
 var NAME_DENS = [
   { re:/OYNA|KOZGU|KO.ZGU|ZERKAL|STEKL|GLASS|SHISHA/i, d:2500 },   // shisha, koʻzgu
-  { re:/KAFEL|PLITKA|KERAMI/i,                         d:2000 }    // keramik plitka
+  { re:/KAFEL|PLITKA|KERAM/i,                          d:2000 }    // keramik plitka, keramogranit (v22)
 ];
 function nameDens(nm){
-  for (var i = 0; i < NAME_DENS.length; i++) if (NAME_DENS[i].re.test(nm || "")) return NAME_DENS[i].d;
+  var lt = translit(nm);                       // v22: «Керамогранит» ham tanilsin
+  for (var i = 0; i < NAME_DENS.length; i++)
+    if (NAME_DENS[i].re.test(nm || "") || NAME_DENS[i].re.test(lt)) return NAME_DENS[i].d;
   return 0;
+}
+/* v22: KIRILL -> LOTIN. Material nomi kirillcha boʻlsa («ЛДСП Белый», «МДФ»,
+   «Керамогранит») katalogdagi lotincha kalit («LDSP», «MDF») unga mos
+   kelmasdi va massa taxminiy hisoblanardi — 5 mm keramogranit yogʻoch
+   zichligida, yaʼni 3 marta yengil chiqardi. Oʻzbek lotin yozuvi boʻyicha:
+   Х -> X (ХДФ = XDF). Natija katta harfda. */
+var TRANSLIT = { "А":"A","Б":"B","В":"V","Г":"G","Д":"D","Е":"E","Ё":"YO","Ж":"J","З":"Z","И":"I",
+  "Й":"Y","К":"K","Л":"L","М":"M","Н":"N","О":"O","П":"P","Р":"R","С":"S","Т":"T","У":"U","Ф":"F",
+  "Х":"X","Ц":"TS","Ч":"CH","Ш":"SH","Щ":"SH","Ъ":"","Ы":"I","Ь":"","Э":"E","Ю":"YU","Я":"YA",
+  "Ў":"O","Қ":"Q","Ғ":"G","Ҳ":"H","І":"I","Ї":"I","Є":"E" };
+function translit(s){
+  return String(s || "").toUpperCase().replace(/[\u0400-\u04FF]/g, function(c){
+    return TRANSLIT.hasOwnProperty(c) ? TRANSLIT[c] : c;
+  });
+}
+/* v22: katalog yozuvining kg/m² — ZICHLIK (kg/m³) berilgan boʻlsa materialning
+   oʻz qalinligidan: bitta «LDSP · 700 kg/m³» yozuvi 10, 16, 18, 25 mm ni qoplaydi. */
+function catKgm2(c, t){
+  if (c && +c.dens > 0 && +t > 0) return +((+c.dens) * (+t) / 1000).toFixed(4);
+  return c ? (+c.kgm2 || 0) : 0;
 }
 /* Material topilmaganda ishlatiladigan zaxira zichlik (16 mm LDSP, kg/m²).
    Ilgari bu son toʻrt joyda qoʻlda yozilgan edi — biri oʻzgarsa qolgani ortda qolardi. */
@@ -25,10 +47,10 @@ var KGM2_FALLBACK = 11.2;
    takrorlanardi — yuqoridagi izoh vaʼda qilgan markazlashtirish chala edi. */
 var SHEET_DEFAULT = { l:2750, w:1830, t:16, kgm2:KGM2_FALLBACK };
 function catLookup(name, t){
-  var u = (name||"").toUpperCase(), best = null;
+  var u = translit(name), best = null;          // v22: kirillcha nom ham
   (S.matCat||[]).forEach(function(c){
     if (!c.key) return;
-    if (u.indexOf(String(c.key).toUpperCase()) < 0) return;
+    if (u.indexOf(translit(c.key)) < 0) return;
     var tOk = !c.t || Math.abs(c.t - t) < 0.51;
     if (!tOk) return;
     if (!best || String(c.key).length > String(best.key).length) best = c;   // aniqrogʻi gʻolib
@@ -170,7 +192,7 @@ function parseProject(xmlText){
     mats.push({ id:id, name:nm,
       l:num(g.getAttribute("l"), sp ? num(sp.getAttribute("l"), SHEET_DEFAULT.l) : SHEET_DEFAULT.l),
       w:num(g.getAttribute("w"), sp ? num(sp.getAttribute("w"), SHEET_DEFAULT.w) : SHEET_DEFAULT.w),
-      t:t, kgm2: cat ? cat.kgm2 : +(t/1000*dens).toFixed(3),
+      t:t, kgm2: cat ? catKgm2(cat, t) : +(t/1000*dens).toFixed(3),   // v22: zichlikli katalog
       cat: cat ? cat.key : null,
       sheets:num(g.getAttribute("count"), 0) });
   });

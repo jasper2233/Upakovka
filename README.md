@@ -343,7 +343,8 @@ upakovka/
 │     ├─ 13-app.js         sozlama, qayta hisob, tablar, ishga tushish
 │     ├─ 14-sort.js        saralash posti: stelyaj/yacheyka, skaner, reja
 │     ├─ 15-post.js        postlar: post rejimi, reja raqami va fayli, stelyaj QR
-│     └─ 16-server.js      server orqali postlar: reja, saralash holati, TV ekrani
+│     ├─ 16-server.js      server orqali postlar: reja, saralash holati, TV ekrani
+│     └─ 17-profile.js     nomlangan profil: me'yorlar to'plami, yuklashda taklif
 ├─ dist/                   build natijasi — bir faylli offline versiya
 ├─ server/
 │  └─ upk-server.py        ixtiyoriy server: tarmoqdagi postlar va Smart TV uchun
@@ -1146,6 +1147,7 @@ ochiq aytadi va furnitura alohida hujjat bo'yicha topshirilishini ko'rsatadi.
 | Loyiha + pochkalar + yig'ish progressi | `IndexedDB` (seans) | «Seansni tozalash» |
 | Saralash: yacheykalar, qadoqlashdagi stelyajlar, skanerlangan cheklar | `IndexedDB` (seans) | «Tozalash» yoki yangi reja |
 | Shu kompyuter qaysi post, ekran klaviaturasi | `localStorage` (`upk_post`, `upk_nofocus`) | P/M → Postlar |
+| Nomlangan profillar | `localStorage` (`upk_profiles`) | Sozlamalar → Profil → «O'chirish» |
 | Server orqali: rejalar, saralash holati, joriy reja | serverda `server/data/` (JSON) | eskisi o'zi o'chadi (oxirgi 300 reja qoladi) |
 | Yuklangan xom `.project` fayllar (oxirgi 20 ta) | `IndexedDB` | ro'yxatdan «O'chirish» |
 
@@ -1220,9 +1222,9 @@ natija o'zgarmagan (namunada 56 pochka, korpusda ham shunday).
 
 | Ko'rinib turadi | Yopiq bo'limda |
 |---|---|
-| maks. massa, tag bo'yi/eni maks, tag eni min, maks. balandlik, chiqishga ruxsat | standart detal min. eni/bo'yi, tag bo'yi min, tag/qopqoq qalinligi, paddon qamrovi, chetdan qochish |
+| maks. massa, tag bo'yi/eni maks, tag eni min, maks. balandlik, chiqishga ruxsat, **chiqish, mm** | standart detal min. eni/bo'yi, tag/qopqoq qalinligi, paddon qamrovi |
 | nostandart massa, bo'yi, eni | «o'lchami yaqin» |
-| 1 kishi chegarasi, tara, qalinlik bo'yicha ajratish, qalinlik matritsasi | detal maks. qalinligi, quyruq (3 ta), tom (2 ta) |
+| 1/2 kishi chegarasi, tara, bitta detal maks., mo'rt detallar, **tom sifati**, qalinlik matritsasi | detal maks. qalinligi, quyruq (3 ta), tom (6 ta — «Qo'lda» bo'lganda) |
 | stelyaj va yacheyka soni | yacheyka o'lchamlari |
 | prefiks, chek o'lchami, avtomatik chek | — |
 
@@ -1287,10 +1289,27 @@ yozilgan: nima uchun 35 kg, nega chiqish 20 mm, qavat to'ldirish 85 % va paddon
 qamrovi 90 % qayerdan olingan va har birini oshirsa/kamaytirsa nima bo'ladi.
 Kod tuzilishi va ma'lumot modeli — **[docs/arxitektura.md](docs/arxitektura.md)**.
 
+### Soddalashtirish (v22): kamroq maydon, profil, avtomatik saqlash
+
+| Nima | Endi |
+|---|---|
+| «Tag bo'yi min» | olib tashlandi (0): «Paddon qamrovi» kalta tagni allaqachon rad etadi |
+| «Variatsiya urinishlari» | doimiy 4: 8 urinish 205 faylda atigi −15 pochka berardi, hisob +47 % sekin |
+| «Qalinlik bo'yicha ajratish» katagi | doimiy yoqiq: o'chirilsa qalinliklar aralashib, qalinlik matritsasini bekor qilardi |
+| «Chiqish» + «Chetdan qochish» | bitta maydon — **«Chiqish, mm»**. Ilgari ikkalasining kichigi ishlardi (standartda faqat chiqish); eski saqlovda chetdan qochish kichik bo'lsa — o'sha qiymat ko'chadi |
+| 6 ta tom sozlamasi | bitta **«Tom sifati»**: Qattiq / O'rtacha / Yumshoq / Qo'lda. 205 faylda: qattiq 2933 pochka (+79), o'rtacha 2854, yumshoq 2767 (−87), audit xatosi uchalasida ham 0. Eski saqlovdagi qiymatlar qaysi darajaga mos bo'lsa o'sha, aks holda «Qo'lda» |
+| «Sozlamalarni saqlash» tugmasi | **yo'q** — har o'zgarish darhol shu kompyuterda saqlanadi (unutilgan saqlash xatolarning manbai edi) |
+| — | **Nomlangan profil** (TZ-v3 §3.3): «Mijozga», «Omborga» kabi me'yorlar to'plami. Kalit so'z loyiha yoki fayl nomida bo'lsa (kirillcha ham), yuklash oynasida profil o'zi taklif qilinadi |
+| Material katalogi | **zichlik (kg/m³)**: bitta «LDSP · 700 kg/m³» yozuvi hamma qalinlikni qoplaydi. **Kirillcha nom**: «ЛДСП», «МДФ», «ХДФ» lotin kalitga mos keladi; «Керамогранит» keramika zichligida (ilgari yog'och zichligida — 3 marta yengil) |
+
+Hamma o'zgarish standart qiymatlarni aynan saqlaydi: 205 faylli korpusda natija
+o'zgarmadi (2854 pochka, audit xatosi 0).
+
 Me'yorni o'zgartirish tartibi:
-1. Sozlamalarda qiymatni o'zgartiring — tizim avtomatik qayta teradi
+1. Sozlamalarda qiymatni o'zgartiring — tizim avtomatik qayta teradi va saqlaydi
+   (ish boshlangan bo'lsa — avval tasdiq so'raydi)
 2. **Diagnostika** bo'limida auditni tekshiring
-3. Natija ma'qul bo'lsa — «Sozlamalarni saqlash»
+3. Tez-tez ishlatiladigan to'plamni **profil** qilib saqlang
 
 ---
 
@@ -1300,8 +1319,8 @@ Pochkalash **bo'laklab** bajariladi: har 40 ms da brauzerga boshqaruv qaytarilad
 Shu sabab katta buyurtmada ham interfeys muzlamaydi, jarayon ko'rsatkichi chiqadi va
 **bekor qilish** mumkin. Kichik buyurtmada ko'rsatkich umuman ko'rinmaydi.
 
-Hisob hajmi: har pochkaga 100 variant × butun buyurtmani `S.tries` marta qayta terish.
-Sekin tuyulsa — sozlamalarda **«Variatsiya urinishlari»** ni kamaytiring (4 → 2 → 1).
+Hisob hajmi: har pochkaga 100 variant × butun buyurtmani 4 marta (`TRIES_FIXED`) qayta terish.
+v22 dan bu sozlama emas, doimiy: 8 urinish 205 faylda atigi −15 pochka berardi, hisob esa +47 % sekinlashardi.
 
 ---
 

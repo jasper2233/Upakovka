@@ -616,6 +616,21 @@ body.post-tv .rackrow .rstat,body.post-tv .rackbar,body.post-tv .sortfoot{font-s
 body.post-tv .cbox b{font-size:16px}
 body.post-tv .cbox s{font-size:13px}
 
+/* ---- v22: profil paneli va tom maydonlari ---- */
+.profbar{margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-left:3px solid var(--info);
+  border-radius:var(--r);background:var(--panel)}
+.profrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.profrow b{font-size:12.5px;letter-spacing:.04em;margin-right:4px}
+.profrow .grow{flex:1}
+.profrow select,.profrow input{background:var(--panel);border:1px solid var(--line2);border-radius:var(--r);
+  color:var(--ink);font-family:var(--mono);font-size:12.5px;padding:7px 9px}
+.profrow select:focus,.profrow input:focus{outline:none;border-color:var(--mark)}
+.profrow select{min-width:200px}
+.profrow input{flex:1;min-width:160px}
+.profcur{font-family:var(--mono);font-size:11.5px;color:var(--ok)}
+#profNote:empty{display:none}
+.fields input:disabled{opacity:.55;cursor:not-allowed}
+
 /* stelyaj QR belgisi */
 .label.racklbl{align-items:center}
 .racklbl .rl-l{font-size:64px;font-weight:700;line-height:.9;letter-spacing:-.04em}

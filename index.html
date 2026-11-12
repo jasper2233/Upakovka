@@ -279,6 +279,25 @@
       <!-- v22: sozlamalar orasidagi ZIDDIYATLAR — confCheck() toʻldiradi -->
       <div id="confWarn"></div>
 
+      <!-- v22: NOMLANGAN PROFIL — meʼyorlar toʻplami (TZ-v3 §3.3). Boshqaruvlar sozlama emas (data-noconf) -->
+      <div class="profbar">
+        <div class="profrow">
+          <b>Profil <span class="q" tabindex="0" data-tip="Meʼyorlarning NOMLANGAN toʻplami — masalan «Mijozga» va «Omborga». Tanlansa hamma maydon bir yoʻla oʻrnatiladi.&#10;&#10;Kiradi: shu ekrandagi meʼyorlar, modul/material kesimi, material katalogi, qalinlik matritsasi, klass guruhlari. Kirmaydi: stelyaj, chek printeri, QR prefiksi (kompyuterniki) va modul nomlari/guruhlari (buyurtmaniki).&#10;&#10;Kalit soʻz loyiha yoki fayl nomida boʻlsa, yuklashda profil oʻzi taklif qilinadi.">?</span></b>
+          <select id="profSel" data-noconf="1"></select>
+          <button type="button" class="btn" id="btnProfApply">Qoʻllash</button>
+          <button type="button" class="btn gh" id="btnProfDel">Oʻchirish</button>
+          <span class="grow"></span>
+          <span id="profCur" class="profcur"></span>
+        </div>
+        <div class="profrow">
+          <input id="profName" data-noconf="1" type="text" placeholder="profil nomi — masalan: Mijozga" spellcheck="false" autocomplete="off">
+          <input id="profMatch" data-noconf="1" type="text" placeholder="loyiha nomidagi kalit soʻz (ixtiyoriy)" spellcheck="false" autocomplete="off">
+          <button type="button" class="btn pri" id="btnProfSave">Joriy meʼyorlarni profil qilib saqlash</button>
+        </div>
+        <div id="profNote" class="msg"></div>
+      </div>
+      <div class="note" id="saveNote" style="margin:0 0 14px;border-left-color:var(--ok)">Har oʻzgarish shu kompyuterda avtomatik saqlanadi.</div>
+
       <!-- ============== STANDART OQIM ============== -->
       <div class="blk blk-std">
         <h3><span class="tag">STANDART</span>Standart pochka
@@ -300,6 +319,7 @@
             <label class="chk"><input type="checkbox" id="cOvhOn" checked><span>oʻrta qavatlar tagdan chiqsin</span></label>
             <small>har pochkada alohida ham belgilanadi</small>
           </div>
+          <div class="f"><label for="cOvh">Chiqish, mm (bir tomon) <span class="q" tabindex="0" data-tip="Oʻrta qavat detali tag chetidan shuncha mm chiqib turishi mumkin (har tomonga). «Chiqishga ruxsat» oʻchiq boʻlsa — 0.&#10;&#10;v22: ilgari ikkinchi maydon ham bor edi («Chetdan qochish») va ikkalasining KICHIGI ishlardi — standartda (20 va 40) faqat shu maydon. Endi bitta.&#10;&#10;Oshirsangiz qavat zichroq toʻladi va pochka kamayadi, lekin chet osilib qoladi.">?</span></label><input id="cOvh" type="number" value="20" step="1"><small>har tomonga; jami 2× (20 mm — jami 40 mm)</small></div>
         </div>
 
         <details class="adv adv-in">
@@ -311,10 +331,8 @@
           </div>
           <h4 class="sub">Tag (paddon) sifati</h4>
           <div class="fields">
-            <div class="f"><label for="cBaseLMin">Tag boʻyi, min mm <span class="q" tabindex="0" data-tip="Kalta detal tag boʻlmasin. 0 = cheklovsiz.&#10;&#10;Odatda kerak emas: «Paddon qamrovi» va «Chetdan qochish» kalta tagni allaqachon rad etadi.">?</span></label><input id="cBaseLMin" type="number" value="0" step="10"><small>0 = cheklovsiz</small></div>
             <div class="f"><label for="cBaseT">Tag/qopqoq min. qalinlik, mm <span class="q" tabindex="0" data-tip="Tag ham, qopqoq ham shundan yupqa detaldan boʻlmaydi.&#10;&#10;3 mm HDF orqa devor ustiga pochka terilsa sinadi, tagda esa butun pochkani koʻtarolmaydi.&#10;&#10;Istisno: butun guruh yupqa boʻlsa (masalan faqat 3 mm orqa devorlar) tizim oʻzi eng qalinini tag qilib oladi — aks holda ular umuman pochkalanmay qolardi.">?</span></label><input id="cBaseT" type="number" value="16" step="1"><small>yupqa detal tag ham, qopqoq ham boʻlolmaydi</small></div>
             <div class="f"><label for="cBaseCover">Paddon qamrovi, min % <span class="q" tabindex="0" data-tip="Tag detal yuzasi butun pochka gabaritining kamida shuncha foizini egallasin (80…100).&#10;&#10;Kichik tag — pochkaning chetlari havoda qoladi, yuk tashishda pastdagi detal sinadi.&#10;&#10;Koʻtarsangiz sifat oshadi, lekin tag nomzodi kamayib pochka soni oshadi. Namunada: 80…90 % — 56 pochka, 95 % — 58, 100 % — 64.">?</span></label><input id="cBaseCover" type="number" value="90" step="1" min="80" max="100"><small>tag yuzasi gabaritning shuncha % i (80…100)</small></div>
-            <div class="f"><label for="cBaseInset">Chetdan qochish, maks mm <span class="q" tabindex="0" data-tip="Tag detal umumiy gabaritdan shuncha mm ichkarida boʻlishi mumkin.&#10;&#10;Undan koʻp qochsa pochka chekkasi tayanchsiz osilib qoladi. 40 mm — qoʻlda koʻtarilganda sezilmaydigan chet.">?</span></label><input id="cBaseInset" type="number" value="40" step="5" min="0"><small>tag gabaritdan shuncha ichkarida boʻlishi mumkin</small></div>
           </div>
         </details>
       </div>
@@ -352,11 +370,7 @@
           <div class="f"><label for="cTare">Qadoq materiali (tara), kg <span class="q" tabindex="0" data-tip="Qogʻoz + burchak + tasma massasi. Toza massaga qoʻshilib BRUTTO beradi.&#10;&#10;Brutto chekda koʻrsatiladi va «2 KISHI» belgisi shunga qarab qoʻyiladi. Terish chegarasi (35/40 kg) esa TOZA massa boʻyicha hisoblanadi.">?</span></label><input id="cTare" type="number" value="0.6" step="0.1" min="0"><small>qogʻoz + burchak + tasma. Bruttoga qoʻshiladi</small></div>
           <div class="f"><label for="cPartKgMax">Bitta detal maks. massasi, kg <span class="q" tabindex="0" data-tip="Sexdagi eng ogʻir BITTA detal — odatda yaxlit list (2800×2070×16 LDSP ≈ 65 kg).&#10;&#10;Undan ogʻir detal chiqsa — bu deyarli har doim massa xatosi: material katalogda yoʻq (zichlik taxminiy) yoki qalinlik notoʻgʻri. Detal baribir pochkalanadi, lekin Diagnostika va audit buni aytadi.&#10;&#10;Namuna fayllarda shunday chiqqan: 30 mm «MATO» paneli LDSP deb hisoblanib 90,7 kg boʻlgan.&#10;0 = tekshiruv oʻchiq.">?</span></label><input id="cPartKgMax" type="number" value="65" step="1" min="0"><small>undan ogʻiri — massa xatosi deb ogohlantiriladi</small></div>
           <div class="f"><label for="cSepMat">Moʻrt detallar — alohida pochka <span class="q" tabindex="0" data-tip="Material yoki detal NOMIDA shu soʻzlardan biri boʻlsa — detal moʻrt: koʻzgu, oyna polka, alyumin ramkali oynali detal, oyna yopishtirilgan detal.&#10;&#10;Moʻrt detal umumiy pochkaga QOʻSHILMAYDI — har biri ALOHIDA pochka boʻladi, chekida va roʻyxatda «⚠ EHTIYOT BOʻLING» turadi.&#10;&#10;Vergul bilan; katta-kichik harf va tutuq belgisi farqsiz (koʻzgu = ko'zgu = kozgu). Boʻsh qoldirilsa — moʻrt detal yoʻq.">?</span></label><input id="cSepMat" type="text" value="OYNA, KOZGU, ZERKAL, STEKL, ЗЕРКАЛ, СТЕКЛ, ALYUMIN" spellcheck="false"><small>material yoki detal nomidagi soʻz — vergul bilan</small></div>
-          <div class="f">
-            <label>Qalinlik <span class="q" tabindex="0" data-tip="Yoqilgan holda har qalinlik alohida pochkalanadi: 16 mm alohida, 3 mm alohida.&#10;&#10;Oʻchirilganda turli qalinlik bitta pochkaga tushishi mumkin (lekin bitta QAVATda baribir aralashmaydi — pastdagi «Qalinlik matritsasi» ga qarang).">?</span></label>
-            <label class="chk"><input type="checkbox" id="cThick" checked><span>qalinlik boʻyicha ajratish</span></label>
-            <small>16 mm alohida, 3 mm alohida</small>
-          </div>
+          <div class="f"><label for="cTomQ">Tom sifati <span class="q" tabindex="0" data-tip="Pochkaning eng ustki yuzasi (tom) — ustiga boshqa pochka teriladi. Oltita tom meʼyori bitta darajaga birlashtirilgan:&#10;&#10;Qattiq — tom toʻliqroq, kam detalli, tayanchi kuchli (205 faylda +79 pochka);&#10;Oʻrtacha — standart;&#10;Yumshoq — tom siyrakroq boʻlishi mumkin (−87 pochka).&#10;&#10;«Qoʻlda» — pastdagi «Kengaytirilgan» boʻlimida oltita maydon ochiladi.">?</span></label><select id="cTomQ"><option value="qattiq">Qattiq</option><option value="orta" selected>Oʻrtacha (standart)</option><option value="yumshoq">Yumshoq</option><option value="qolda">Qoʻlda — 6 maydon</option></select><small>qattiq +79 pochka · yumshoq −87 (205 fayl)</small></div>
         </div>
 
         <details class="adv adv-in">
@@ -371,8 +385,12 @@
             <div class="f"><label for="cTailGap">Quyruqda maks. boʻshliq, mm <span class="q" tabindex="0" data-tip="Singdirilgan qoldiq qavatida detallar orasida (va tag chetigacha) qolgan eng katta TAYANCHSIZ oraliq.&#10;&#10;Nega foiz emas, millimetr: 4 ta tor detal butun chuqurlik boʻylab tarqalsa 44 % beradi va qopqoq bemalol tayanadi; oʻsha 44 % ikkita keng detal boʻlib yigʻilsa qopqoq 681 mm boʻshliq ustidan oʻtadi va ustiga pochka terilganda sinadi.&#10;&#10;Kichraytirsangiz sifat oshadi, pochka soni ham oshadi. Namuna buyurtmada eng katta quyruq boʻshligʻi 187 mm, shuning uchun 200 mm dan yuqori chegara unga umuman tegmaydi: oʻchiq/300/200 — 56 pochka, 150 — 57, 100 — 57, 50 — 58.&#10;0 = oʻchiq.">?</span></label><input id="cTailGap" type="number" value="300" step="25" min="0"><small>qopqoq shuncha mm dan koʻp tayanchsiz turmasin. 0 = oʻchiq</small></div>
             <div class="f"><label for="cTailSpan">Quyruq tayanchi, min % <span class="q" tabindex="0" data-tip="Singdirilgan qoldiq qavati pochkani har oʻq boʻyicha kamida shuncha foiz qoplasin.&#10;&#10;Nega boʻshliqdan tashqari yana shu kerak: 1910×300 li pochkaga 1720×160 li detal MARKAZGA qoʻyilsa chetdagi boʻshliqlar atigi 70 va 102 mm — boʻshliq chegarasi bemalol oʻtkazadi. Lekin qopqoq 300 mm enli pochkada 160 mm enli qirraga tayanadi (53 %) va ustiga pochka terilganda ARRA-KAMON boʻlib ag'dariladi.&#10;&#10;Ikki oʻq alohida oʻlchanadi, kichigi olinadi: bir oʻq boʻyicha 90 % boʻlishi ikkinchisini oqlamaydi.&#10;&#10;Namunada eng tor quyruq tayanchi 80 %, shuning uchun 80 % gacha chegara unga tegmaydi: oʻchiq/60/70/80 — 56 pochka, 90 % — 57 pochka (tayanch 91 %).&#10;0 = oʻchiq.">?</span></label><input id="cTailSpan" type="number" value="70" step="5" min="0" max="100"><small>qopqoq tor qirraga tayanib chayqalmasin. 0 = oʻchiq</small></div>
           </div>
-          <h4 class="sub">Tom — pochkaning eng ustki yuzasi</h4>
+          <h4 class="sub">Tom — «Tom sifati» = Qoʻlda boʻlganda tahrirlanadi</h4>
           <div class="fields">
+          <div class="f"><label for="cLidFill">Tom yopilishi, min % <span class="q" tabindex="0" data-tip="Eng ustki yuza (tom) tag yuzasining kamida shuncha foizini yopsin — ustiga boshqa pochka teriladi, ogʻirlik tekis tushsin.">?</span></label><input id="cLidFill" type="number" value="90" step="5"><small>eng ustki yuza — ustiga boshqa pochka teriladi</small></div>
+          <div class="f"><label for="cLidN">Tom detallari, maks <span class="q" tabindex="0" data-tip="Tom shuncha detaldan koʻp boʻlmasin. Koʻp mayda detalli tom ustiga pochka terilganda detallar alohida-alohida egiladi.">?</span></label><input id="cLidN" type="number" value="3" step="1" min="1" max="4"><small>2–3 detal birga yopishi mumkin</small></div>
+          <div class="f"><label for="cLidBal">Tom ulushi, min % <span class="q" tabindex="0" data-tip="Tomdagi eng kichik detal yuzasi ulushi. 2 detalda 60/40, 3 detalda 30/30/30 — 88/12 kabi notekis tom rad etiladi. Maks 50.">?</span></label><input id="cLidBal" type="number" value="40" step="5" min="0" max="50"><small>2 detalda 60/40, 3 detalda 30/30/30. 88/12 rad etiladi. Maks 50</small></div>
+          <div class="f"><label for="cLidTol">Tom kichikligi, maks mm <span class="q" tabindex="0" data-tip="Tom tag gabaritidan shuncha mm kichik boʻlishi mumkin. Kichraytirsangiz tom toʻliqroq boʻladi, lekin tom nomzodi kamayadi.">?</span></label><input id="cLidTol" type="number" value="100" step="10"><small>tag gabaritidan shuncha kichik boʻlishi mumkin</small></div>
             <div class="f"><label for="cLidSupp">Tom detali tayanchi, min % <span class="q" tabindex="0" data-tip="HAR BIR tom detali oʻz yuzasining kamida shuncha foizi bilan ostidagi qavatga tegishi shart. Ostida qavat boʻlmasa — tag detalga.&#10;&#10;«Quyruq tayanchi» dan farqi: u BUTUN qavatning umumiy kengligini oʻlchaydi va tomning biron detali ostidagi qavatdan butunlay chiqib ketganini koʻrmaydi. Sexda koʻrilgani shu: tom uch detaldan iborat, oʻrtadagisi yaxshi tegadi, chetdagi ikkitasi osilib qolgan — tegish yuzasi 30 % ham emas.&#10;&#10;Nega har detal alohida: uchtasining oʻrtachasi 70 % boʻlishi mumkin, lekin chetdagi bittasi 0 % boʻlsa u baribir sinadi. Oʻrtacha nosozlikni yashiradi.&#10;&#10;Namunada: oʻchiq — 54 pochka, 65 % — 56, 80 % — 57, 90 % — 58. Eng yomon tom tayanchi 80 % da qoladi — bu buyurtma undan yaxshisini bermaydi, shuning uchun 90 % qoʻyilsa audit ogohlantiradi.&#10;0 = oʻchiq.">?</span></label><input id="cLidSupp" type="number" value="65" step="5" min="0" max="100"><small>har tom detali ostidagi qavatga shuncha % tegsin. 0 = oʻchiq</small></div>
             <div class="f"><label for="cLidBed">Tom ostidagi qavat, min % <span class="q" tabindex="0" data-tip="Tom ostidagi qavat («toʻshak») oʻz yuzasining kamida shuncha foizini qoplasin.&#10;&#10;«Tom detali tayanchi» dan farqi: u har detalning TEGISH yuzasini oʻlchaydi, bu esa toʻshakning OʻZI toʻlaligini talab qiladi.&#10;&#10;Sabab: tom uch tasmadan iborat boʻlsa (1897×100 + 1790×100 + 1897×100) va ostidagi qavat faqat oʻrtani egallasa, chetdagi ikkita tasma qirraga tayanib DUMALAB ketadi — tasma tortilgunga qadar joyidan qoʻzgʻaladi.&#10;&#10;Amalda bu QUYRUQqa tegishli: oddiy qavatlar allaqachon toʻldirish chegarasidan oʻtadi, quyruq esa undan ozod. Endi siyrak quyruq tom ostiga qoʻyilmaydi — bir qavat pastga suqiladi yoki umuman singdirilmaydi.&#10;&#10;Buzilishi XATO hisoblanadi (audit TOM_TAGI).&#10;&#10;Namunada: oʻchiq — 55 pochka (eng yomon toʻshak 75 %, 3 ta buzilish), 85 % — 56 pochka (85 %, buzilish yoʻq).&#10;0 = oʻchiq.">?</span></label><input id="cLidBed" type="number" value="85" step="5" min="0" max="100"><small>siyrak quyruq tom ostiga tushmasin. 0 = oʻchiq</small></div>
           </div>
@@ -411,14 +429,8 @@
       <details class="adv">
         <summary>Nozik sozlash — terish algoritmi <span>(bir marta oʻrnatiladi)</span><em class="advmod"></em></summary>
         <div class="fields">
-          <div class="f"><label for="cOvh">Chiqish, mm (bir tomon)</label><input id="cOvh" type="number" value="20" step="1"><small>umumiy 2× — jami 40 mm</small></div>
           <div class="f"><label for="cFill">Qavat toʻldirish, min %</label><input id="cFill" type="number" value="85" step="5"><small>tag detal yuzasining foizi</small></div>
-          <div class="f"><label for="cLidFill">Tom (qopqoq) yopilishi, min %</label><input id="cLidFill" type="number" value="90" step="5"><small>eng ustki yuza — ustiga boshqa pochka teriladi</small></div>
-          <div class="f"><label for="cLidN">Qopqoq detallari, maks</label><input id="cLidN" type="number" value="3" step="1" min="1" max="4"><small>2–3 detal birga yopishi mumkin</small></div>
-          <div class="f"><label for="cLidBal">Tom ulushi, min %</label><input id="cLidBal" type="number" value="40" step="5" min="0" max="50"><small>2 detalda 60/40, 3 detalda 30/30/30. 88/12 rad etiladi. Maks 50</small></div>
-          <div class="f"><label for="cLidTol">Qopqoq kichikligi, maks mm</label><input id="cLidTol" type="number" value="100" step="10"><small>tag gabaritidan shuncha kichik boʻlishi mumkin</small></div>
           <div class="f"><label for="cMaxLay">Maks. qavat soni</label><input id="cMaxLay" type="number" value="12" step="1" min="0"><small>tag + oʻrta + qopqoq. 0 = cheklovsiz</small></div>
-          <div class="f"><label for="cTries">Variatsiya urinishlari</label><input id="cTries" type="number" value="4" step="1"><small>butun buyurtma shuncha marta qayta teriladi</small></div>
         </div>
       </details>
 
@@ -464,9 +476,7 @@
       </div>
 
       <h3>Loyiha</h3>
-      <div class="note" id="saveNote" style="display:none;border-left-color:var(--ok)">Sozlamalar saqlandi — keyingi ochilishda avtomatik qoʻllanadi.</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn pri" id="btnSave">Sozlamalarni saqlash</button>
         <button class="btn" id="btnReset">Standartga qaytarish</button>
         <button class="btn" id="btnRepack">Qayta pochkalash</button>
         <button class="btn" id="btnPrintAll">Barcha cheklarni chop etish</button>
@@ -487,6 +497,8 @@
   <div style="background:var(--panel);border:1px solid var(--line2);border-radius:6px;padding:22px;width:400px;max-width:92vw">
     <div style="font-size:15px;font-weight:700;letter-spacing:.04em;margin-bottom:4px">YANGI BUYURTMA</div>
     <div id="mFile" style="font-family:var(--mono);font-size:11px;color:var(--ink3);margin-bottom:16px"></div>
+    <!-- v22: profil taklifi (17-profile.js) -->
+    <div id="mProf" style="display:none"></div>
     <div class="f" style="margin:10px 0 4px"><label>Modullar (<span id="mRoomN">0</span> ta)</label></div>
     <div id="mRoomsInfo" style="font-family:var(--mono);font-size:11px;color:var(--ink2);margin:0 0 12px;max-height:110px;overflow:auto;border:1px solid var(--line);border-radius:var(--r);padding:7px 9px;line-height:1.8"></div>
     <div class="f" style="margin:0 0 4px"><label>Detal klasslari (<span id="mClsN">0</span> ta) — belgilangani ALOHIDA pochkalanadi</label></div>
@@ -529,5 +541,6 @@
 <script src="src/js/14-sort.js"></script>
 <script src="src/js/15-post.js"></script>
 <script src="src/js/16-server.js"></script>
+<script src="src/js/17-profile.js"></script>
 </body>
 </html>

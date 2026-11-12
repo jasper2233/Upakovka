@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-<!-- Upakofka tizimi — build c41d6c0f -->
+<!-- Upakofka tizimi — build 4d6768af -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Upakofka tizimi</title>
@@ -629,6 +629,21 @@ body.post-tv .cbox{width:96px}
 body.post-tv .rackrow .rstat,body.post-tv .rackbar,body.post-tv .sortfoot{font-size:15px}
 body.post-tv .cbox b{font-size:16px}
 body.post-tv .cbox s{font-size:13px}
+
+/* ---- v22: profil paneli va tom maydonlari ---- */
+.profbar{margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-left:3px solid var(--info);
+  border-radius:var(--r);background:var(--panel)}
+.profrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.profrow b{font-size:12.5px;letter-spacing:.04em;margin-right:4px}
+.profrow .grow{flex:1}
+.profrow select,.profrow input{background:var(--panel);border:1px solid var(--line2);border-radius:var(--r);
+  color:var(--ink);font-family:var(--mono);font-size:12.5px;padding:7px 9px}
+.profrow select:focus,.profrow input:focus{outline:none;border-color:var(--mark)}
+.profrow select{min-width:200px}
+.profrow input{flex:1;min-width:160px}
+.profcur{font-family:var(--mono);font-size:11.5px;color:var(--ok)}
+#profNote:empty{display:none}
+.fields input:disabled{opacity:.55;cursor:not-allowed}
 
 /* stelyaj QR belgisi */
 .label.racklbl{align-items:center}
@@ -1270,6 +1285,25 @@ select:focus-visible,
       <!-- v22: sozlamalar orasidagi ZIDDIYATLAR — confCheck() toʻldiradi -->
       <div id="confWarn"></div>
 
+      <!-- v22: NOMLANGAN PROFIL — meʼyorlar toʻplami (TZ-v3 §3.3). Boshqaruvlar sozlama emas (data-noconf) -->
+      <div class="profbar">
+        <div class="profrow">
+          <b>Profil <span class="q" tabindex="0" data-tip="Meʼyorlarning NOMLANGAN toʻplami — masalan «Mijozga» va «Omborga». Tanlansa hamma maydon bir yoʻla oʻrnatiladi.&#10;&#10;Kiradi: shu ekrandagi meʼyorlar, modul/material kesimi, material katalogi, qalinlik matritsasi, klass guruhlari. Kirmaydi: stelyaj, chek printeri, QR prefiksi (kompyuterniki) va modul nomlari/guruhlari (buyurtmaniki).&#10;&#10;Kalit soʻz loyiha yoki fayl nomida boʻlsa, yuklashda profil oʻzi taklif qilinadi.">?</span></b>
+          <select id="profSel" data-noconf="1"></select>
+          <button type="button" class="btn" id="btnProfApply">Qoʻllash</button>
+          <button type="button" class="btn gh" id="btnProfDel">Oʻchirish</button>
+          <span class="grow"></span>
+          <span id="profCur" class="profcur"></span>
+        </div>
+        <div class="profrow">
+          <input id="profName" data-noconf="1" type="text" placeholder="profil nomi — masalan: Mijozga" spellcheck="false" autocomplete="off">
+          <input id="profMatch" data-noconf="1" type="text" placeholder="loyiha nomidagi kalit soʻz (ixtiyoriy)" spellcheck="false" autocomplete="off">
+          <button type="button" class="btn pri" id="btnProfSave">Joriy meʼyorlarni profil qilib saqlash</button>
+        </div>
+        <div id="profNote" class="msg"></div>
+      </div>
+      <div class="note" id="saveNote" style="margin:0 0 14px;border-left-color:var(--ok)">Har oʻzgarish shu kompyuterda avtomatik saqlanadi.</div>
+
       <!-- ============== STANDART OQIM ============== -->
       <div class="blk blk-std">
         <h3><span class="tag">STANDART</span>Standart pochka
@@ -1291,6 +1325,7 @@ select:focus-visible,
             <label class="chk"><input type="checkbox" id="cOvhOn" checked><span>oʻrta qavatlar tagdan chiqsin</span></label>
             <small>har pochkada alohida ham belgilanadi</small>
           </div>
+          <div class="f"><label for="cOvh">Chiqish, mm (bir tomon) <span class="q" tabindex="0" data-tip="Oʻrta qavat detali tag chetidan shuncha mm chiqib turishi mumkin (har tomonga). «Chiqishga ruxsat» oʻchiq boʻlsa — 0.&#10;&#10;v22: ilgari ikkinchi maydon ham bor edi («Chetdan qochish») va ikkalasining KICHIGI ishlardi — standartda (20 va 40) faqat shu maydon. Endi bitta.&#10;&#10;Oshirsangiz qavat zichroq toʻladi va pochka kamayadi, lekin chet osilib qoladi.">?</span></label><input id="cOvh" type="number" value="20" step="1"><small>har tomonga; jami 2× (20 mm — jami 40 mm)</small></div>
         </div>
 
         <details class="adv adv-in">
@@ -1302,10 +1337,8 @@ select:focus-visible,
           </div>
           <h4 class="sub">Tag (paddon) sifati</h4>
           <div class="fields">
-            <div class="f"><label for="cBaseLMin">Tag boʻyi, min mm <span class="q" tabindex="0" data-tip="Kalta detal tag boʻlmasin. 0 = cheklovsiz.&#10;&#10;Odatda kerak emas: «Paddon qamrovi» va «Chetdan qochish» kalta tagni allaqachon rad etadi.">?</span></label><input id="cBaseLMin" type="number" value="0" step="10"><small>0 = cheklovsiz</small></div>
             <div class="f"><label for="cBaseT">Tag/qopqoq min. qalinlik, mm <span class="q" tabindex="0" data-tip="Tag ham, qopqoq ham shundan yupqa detaldan boʻlmaydi.&#10;&#10;3 mm HDF orqa devor ustiga pochka terilsa sinadi, tagda esa butun pochkani koʻtarolmaydi.&#10;&#10;Istisno: butun guruh yupqa boʻlsa (masalan faqat 3 mm orqa devorlar) tizim oʻzi eng qalinini tag qilib oladi — aks holda ular umuman pochkalanmay qolardi.">?</span></label><input id="cBaseT" type="number" value="16" step="1"><small>yupqa detal tag ham, qopqoq ham boʻlolmaydi</small></div>
             <div class="f"><label for="cBaseCover">Paddon qamrovi, min % <span class="q" tabindex="0" data-tip="Tag detal yuzasi butun pochka gabaritining kamida shuncha foizini egallasin (80…100).&#10;&#10;Kichik tag — pochkaning chetlari havoda qoladi, yuk tashishda pastdagi detal sinadi.&#10;&#10;Koʻtarsangiz sifat oshadi, lekin tag nomzodi kamayib pochka soni oshadi. Namunada: 80…90 % — 56 pochka, 95 % — 58, 100 % — 64.">?</span></label><input id="cBaseCover" type="number" value="90" step="1" min="80" max="100"><small>tag yuzasi gabaritning shuncha % i (80…100)</small></div>
-            <div class="f"><label for="cBaseInset">Chetdan qochish, maks mm <span class="q" tabindex="0" data-tip="Tag detal umumiy gabaritdan shuncha mm ichkarida boʻlishi mumkin.&#10;&#10;Undan koʻp qochsa pochka chekkasi tayanchsiz osilib qoladi. 40 mm — qoʻlda koʻtarilganda sezilmaydigan chet.">?</span></label><input id="cBaseInset" type="number" value="40" step="5" min="0"><small>tag gabaritdan shuncha ichkarida boʻlishi mumkin</small></div>
           </div>
         </details>
       </div>
@@ -1343,11 +1376,7 @@ select:focus-visible,
           <div class="f"><label for="cTare">Qadoq materiali (tara), kg <span class="q" tabindex="0" data-tip="Qogʻoz + burchak + tasma massasi. Toza massaga qoʻshilib BRUTTO beradi.&#10;&#10;Brutto chekda koʻrsatiladi va «2 KISHI» belgisi shunga qarab qoʻyiladi. Terish chegarasi (35/40 kg) esa TOZA massa boʻyicha hisoblanadi.">?</span></label><input id="cTare" type="number" value="0.6" step="0.1" min="0"><small>qogʻoz + burchak + tasma. Bruttoga qoʻshiladi</small></div>
           <div class="f"><label for="cPartKgMax">Bitta detal maks. massasi, kg <span class="q" tabindex="0" data-tip="Sexdagi eng ogʻir BITTA detal — odatda yaxlit list (2800×2070×16 LDSP ≈ 65 kg).&#10;&#10;Undan ogʻir detal chiqsa — bu deyarli har doim massa xatosi: material katalogda yoʻq (zichlik taxminiy) yoki qalinlik notoʻgʻri. Detal baribir pochkalanadi, lekin Diagnostika va audit buni aytadi.&#10;&#10;Namuna fayllarda shunday chiqqan: 30 mm «MATO» paneli LDSP deb hisoblanib 90,7 kg boʻlgan.&#10;0 = tekshiruv oʻchiq.">?</span></label><input id="cPartKgMax" type="number" value="65" step="1" min="0"><small>undan ogʻiri — massa xatosi deb ogohlantiriladi</small></div>
           <div class="f"><label for="cSepMat">Moʻrt detallar — alohida pochka <span class="q" tabindex="0" data-tip="Material yoki detal NOMIDA shu soʻzlardan biri boʻlsa — detal moʻrt: koʻzgu, oyna polka, alyumin ramkali oynali detal, oyna yopishtirilgan detal.&#10;&#10;Moʻrt detal umumiy pochkaga QOʻSHILMAYDI — har biri ALOHIDA pochka boʻladi, chekida va roʻyxatda «⚠ EHTIYOT BOʻLING» turadi.&#10;&#10;Vergul bilan; katta-kichik harf va tutuq belgisi farqsiz (koʻzgu = ko'zgu = kozgu). Boʻsh qoldirilsa — moʻrt detal yoʻq.">?</span></label><input id="cSepMat" type="text" value="OYNA, KOZGU, ZERKAL, STEKL, ЗЕРКАЛ, СТЕКЛ, ALYUMIN" spellcheck="false"><small>material yoki detal nomidagi soʻz — vergul bilan</small></div>
-          <div class="f">
-            <label>Qalinlik <span class="q" tabindex="0" data-tip="Yoqilgan holda har qalinlik alohida pochkalanadi: 16 mm alohida, 3 mm alohida.&#10;&#10;Oʻchirilganda turli qalinlik bitta pochkaga tushishi mumkin (lekin bitta QAVATda baribir aralashmaydi — pastdagi «Qalinlik matritsasi» ga qarang).">?</span></label>
-            <label class="chk"><input type="checkbox" id="cThick" checked><span>qalinlik boʻyicha ajratish</span></label>
-            <small>16 mm alohida, 3 mm alohida</small>
-          </div>
+          <div class="f"><label for="cTomQ">Tom sifati <span class="q" tabindex="0" data-tip="Pochkaning eng ustki yuzasi (tom) — ustiga boshqa pochka teriladi. Oltita tom meʼyori bitta darajaga birlashtirilgan:&#10;&#10;Qattiq — tom toʻliqroq, kam detalli, tayanchi kuchli (205 faylda +79 pochka);&#10;Oʻrtacha — standart;&#10;Yumshoq — tom siyrakroq boʻlishi mumkin (−87 pochka).&#10;&#10;«Qoʻlda» — pastdagi «Kengaytirilgan» boʻlimida oltita maydon ochiladi.">?</span></label><select id="cTomQ"><option value="qattiq">Qattiq</option><option value="orta" selected>Oʻrtacha (standart)</option><option value="yumshoq">Yumshoq</option><option value="qolda">Qoʻlda — 6 maydon</option></select><small>qattiq +79 pochka · yumshoq −87 (205 fayl)</small></div>
         </div>
 
         <details class="adv adv-in">
@@ -1362,8 +1391,12 @@ select:focus-visible,
             <div class="f"><label for="cTailGap">Quyruqda maks. boʻshliq, mm <span class="q" tabindex="0" data-tip="Singdirilgan qoldiq qavatida detallar orasida (va tag chetigacha) qolgan eng katta TAYANCHSIZ oraliq.&#10;&#10;Nega foiz emas, millimetr: 4 ta tor detal butun chuqurlik boʻylab tarqalsa 44 % beradi va qopqoq bemalol tayanadi; oʻsha 44 % ikkita keng detal boʻlib yigʻilsa qopqoq 681 mm boʻshliq ustidan oʻtadi va ustiga pochka terilganda sinadi.&#10;&#10;Kichraytirsangiz sifat oshadi, pochka soni ham oshadi. Namuna buyurtmada eng katta quyruq boʻshligʻi 187 mm, shuning uchun 200 mm dan yuqori chegara unga umuman tegmaydi: oʻchiq/300/200 — 56 pochka, 150 — 57, 100 — 57, 50 — 58.&#10;0 = oʻchiq.">?</span></label><input id="cTailGap" type="number" value="300" step="25" min="0"><small>qopqoq shuncha mm dan koʻp tayanchsiz turmasin. 0 = oʻchiq</small></div>
             <div class="f"><label for="cTailSpan">Quyruq tayanchi, min % <span class="q" tabindex="0" data-tip="Singdirilgan qoldiq qavati pochkani har oʻq boʻyicha kamida shuncha foiz qoplasin.&#10;&#10;Nega boʻshliqdan tashqari yana shu kerak: 1910×300 li pochkaga 1720×160 li detal MARKAZGA qoʻyilsa chetdagi boʻshliqlar atigi 70 va 102 mm — boʻshliq chegarasi bemalol oʻtkazadi. Lekin qopqoq 300 mm enli pochkada 160 mm enli qirraga tayanadi (53 %) va ustiga pochka terilganda ARRA-KAMON boʻlib ag'dariladi.&#10;&#10;Ikki oʻq alohida oʻlchanadi, kichigi olinadi: bir oʻq boʻyicha 90 % boʻlishi ikkinchisini oqlamaydi.&#10;&#10;Namunada eng tor quyruq tayanchi 80 %, shuning uchun 80 % gacha chegara unga tegmaydi: oʻchiq/60/70/80 — 56 pochka, 90 % — 57 pochka (tayanch 91 %).&#10;0 = oʻchiq.">?</span></label><input id="cTailSpan" type="number" value="70" step="5" min="0" max="100"><small>qopqoq tor qirraga tayanib chayqalmasin. 0 = oʻchiq</small></div>
           </div>
-          <h4 class="sub">Tom — pochkaning eng ustki yuzasi</h4>
+          <h4 class="sub">Tom — «Tom sifati» = Qoʻlda boʻlganda tahrirlanadi</h4>
           <div class="fields">
+          <div class="f"><label for="cLidFill">Tom yopilishi, min % <span class="q" tabindex="0" data-tip="Eng ustki yuza (tom) tag yuzasining kamida shuncha foizini yopsin — ustiga boshqa pochka teriladi, ogʻirlik tekis tushsin.">?</span></label><input id="cLidFill" type="number" value="90" step="5"><small>eng ustki yuza — ustiga boshqa pochka teriladi</small></div>
+          <div class="f"><label for="cLidN">Tom detallari, maks <span class="q" tabindex="0" data-tip="Tom shuncha detaldan koʻp boʻlmasin. Koʻp mayda detalli tom ustiga pochka terilganda detallar alohida-alohida egiladi.">?</span></label><input id="cLidN" type="number" value="3" step="1" min="1" max="4"><small>2–3 detal birga yopishi mumkin</small></div>
+          <div class="f"><label for="cLidBal">Tom ulushi, min % <span class="q" tabindex="0" data-tip="Tomdagi eng kichik detal yuzasi ulushi. 2 detalda 60/40, 3 detalda 30/30/30 — 88/12 kabi notekis tom rad etiladi. Maks 50.">?</span></label><input id="cLidBal" type="number" value="40" step="5" min="0" max="50"><small>2 detalda 60/40, 3 detalda 30/30/30. 88/12 rad etiladi. Maks 50</small></div>
+          <div class="f"><label for="cLidTol">Tom kichikligi, maks mm <span class="q" tabindex="0" data-tip="Tom tag gabaritidan shuncha mm kichik boʻlishi mumkin. Kichraytirsangiz tom toʻliqroq boʻladi, lekin tom nomzodi kamayadi.">?</span></label><input id="cLidTol" type="number" value="100" step="10"><small>tag gabaritidan shuncha kichik boʻlishi mumkin</small></div>
             <div class="f"><label for="cLidSupp">Tom detali tayanchi, min % <span class="q" tabindex="0" data-tip="HAR BIR tom detali oʻz yuzasining kamida shuncha foizi bilan ostidagi qavatga tegishi shart. Ostida qavat boʻlmasa — tag detalga.&#10;&#10;«Quyruq tayanchi» dan farqi: u BUTUN qavatning umumiy kengligini oʻlchaydi va tomning biron detali ostidagi qavatdan butunlay chiqib ketganini koʻrmaydi. Sexda koʻrilgani shu: tom uch detaldan iborat, oʻrtadagisi yaxshi tegadi, chetdagi ikkitasi osilib qolgan — tegish yuzasi 30 % ham emas.&#10;&#10;Nega har detal alohida: uchtasining oʻrtachasi 70 % boʻlishi mumkin, lekin chetdagi bittasi 0 % boʻlsa u baribir sinadi. Oʻrtacha nosozlikni yashiradi.&#10;&#10;Namunada: oʻchiq — 54 pochka, 65 % — 56, 80 % — 57, 90 % — 58. Eng yomon tom tayanchi 80 % da qoladi — bu buyurtma undan yaxshisini bermaydi, shuning uchun 90 % qoʻyilsa audit ogohlantiradi.&#10;0 = oʻchiq.">?</span></label><input id="cLidSupp" type="number" value="65" step="5" min="0" max="100"><small>har tom detali ostidagi qavatga shuncha % tegsin. 0 = oʻchiq</small></div>
             <div class="f"><label for="cLidBed">Tom ostidagi qavat, min % <span class="q" tabindex="0" data-tip="Tom ostidagi qavat («toʻshak») oʻz yuzasining kamida shuncha foizini qoplasin.&#10;&#10;«Tom detali tayanchi» dan farqi: u har detalning TEGISH yuzasini oʻlchaydi, bu esa toʻshakning OʻZI toʻlaligini talab qiladi.&#10;&#10;Sabab: tom uch tasmadan iborat boʻlsa (1897×100 + 1790×100 + 1897×100) va ostidagi qavat faqat oʻrtani egallasa, chetdagi ikkita tasma qirraga tayanib DUMALAB ketadi — tasma tortilgunga qadar joyidan qoʻzgʻaladi.&#10;&#10;Amalda bu QUYRUQqa tegishli: oddiy qavatlar allaqachon toʻldirish chegarasidan oʻtadi, quyruq esa undan ozod. Endi siyrak quyruq tom ostiga qoʻyilmaydi — bir qavat pastga suqiladi yoki umuman singdirilmaydi.&#10;&#10;Buzilishi XATO hisoblanadi (audit TOM_TAGI).&#10;&#10;Namunada: oʻchiq — 55 pochka (eng yomon toʻshak 75 %, 3 ta buzilish), 85 % — 56 pochka (85 %, buzilish yoʻq).&#10;0 = oʻchiq.">?</span></label><input id="cLidBed" type="number" value="85" step="5" min="0" max="100"><small>siyrak quyruq tom ostiga tushmasin. 0 = oʻchiq</small></div>
           </div>
@@ -1402,14 +1435,8 @@ select:focus-visible,
       <details class="adv">
         <summary>Nozik sozlash — terish algoritmi <span>(bir marta oʻrnatiladi)</span><em class="advmod"></em></summary>
         <div class="fields">
-          <div class="f"><label for="cOvh">Chiqish, mm (bir tomon)</label><input id="cOvh" type="number" value="20" step="1"><small>umumiy 2× — jami 40 mm</small></div>
           <div class="f"><label for="cFill">Qavat toʻldirish, min %</label><input id="cFill" type="number" value="85" step="5"><small>tag detal yuzasining foizi</small></div>
-          <div class="f"><label for="cLidFill">Tom (qopqoq) yopilishi, min %</label><input id="cLidFill" type="number" value="90" step="5"><small>eng ustki yuza — ustiga boshqa pochka teriladi</small></div>
-          <div class="f"><label for="cLidN">Qopqoq detallari, maks</label><input id="cLidN" type="number" value="3" step="1" min="1" max="4"><small>2–3 detal birga yopishi mumkin</small></div>
-          <div class="f"><label for="cLidBal">Tom ulushi, min %</label><input id="cLidBal" type="number" value="40" step="5" min="0" max="50"><small>2 detalda 60/40, 3 detalda 30/30/30. 88/12 rad etiladi. Maks 50</small></div>
-          <div class="f"><label for="cLidTol">Qopqoq kichikligi, maks mm</label><input id="cLidTol" type="number" value="100" step="10"><small>tag gabaritidan shuncha kichik boʻlishi mumkin</small></div>
           <div class="f"><label for="cMaxLay">Maks. qavat soni</label><input id="cMaxLay" type="number" value="12" step="1" min="0"><small>tag + oʻrta + qopqoq. 0 = cheklovsiz</small></div>
-          <div class="f"><label for="cTries">Variatsiya urinishlari</label><input id="cTries" type="number" value="4" step="1"><small>butun buyurtma shuncha marta qayta teriladi</small></div>
         </div>
       </details>
 
@@ -1455,9 +1482,7 @@ select:focus-visible,
       </div>
 
       <h3>Loyiha</h3>
-      <div class="note" id="saveNote" style="display:none;border-left-color:var(--ok)">Sozlamalar saqlandi — keyingi ochilishda avtomatik qoʻllanadi.</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn pri" id="btnSave">Sozlamalarni saqlash</button>
         <button class="btn" id="btnReset">Standartga qaytarish</button>
         <button class="btn" id="btnRepack">Qayta pochkalash</button>
         <button class="btn" id="btnPrintAll">Barcha cheklarni chop etish</button>
@@ -1478,6 +1503,8 @@ select:focus-visible,
   <div style="background:var(--panel);border:1px solid var(--line2);border-radius:6px;padding:22px;width:400px;max-width:92vw">
     <div style="font-size:15px;font-weight:700;letter-spacing:.04em;margin-bottom:4px">YANGI BUYURTMA</div>
     <div id="mFile" style="font-family:var(--mono);font-size:11px;color:var(--ink3);margin-bottom:16px"></div>
+    <!-- v22: profil taklifi (17-profile.js) -->
+    <div id="mProf" style="display:none"></div>
     <div class="f" style="margin:10px 0 4px"><label>Modullar (<span id="mRoomN">0</span> ta)</label></div>
     <div id="mRoomsInfo" style="font-family:var(--mono);font-size:11px;color:var(--ink2);margin:0 0 12px;max-height:110px;overflow:auto;border:1px solid var(--line);border-radius:var(--r);padding:7px 9px;line-height:1.8"></div>
     <div class="f" style="margin:0 0 4px"><label>Detal klasslari (<span id="mClsN">0</span> ta) — belgilangani ALOHIDA pochkalanadi</label></div>
@@ -1745,7 +1772,11 @@ var S = {
        baseInset — tag gabaritdan har tomonga ≤ shuncha mm ichkarida
      Ikkalasi BIRGA tekshiriladi: foiz umumiy qamrovni, mm esa bitta yomon
      tomonni ushlaydi (uzun pochkada 5% ham 60 mm boʻlishi mumkin). */
-  baseCover:90, baseInset:40,
+  /* v22: baseInset («Chetdan qochish») OLIB TASHLANDI — chiqish chegarasi
+     min(chiqish, chetdan qochish) edi, standartda (20 va 40) faqat «Chiqish»
+     ishlardi; ikki maydon bitta narsani boshqarardi. Endi faqat S.ovh. */
+  baseCover:90, baseInset:null,
+  tomQ:"orta",          // v22: «Tom sifati» — TOM_PRESETS (pastda); «qolda» — 6 maydon qoʻlda
 
   /* v14: pochka maks BALANDLIGI, mm. 0 = cheklovsiz. Qavat soni (maxLayers)
      aralash qalinlikda balandlikni yomon oʻlchaydi: 12 ta 3 mm = 36 mm,
@@ -2054,6 +2085,24 @@ function splitFix(split, mode, rules){
   // eski rejim nomi bor, lekin qoidasi yoʻq — oʻsha rejimning maʼnosi bilan
   return (m === "conv") ? { prod:false, mat:true } : { prod:true, mat:false };
 }
+/* v22: TOM SIFATI — oltita tom meʼyori bitta tanlovga birlashtirildi.
+   205 ta real faylda oʻlchangan (audit xatosi uchalasida ham 0):
+     qattiq  — 2933 pochka (+79): tom toʻliqroq, kam detalli, tayanchi kuchli;
+     orta    — 2854 pochka: avvalgi standart qiymatlar;
+     yumshoq — 2767 pochka (−87): tom siyrakroq boʻlishi mumkin.
+   «qolda» — maydonlar ochiladi va oʻzi kiritiladi. */
+var TOM_PRESETS = {
+  qattiq:  { lidFill:95, lidN:2, lidBal:45, lidTol:50,  lidSupp:75, lidBed:90 },
+  orta:    { lidFill:90, lidN:3, lidBal:40, lidTol:100, lidSupp:65, lidBed:85 },
+  yumshoq: { lidFill:80, lidN:4, lidBal:30, lidTol:150, lidSupp:55, lidBed:75 }
+};
+/* v22: SOZLAMADAN DOIMIYGA AYLANGANLAR (soddalashtirish):
+     tries   — 4 → 8 urinish 205 faylda atigi −15 pochka, hisob vaqti +47 %;
+     byThick — har doim yoqiq: oʻchirilsa qalinliklar aralashib, qalinlik
+               matritsasini bekor qilardi (matritsa buni nazorat bilan qiladi);
+     baseLMin — 0: «Paddon qamrovi» kalta tagni allaqachon rad etadi. */
+var TRIES_FIXED = 4;
+
 var P = null;      // loyiha: {name, uuid, materials[], parts[]}
 var PACKS = [];    // hisoblangan pochkalar
 var CUR = -1;      // tanlangan pochka
@@ -2074,11 +2123,33 @@ var DENS = {3:900, 4:850, 6:850, 8:800, 10:700, 16:700, 18:700, 22:680, 25:680};
    tarkibi har xil materialni tsex katalogga oʻzi qoʻshadi. */
 var NAME_DENS = [
   { re:/OYNA|KOZGU|KO.ZGU|ZERKAL|STEKL|GLASS|SHISHA/i, d:2500 },   // shisha, koʻzgu
-  { re:/KAFEL|PLITKA|KERAMI/i,                         d:2000 }    // keramik plitka
+  { re:/KAFEL|PLITKA|KERAM/i,                          d:2000 }    // keramik plitka, keramogranit (v22)
 ];
 function nameDens(nm){
-  for (var i = 0; i < NAME_DENS.length; i++) if (NAME_DENS[i].re.test(nm || "")) return NAME_DENS[i].d;
+  var lt = translit(nm);                       // v22: «Керамогранит» ham tanilsin
+  for (var i = 0; i < NAME_DENS.length; i++)
+    if (NAME_DENS[i].re.test(nm || "") || NAME_DENS[i].re.test(lt)) return NAME_DENS[i].d;
   return 0;
+}
+/* v22: KIRILL -> LOTIN. Material nomi kirillcha boʻlsa («ЛДСП Белый», «МДФ»,
+   «Керамогранит») katalogdagi lotincha kalit («LDSP», «MDF») unga mos
+   kelmasdi va massa taxminiy hisoblanardi — 5 mm keramogranit yogʻoch
+   zichligida, yaʼni 3 marta yengil chiqardi. Oʻzbek lotin yozuvi boʻyicha:
+   Х -> X (ХДФ = XDF). Natija katta harfda. */
+var TRANSLIT = { "А":"A","Б":"B","В":"V","Г":"G","Д":"D","Е":"E","Ё":"YO","Ж":"J","З":"Z","И":"I",
+  "Й":"Y","К":"K","Л":"L","М":"M","Н":"N","О":"O","П":"P","Р":"R","С":"S","Т":"T","У":"U","Ф":"F",
+  "Х":"X","Ц":"TS","Ч":"CH","Ш":"SH","Щ":"SH","Ъ":"","Ы":"I","Ь":"","Э":"E","Ю":"YU","Я":"YA",
+  "Ў":"O","Қ":"Q","Ғ":"G","Ҳ":"H","І":"I","Ї":"I","Є":"E" };
+function translit(s){
+  return String(s || "").toUpperCase().replace(/[\u0400-\u04FF]/g, function(c){
+    return TRANSLIT.hasOwnProperty(c) ? TRANSLIT[c] : c;
+  });
+}
+/* v22: katalog yozuvining kg/m² — ZICHLIK (kg/m³) berilgan boʻlsa materialning
+   oʻz qalinligidan: bitta «LDSP · 700 kg/m³» yozuvi 10, 16, 18, 25 mm ni qoplaydi. */
+function catKgm2(c, t){
+  if (c && +c.dens > 0 && +t > 0) return +((+c.dens) * (+t) / 1000).toFixed(4);
+  return c ? (+c.kgm2 || 0) : 0;
 }
 /* Material topilmaganda ishlatiladigan zaxira zichlik (16 mm LDSP, kg/m²).
    Ilgari bu son toʻrt joyda qoʻlda yozilgan edi — biri oʻzgarsa qolgani ortda qolardi. */
@@ -2089,10 +2160,10 @@ var KGM2_FALLBACK = 11.2;
    takrorlanardi — yuqoridagi izoh vaʼda qilgan markazlashtirish chala edi. */
 var SHEET_DEFAULT = { l:2750, w:1830, t:16, kgm2:KGM2_FALLBACK };
 function catLookup(name, t){
-  var u = (name||"").toUpperCase(), best = null;
+  var u = translit(name), best = null;          // v22: kirillcha nom ham
   (S.matCat||[]).forEach(function(c){
     if (!c.key) return;
-    if (u.indexOf(String(c.key).toUpperCase()) < 0) return;
+    if (u.indexOf(translit(c.key)) < 0) return;
     var tOk = !c.t || Math.abs(c.t - t) < 0.51;
     if (!tOk) return;
     if (!best || String(c.key).length > String(best.key).length) best = c;   // aniqrogʻi gʻolib
@@ -2234,7 +2305,7 @@ function parseProject(xmlText){
     mats.push({ id:id, name:nm,
       l:num(g.getAttribute("l"), sp ? num(sp.getAttribute("l"), SHEET_DEFAULT.l) : SHEET_DEFAULT.l),
       w:num(g.getAttribute("w"), sp ? num(sp.getAttribute("w"), SHEET_DEFAULT.w) : SHEET_DEFAULT.w),
-      t:t, kgm2: cat ? cat.kgm2 : +(t/1000*dens).toFixed(3),
+      t:t, kgm2: cat ? catKgm2(cat, t) : +(t/1000*dens).toFixed(3),   // v22: zichlikli katalog
       cat: cat ? cat.key : null,
       sheets:num(g.getAttribute("count"), 0) });
   });
@@ -7859,12 +7930,14 @@ function renderCat(){
     d.innerHTML = '<div class="cathead"><b>'+esc(c.key || "—")+'</b>'+
         '<button class="btn del" data-del="'+i+'">Oʻchirish</button></div>'+
       '<div class="fields" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">'+
-      '<div class="f"><label>Kalit soʻz</label><input data-k="key" value="'+esc(c.key)+'"><small>nomda shu soʻz boʻlsa qoʻllanadi</small></div>'+
+      '<div class="f"><label>Kalit soʻz</label><input data-k="key" value="'+esc(c.key)+'"><small>nomda shu soʻz boʻlsa (kirillcha ham: ЛДСП = LDSP)</small></div>'+
       '<div class="f"><label>Qalinlik, mm</label><input data-k="t" type="number" step="0.1" value="'+c.t+'"><small>0 = istalgan</small></div>'+
+      // v22: zichlik — bitta yozuv hamma qalinlikni qoplaydi
+      '<div class="f"><label>Zichlik, kg/m³</label><input data-k="dens" type="number" step="10" min="0" value="'+(+c.dens || 0)+'"><small>0 = kg/m² ishlatiladi</small></div>'+
       '<div class="f"><label>List uzunligi</label><input data-k="l" type="number" value="'+c.l+'"></div>'+
       '<div class="f"><label>List eni</label><input data-k="w" type="number" value="'+c.w+'"></div>'+
       '<div class="f"><label>List kilosi</label><input data-k="sheet" type="number" step="0.1" value="'+sheetKg.toFixed(2)+'"></div>'+
-      '<div class="f"><label>kg/m²</label><input data-k="kgm2" type="number" step="0.01" value="'+c.kgm2+'"><small>oʻzaro bogʻliq</small></div>'+
+      '<div class="f"><label>kg/m²</label><input data-k="kgm2" type="number" step="0.01" value="'+c.kgm2+'"'+(+c.dens > 0 ? ' disabled' : '')+'><small>'+(+c.dens > 0 ? 'zichlikdan — materialning oʻz qalinligida' : 'oʻzaro bogʻliq')+'</small></div>'+
       '</div>';
     d.querySelectorAll("input").forEach(function(inp){
       inp.oninput = function(){
@@ -7872,14 +7945,17 @@ function renderCat(){
         if (k==="key"){ c.key = v; return; }
         if (k==="sheet"){ var ar = (c.l*c.w/1e6)||1; c.kgm2 = +(parseFloat(v||0)/ar).toFixed(4); }
         else c[k] = parseFloat(v||0) || 0;
+        // v22: zichlik va qalinlik bor — kg/m² shundan (koʻrinish uchun; qidiruv baribir catKgm2)
+        if ((k === "dens" || k === "t") && +c.dens > 0 && +c.t > 0) c.kgm2 = catKgm2(c, c.t);
       };
       // qayta chizish faqat fokus tark etilganda — aks holda yozayotganda kursor yoʻqoladi
       inp.onchange = function(){
         var k = inp.dataset.k;
-        if (k==="sheet"||k==="kgm2"||k==="l"||k==="w"||k==="key") renderCat();
+        if (k==="sheet"||k==="kgm2"||k==="l"||k==="w"||k==="key"||k==="dens"||k==="t") renderCat();
+        if (typeof saveConf === "function") saveConf();      // v22: katalog ham avtomatik saqlanadi
       };
     });
-    d.querySelector("[data-del]").onclick = function(){ S.matCat.splice(i,1); renderCat(); };
+    d.querySelector("[data-del]").onclick = function(){ S.matCat.splice(i,1); renderCat(); if (typeof saveConf === "function") saveConf(); };   // v22: avtomatik saqlash
     box.appendChild(d);
   });
   if (typeof fixNumberInputs === "function") fixNumberInputs(box);
@@ -7891,7 +7967,7 @@ function applyCat(){
   var hit = 0;
   P.materials.forEach(function(m){
     var c = catLookup(m.name, m.t);
-    if (c){ m.kgm2 = c.kgm2; m.cat = c.key; hit++; }
+    if (c){ m.kgm2 = catKgm2(c, m.t); m.cat = c.key; hit++; }   // v22: zichlik boʻlsa — qalinlikdan
   });
   return hit;
 }
@@ -9216,6 +9292,7 @@ var CONF_IDS = (function(){
       var e = els[i];
       if (!e.id) continue;
       if (e.type === "file" || e.type === "button" || e.type === "submit") continue;
+      if (e.getAttribute("data-noconf")) continue;     // v22: profil tanlovi va nomi — sozlama emas
       out.push(e.id);
     }
   }
@@ -9294,8 +9371,6 @@ function confCheck(){
     add("err", "Stelyaj/yacheyka soni kamaytirilmadi: " + S._sortLost + " da saralangan detallar turibdi — avval ularni qadoqlang.");
   if (S.minBase > (S.baseWMax || 1e9))
     add("err", "Tag eni min (" + S.minBase + " mm) maks (" + S.baseWMax + " mm) dan katta — hech bir detal tag boʻlolmaydi.");
-  if ((S.baseLMin || 0) > S.maxLen)
-    add("err", "Tag boʻyi min (" + S.baseLMin + " mm) maks (" + S.maxLen + " mm) dan katta — hech bir detal tag boʻlolmaydi.");
   if (S.minPartW && S.minPartW > (S.baseWMax || 1e9))
     add("err", "Standart detal min. eni (" + S.minPartW + " mm) tag eni maks (" + S.baseWMax + " mm) dan katta — hamma detal nostandartga oʻtadi.");
   if (S.minPartL && S.minPartL > S.maxLen)
@@ -9321,8 +9396,6 @@ function confCheck(){
     add("info", "Tom ostidagi qavat " + S.lidBed + " % — qavat toʻldirish (" + S.minFill + " %) dan qatʼiy boʻlolmaydi, amalda " + S.minFill + " % ishlatiladi.");
   if (S.ovhOn && S.baseCover >= 100)
     add("info", "Paddon qamrovi 100 % — «Chiqishga ruxsat» yoqilgan boʻlsa ham chiqish amalda boʻlmaydi.");
-  if (S.ovhOn && S.ovh > (S.baseInset != null ? S.baseInset : S.ovh))
-    add("info", "Chiqish " + S.ovh + " mm, chetdan qochish " + S.baseInset + " mm — amalda " + S.baseInset + " mm ishlatiladi.");
 
   var box = $("confWarn");
   if (box){
@@ -9352,22 +9425,73 @@ function saveConf(){
   o._modGroups = S.modGroups;   // v11
   o._clsGroups = S.clsGroups;
   o._unitNames = S.unitNames;   // v12: modul nomlari
-  o._split = S.split;           // v12: bitta pochkalash qoidasi (rejim oʻrniga)
+  /* v22: kesim FORMADAN — avtomatik saqlash qayta pochkalash tasdiq kutayotganda
+     ham ishlaydi, u paytda S.split hali eski (joriy pochkalarniki) boʻladi. */
+  o._split = ($("mgrByRoom") && $("mgrByMat"))
+    ? { prod:$("mgrByRoom").checked, mat:$("mgrByMat").checked } : S.split;
+  o._profile = S.profile || "";  // v22: oxirgi qoʻllangan profil
   o._splitV = 22;               // v22: standart buyurtma boʻyicha — eski saqlov bir marta koʻchiriladi
   o._cellOff = S.cellOff;       // yopiq yacheykalar — sexning fizik holati
   o._thickMix = S.thickMix;     // v20: qalinlik matritsasi ham meʼyor edi, saqlanmasdi
   o._thickMixV = 22;            // v22: «false» endi tsexning ANIQ tanlovi (pastda restoreConf)
   try {
     localStorage.setItem("upk_conf", JSON.stringify(o));
-    DEVICE_CONF = confCapture(); CONF_FROM_SNAP = false;   // v22: endi shular — tsex meʼyorlari
-    var n = $("saveNote"); n.style.display = "block";
-    setTimeout(function(){ n.style.display = "none"; }, 3500);
+    DEVICE_CONF = confCaptureForm(); CONF_FROM_SNAP = false;   // v22: endi shular — tsex meʼyorlari
+    var n = $("saveNote");
+    if (n){
+      var d = new Date(), p2 = function(x){ return (x < 10 ? "0" : "") + x; };
+      n.style.borderLeftColor = "var(--ok)";
+      n.textContent = "Avtomatik saqlandi ✓ " + p2(d.getHours()) + ":" + p2(d.getMinutes()) + ":" + p2(d.getSeconds()) +
+                      " — har oʻzgarish shu kompyuterda saqlanadi.";
+    }
   } catch(e){
     var n2 = $("saveNote");
-    n2.style.display = "block";
-    n2.style.borderLeftColor = "var(--alert)";
-    n2.textContent = "Bu brauzerda saqlash imkoni yoʻq: " + e.message;
+    if (n2){
+      n2.style.borderLeftColor = "var(--alert)";
+      n2.textContent = "Bu brauzerda saqlash imkoni yoʻq: " + e.message;
+    }
   }
+}
+/* v22: FORMADAGI meʼyorlar (S koʻrinishida) — S ga tegmasdan. Avtomatik saqlash
+   qayta pochkalash tasdiq kutayotganda ham ishlaydi; u paytda S joriy
+   pochkalarniki, saqlangani esa formada. readConf() bir zum formadan oʻqiydi,
+   S keyin oʻz holiga qaytadi. */
+function confCaptureForm(){
+  var bak = {}, k;
+  for (k in S) if (S.hasOwnProperty(k)) bak[k] = S[k];
+  var sp = JSON.parse(JSON.stringify(S.split || splitDefault()));
+  var tm = JSON.parse(JSON.stringify(S.thickMix || {}));
+  S.split = JSON.parse(JSON.stringify(sp)); S.thickMix = JSON.parse(JSON.stringify(tm));
+  try { readConf(); return confCapture(); }
+  finally {
+    for (k in S) if (S.hasOwnProperty(k) && !bak.hasOwnProperty(k)) delete S[k];
+    for (k in bak) S[k] = bak[k];
+    S.split = sp; S.thickMix = tm;
+  }
+}
+/* v22: tom sifati — eski saqlovda tanlov yoʻq: 6 qiymat qaysi darajaga mos */
+function tomPresetOf(o){
+  var map = { lidFill:"cLidFill", lidN:"cLidN", lidBal:"cLidBal", lidTol:"cLidTol", lidSupp:"cLidSupp", lidBed:"cLidBed" };
+  var names = Object.keys(TOM_PRESETS);
+  for (var i = 0; i < names.length; i++){
+    var pr = TOM_PRESETS[names[i]], same = true;
+    Object.keys(map).forEach(function(k){
+      var v = (o && map[k] in o) ? +o[map[k]] : TOM_PRESETS.orta[k];
+      if (Math.abs(v - pr[k]) > 1e-9) same = false;
+    });
+    if (same) return names[i];
+  }
+  return "qolda";
+}
+/* Tom maydonlari: daraja tanlangan boʻlsa — uning qiymatlari, oʻchirilgan holda */
+var TOM_IDS = { lidFill:"cLidFill", lidN:"cLidN", lidBal:"cLidBal", lidTol:"cLidTol", lidSupp:"cLidSupp", lidBed:"cLidBed" };
+function tomFields(q){
+  var pr = TOM_PRESETS[q];
+  Object.keys(TOM_IDS).forEach(function(k){
+    var e = $(TOM_IDS[k]); if (!e) return;
+    if (pr) e.value = pr[k];
+    e.disabled = !!pr;
+  });
 }
 function restoreConf(){
   try {
@@ -9377,6 +9501,13 @@ function restoreConf(){
       var e = $(id); if (!e || !(id in o)) return;
       if (e.type === "checkbox") e.checked = !!o[id]; else e.value = o[id];
     });
+    /* v22: «Chetdan qochish» olib tashlandi. Chiqish chegarasi ikkalasining
+       kichigi edi — tsex uni «Chiqish» dan kichik qoʻygan boʻlsa, amaldagi
+       qiymat saqlansin. */
+    if (o.cBaseInset != null && o.cOvh != null && +o.cBaseInset < +o.cOvh && $("cOvh")) $("cOvh").value = o.cBaseInset;
+    // v22: tom sifati — eski saqlovda tanlov yoʻq: qiymatlar qaysi darajaga mos boʻlsa oʻsha, aks holda «Qoʻlda»
+    if (!("cTomQ" in o) && $("cTomQ")) $("cTomQ").value = tomPresetOf(o);
+    S.profile = typeof o._profile === "string" ? o._profile : "";
     /* v12: eski saqlangan sozlamada rejim («b2c/b2b» yoki «ind/conv») va ikki
        qoida turgan boʻlishi mumkin — ular bitta qoidaga koʻchiriladi. Katakchalar
        shundan keyin toʻldiriladi, aks holda eski rejimning qiymati koʻrinmasdi. */
@@ -9453,15 +9584,19 @@ function readConf(){
   /* v14: TAG OYNASI — qolgan ikki chegara. baseLMin 0 boʻlishi MUMKIN
      («cheklovsiz»), shuning uchun `|| N` shakli ishlatilmaydi. */
   S.baseWMax  = numOr($("cBaseWMax"),  1900, 100, 4000);
-  S.baseLMin  = numOr($("cBaseLMin"),     0,   0, 4000);
+  S.baseLMin  = 0;                                  // v22: doimiy (02-state TRIES_FIXED izohi)
   /* Quyi chegara 80: maydonning `min="80"` atributi, yorligʻi va podskaskasi
      ham «80…100» deydi. Ilgari bu yerda 50 turardi — yagona haqiqiy chegara
      shu funksiyada, yaʼni interfeys yolgʻon gapirardi. */
   S.baseCover = numOr($("cBaseCover"),   90,  80,  100);
-  S.baseInset = numOr($("cBaseInset"),   40,   0,  500);
+  S.baseInset = null;                               // v22: «Chiqish» bilan birlashtirildi
   S.maxH      = numOr($("cMaxH"),         0,   0, 5000);
   /* v22: 50 dan katta ulush matematik imkonsiz — 2+ detalli qopqoqda eng
      kichik detal ulushi 50 % dan oshmaydi, yaʼni qopqoq umuman yasalmasdi */
+  /* v22: TOM SIFATI — daraja tanlangan boʻlsa oltita maydon uning qiymatini oladi
+     (oʻchirilgan holda koʻrinadi), «Qoʻlda» boʻlsa — kiritilgani. */
+  S.tomQ = ($("cTomQ") && $("cTomQ").value) || "orta";
+  tomFields(S.tomQ);
   S.lidBal    = numOr($("cLidBal"),      40,   0,   50);
   S.maxPartT  = numOr($("cMaxPartT"),    60,   0, 5000);
   // v14: nostandart oqim
@@ -9477,10 +9612,10 @@ function readConf(){
   S.minPartW   = numOr($("cMinPartW"),    0,   0, 4000);   // v18
   S.minPartL   = numOr($("cMinPartL"),    0,   0, 9000);
   readThickMix();
-  S.tries    = Math.max(1, Math.min(40, +$("cTries").value || 4));
+  S.tries    = TRIES_FIXED;                         // v22: doimiy
   S.prefix   = $("cPrefix").value || "SM";
   S.ovhOn    = $("cOvhOn").checked;
-  S.byThick  = $("cThick").checked;
+  S.byThick  = true;                                // v22: doimiy — qalinlikni matritsa boshqaradi
 
   /* v12: KESIM OʻQLARI — bitta umumiy qoida. Rejim tanlovi yoʻq: ikki katak
      bevosita S.split ni belgilaydi. Ikkalasini ham oʻchirish RUXSAT —
@@ -9554,10 +9689,10 @@ function showCellTot(){
 function writeConf(){
   var m = { cMaxKg:S.maxKg, cOvh:S.ovh, cMinBase:S.minBase, cMaxLen:S.maxLen, cBaseT:S.minBaseT,
             cFill:S.minFill, cLidFill:S.lidFill, cLidN:S.lidN, cLidTol:S.lidTol, cOneMan:S.oneMan, cTwoMan:S.twoMan, cPartKgMax:S.partKgMax,
-            cTare:S.tare, cMaxLay:S.maxLayers, cTries:S.tries, cPrefix:S.prefix, cLabel:S.labelSize,
+            cTare:S.tare, cMaxLay:S.maxLayers, cPrefix:S.prefix, cLabel:S.labelSize,
             // v14
-            cBaseWMax:S.baseWMax, cBaseLMin:S.baseLMin, cBaseCover:S.baseCover,
-            cBaseInset:S.baseInset, cMaxH:S.maxH, cLidBal:S.lidBal, cMaxPartT:S.maxPartT,
+            cBaseWMax:S.baseWMax, cBaseCover:S.baseCover,
+            cMaxH:S.maxH, cLidBal:S.lidBal, cMaxPartT:S.maxPartT,
             cOddKg:S.oddKg, cOddLMax:S.oddLMax, cOddWMax:S.oddWMax, cOddTol:S.oddTol,
             cTailOver:S.tailKgOver, cTailGap:S.tailGap, cTailSpan:S.tailSpan,
             cLidSupp:S.lidSupp, cLidBed:S.lidBed,
@@ -9574,7 +9709,7 @@ function writeConf(){
   });
   showCellTot();
   if ($("cOvhOn")) $("cOvhOn").checked = !!S.ovhOn;
-  if ($("cThick")) $("cThick").checked = !!S.byThick;
+  if ($("cTomQ")){ $("cTomQ").value = S.tomQ || "orta"; tomFields($("cTomQ").value); }   // v22
   if ($("cAutoLbl")) $("cAutoLbl").checked = !!S.autoLbl;
   if ($("cSepMat")) $("cSepMat").value = S.sepMat || "";       // v22
   var sp = S.split || splitDefault();
@@ -9638,6 +9773,7 @@ function renderThickMix(){
     el.onchange = function(){
       S.thickMix[el.getAttribute("data-tmix")] = el.checked;
       recomputeSoon();
+      saveConf();                                      // v22: avtomatik saqlash
     };
   });
 }
@@ -9836,6 +9972,8 @@ function askAndBoot(data, fname){
   /* v12: modul tanlovlari oynadan olib tashlandi. Oyna endi FAKTNI koʻrsatadi —
      joriy sozlama bilan qanaqa modullar chiqishini. Tanlov P/M menejerida. */
   modalUnits(data.parts);
+  // v22: profil — loyiha yoki fayl nomidagi kalit soʻz boʻyicha taklif (TZ-v3 §3.3)
+  if (typeof profModal === "function") profModal((fname || "") + " " + (data.name || ""));
   // detal klasslari
   var cls = {};
   data.parts.forEach(function(p){ var c = classify(p.n); cls[c] = (cls[c]||0) + p.q; });
@@ -9872,6 +10010,8 @@ $("mOk").onclick = function(){
   });
   $("modal").style.display = "none";
   var data = PENDING; PENDING = null;
+  // v22: oynada tanlangan profil — yangi buyurtma shu meʼyorlar bilan pochkalanadi
+  if (typeof profModalApply === "function") profModalApply();
   boot(data);
   showTab("work");                     // v22: post rejimida — postning oʻz ekrani
 };
@@ -9928,18 +10068,24 @@ if ($("btnClsGrp")) $("btnClsGrp").onclick = makeClsGroup;
    Endi ular ham boshqa har qanday meʼyor kabi qayta terishni chaqiradi. */
 CONF_IDS.forEach(function(id){
   var e = $(id); if (!e) return;
+  /* v22: AVTOMATIK SAQLASH. «Sozlamalarni saqlash» tugmasi xato manbai edi:
+     unutilsa qayta yuklashda oʻzgarish yoʻqolardi. Endi har oʻzgarish darhol
+     shu kompyuterda saqlanadi. */
   e.onchange = CONF_VIEW_ONLY[id]
     ? function(){
         readConf();
         if (typeof showCellTot === "function") showCellTot();
         if (typeof renderPacks === "function") renderPacks();
         if (typeof renderStep === "function") renderStep();
+        saveConf();
       }
-    : function(){ recompute(); };
+    : function(){
+        if (id === "cTomQ") tomFields(e.value);      // daraja almashdi — maydonlar darhol
+        recompute(); saveConf();
+      };
 });
 
 $("btnRepack").onclick   = function(){ recompute(); };
-$("btnSave").onclick     = function(){ readConf(); saveConf(); };
 $("btnReset").onclick    = resetConf;
 $("btnCsv").onclick      = csv;
 /* v22: MES buyurtma raqami — loyihaga tegishli (P.mesOrder), sozlama emas:
@@ -9954,8 +10100,9 @@ $("mgrMesOrder").onchange = function(){
 $("btnAddMat").onclick   = function(){ if (typeof addMaterial === "function") addMaterial(); };
 $("btnAddCat").onclick   = function(){
   S.matCat.push({ key:"YANGI", t:SHEET_DEFAULT.t, l:SHEET_DEFAULT.l,
-                  w:SHEET_DEFAULT.w, kgm2:SHEET_DEFAULT.kgm2 });
+                  w:SHEET_DEFAULT.w, kgm2:SHEET_DEFAULT.kgm2, dens:0 });
   renderCat();
+  saveConf();                                          // v22: avtomatik saqlash
 };
 $("btnClearSes").onclick = function(){
   if (typeof Store === "undefined") return;
@@ -9964,10 +10111,9 @@ $("btnClearSes").onclick = function(){
      bevosita Store chaqirilardi va taymer keyin ishlab, endigina tozalangan
      seansni qaytarib yozib qoʻyishi mumkin edi. */
   clearSession().then(function(){
-    var n = $("saveNote");
-    n.style.display = "block"; n.style.borderLeftColor = "var(--ok)";
-    n.textContent = "Seans tozalandi — keyingi ochilishda namuna loyiha yuklanadi.";
-    setTimeout(function(){ n.style.display = "none"; }, 3500);
+    var n = $("saveNote");                 // v22: doimiy yozuv — yashirilmaydi, faqat matni
+    if (n){ n.style.borderLeftColor = "var(--ok)";
+            n.textContent = "Seans tozalandi — keyingi ochilishda namuna loyiha yuklanadi. Sozlamalar joyida."; }
   });
 };
 
@@ -11665,6 +11811,178 @@ function srvBanner(){
 
 /* ishga tushish — sahifa yuklangach (13-app.js seansni tiklashga ulgursin) */
 setTimeout(function(){ srvDetect(); }, 300);
+
+</script>
+<script>
+/* ===== src/js/17-profile.js ===== */
+/* ============================================================
+   3.18 NOMLANGAN PROFIL — meʼyorlar toʻplami (v22, TZ-v3 §3.3)
+   ============================================================
+   TZ-v2 §2: «sozlama bir marta qilinadi va eslab qolinadi». Bitta tsexda bir
+   necha xil buyurtma oqimi boʻladi — masalan «Mijozga» (modul ajratiladi, tom
+   qattiq) va «Omborga» (buyurtma boʻyicha, zich). Profil — shu meʼyorlarning
+   NOMLANGAN toʻplami: tanlansa hamma maydon bir yoʻla oʻrnatiladi.
+
+   Profilga KIRADI: Sozlamalar ekranidagi meʼyorlar, modul/material kesimi,
+   material katalogi, qalinlik matritsasi, klass guruhlari.
+   KIRMAYDI: shu kompyuterga xos narsalar (stelyaj va yacheykalar, chek
+   printeri, QR prefiksi) va buyurtmaga xos narsalar (modul nomlari, modul
+   guruhlari, yopiq yacheykalar).
+
+   Loyiha yuklanganda profil oʻzi taklif qilinadi: profilning «kalit soʻzi»
+   loyiha yoki fayl nomida boʻlsa (kirillcha ham — translit).
+   ============================================================ */
+var PROF_KEY = "upk_profiles";
+var PROF_SKIP = { cRackN:1, cCellN:1, cCellW:1, cCellD:1, cBigN:1, cBigW:1, cBigD:1, cCellH:1,
+                  cLabel:1, cLabelW:1, cLabelH:1, cAutoLbl:1, cPrefix:1 };
+var PROF_DEL_ARM = null;
+
+function profClone(v){ return JSON.parse(JSON.stringify(v)); }
+function profAll(){
+  try {
+    var o = JSON.parse(localStorage.getItem(PROF_KEY) || "{}");
+    return (o && typeof o === "object" && !isArr(o)) ? o : {};
+  } catch(e){ return {}; }
+}
+function profWrite(o){
+  try { localStorage.setItem(PROF_KEY, JSON.stringify(o)); return true; } catch(e){ return false; }
+}
+function profNames(){ return Object.keys(profAll()).sort(function(a, b){ return a.localeCompare(b); }); }
+
+/* Joriy meʼyorlar — FORMADAN (foydalanuvchi koʻrib turgani) */
+function profCapture(){
+  var f = {};
+  CONF_IDS.forEach(function(id){
+    if (PROF_SKIP[id]) return;
+    var e = $(id); if (!e) return;
+    f[id] = e.type === "checkbox" ? e.checked : e.value;
+  });
+  return { f:f, matCat:profClone(S.matCat || []), thickMix:profClone(S.thickMix || {}),
+           clsGroups:profClone(S.clsGroups || []) };
+}
+function profSave(name, match){
+  name = String(name || "").trim();
+  if (!name) return "profil nomini kiriting";
+  if (name.length > 40) return "nom juda uzun (40 belgigacha)";
+  var all = profAll(), p = profCapture();
+  p.match = String(match || "").trim();
+  p.ts = Date.now();
+  all[name] = p;
+  if (!profWrite(all)) return "profil saqlanmadi — brauzer xotirasi yopiq yoki toʻlgan";
+  S.profile = name;
+  if (typeof saveConf === "function") saveConf();
+  return null;
+}
+/* Profilni qoʻllash. noRe — qayta pochkalanmasin (yuklash oynasida: boot oʻzi hisoblaydi). */
+function profApply(name, noRe){
+  var p = profAll()[name];
+  if (!p) return "«" + name + "» profili topilmadi";
+  Object.keys(p.f || {}).forEach(function(id){
+    if (PROF_SKIP[id]) return;
+    var e = $(id); if (!e) return;
+    if (e.type === "checkbox") e.checked = !!p.f[id]; else e.value = p.f[id];
+  });
+  if (isArr(p.matCat) && p.matCat.length) S.matCat = profClone(p.matCat);
+  if (p.thickMix && typeof p.thickMix === "object") S.thickMix = profClone(p.thickMix);
+  if (isArr(p.clsGroups)) S.clsGroups = profClone(p.clsGroups);
+  S.profile = name;
+  if ($("cTomQ") && typeof tomFields === "function") tomFields($("cTomQ").value);
+  if (typeof renderCat === "function") renderCat();
+  if (!noRe){
+    if (P) recompute(); else readConf();
+    if (typeof renderMgr === "function" && P) renderMgr();
+  }
+  if (typeof saveConf === "function") saveConf();
+  profUi();
+  return null;
+}
+function profDel(name){
+  var all = profAll();
+  if (!all[name]) return "«" + name + "» profili topilmadi";
+  delete all[name];
+  if (!profWrite(all)) return "oʻchirib boʻlmadi";
+  if (S.profile === name){ S.profile = ""; if (typeof saveConf === "function") saveConf(); }
+  return null;
+}
+/* Loyiha/fayl nomiga mos profil: kalit soʻzlardan biri nomda boʻlsa */
+function profMatch(text){
+  var u = translit(text), all = profAll(), names = profNames();
+  for (var i = 0; i < names.length; i++){
+    var ws = String(all[names[i]].match || "").split(",");
+    for (var j = 0; j < ws.length; j++){
+      var w = translit(ws[j].trim());
+      if (w && u.indexOf(w) >= 0) return names[i];
+    }
+  }
+  return "";
+}
+
+/* ---- Sozlamalar ekrani ---- */
+function profNote(kind, txt){
+  var n = $("profNote"); if (!n) return;
+  n.className = "msg " + (kind || "");
+  n.textContent = txt || "";
+}
+function profUi(){
+  var sel = $("profSel"); if (!sel) return;
+  var names = profNames(), cur = S.profile || "";
+  sel.innerHTML = '<option value="">' + (names.length ? "— profil tanlang —" : "— hali profil yoʻq —") + '</option>' +
+    names.map(function(n){ return '<option value="' + esc(n) + '"' + (n === cur ? " selected" : "") + '>' + esc(n) + '</option>'; }).join("");
+  var c = $("profCur");
+  if (c) c.textContent = cur && names.indexOf(cur) >= 0 ? "joriy: " + cur : "";
+  var p = profAll()[sel.value];
+  if ($("profMatch") && p && document.activeElement !== $("profMatch")) $("profMatch").value = p.match || "";
+  if ($("btnProfDel")) $("btnProfDel").textContent = (PROF_DEL_ARM && PROF_DEL_ARM === sel.value) ? "Rostdan oʻchirilsinmi?" : "Oʻchirish";
+}
+function profInit(){
+  var sel = $("profSel");
+  if (sel) sel.onchange = function(){ PROF_DEL_ARM = null; profUi(); var nm = $("profName"); if (nm && sel.value) nm.value = sel.value; };
+  if ($("btnProfApply")) $("btnProfApply").onclick = function(){
+    var v = sel ? sel.value : "";
+    if (!v){ profNote("err", "profil tanlanmagan"); return; }
+    var e = profApply(v);
+    profNote(e ? "err" : "ok", e || ("«" + v + "» qoʻllandi" + (P && typeof REPACK_WAIT !== "undefined" && REPACK_WAIT ? " — qayta pochkalash tasdiq kutmoqda" : "")));
+  };
+  if ($("btnProfSave")) $("btnProfSave").onclick = function(){
+    var nm = ($("profName") && $("profName").value) || (sel && sel.value) || "";
+    var e = profSave(nm, $("profMatch") ? $("profMatch").value : "");
+    profUi();
+    profNote(e ? "err" : "ok", e || ("«" + String(nm).trim() + "» profili saqlandi — joriy meʼyorlar bilan"));
+  };
+  if ($("btnProfDel")) $("btnProfDel").onclick = function(){
+    var v = sel ? sel.value : "";
+    if (!v){ profNote("err", "profil tanlanmagan"); return; }
+    if (PROF_DEL_ARM !== v){ PROF_DEL_ARM = v; profUi(); return; }   // ikkinchi bosish — tasdiq
+    PROF_DEL_ARM = null;
+    var e = profDel(v);
+    profUi();
+    profNote(e ? "err" : "ok", e || ("«" + v + "» oʻchirildi"));
+  };
+  profUi();
+}
+
+/* ---- Yuklash oynasi: profil taklifi ---- */
+function profModal(text){
+  var box = $("mProf"); if (!box) return;
+  var names = profNames();
+  if (!names.length){ box.innerHTML = ""; box.style.display = "none"; return; }
+  var hit = profMatch(text), pick = hit || "";
+  box.style.display = "block";
+  box.innerHTML = '<div class="f" style="margin:0 0 4px"><label for="mProfSel">Profil</label></div>' +
+    '<select id="mProfSel" style="width:100%">' +
+      '<option value="">— joriy meʼyorlar' + (S.profile ? " (" + esc(S.profile) + ")" : "") + ' —</option>' +
+      names.map(function(n){ return '<option value="' + esc(n) + '"' + (n === pick ? " selected" : "") + '>' + esc(n) + '</option>'; }).join("") +
+    '</select>' +
+    '<div style="font-size:11px;color:var(--ink3);margin:4px 0 12px">' +
+      (hit ? "«" + esc(hit) + "» — loyiha nomidagi kalit soʻz boʻyicha taklif qilindi" : "tanlansa yangi buyurtma shu meʼyorlar bilan pochkalanadi") + '</div>';
+}
+function profModalApply(){
+  var s = $("mProfSel");
+  if (!s || !s.value || s.value === S.profile) return null;
+  return profApply(s.value, true);
+}
+
+profInit();
 
 </script>
 </body>

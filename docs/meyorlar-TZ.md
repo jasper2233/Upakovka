@@ -240,6 +240,9 @@ Auditda quyruq qavati `TOLDIRISH` ogohlantirishini bermaydi (`05-audit.js` → `
 
 ### 7. Tom (qopqoq) yopilishi min. % — 90 (`S.lidFill`)
 
+> **v22: «Tom sifati» darajasining qismi** (`S.tomQ`, `TOM_PRESETS`): qattiq / o'rtacha / yumshoq /
+> qo'lda. Bu yerdagi qiymat — «O'rtacha». Maydon faqat «Qo'lda» darajasida tahrirlanadi.
+
 > **v15 da o'zgardi:** standart 80 dan **90** ga ko'tarildi va endi u faqat
 > «qopqoq» ga emas, pochkaning **eng ustki qavatiga** — kim bo'lishidan qat'i
 > nazar — qo'llanadi.
@@ -279,6 +282,9 @@ Auditda quyruq qavati `TOLDIRISH` ogohlantirishini bermaydi (`05-audit.js` → `
 
 ### 8. Qopqoq detallari maks. — 3 (`S.lidN`)
 
+> **v22: «Tom sifati» darajasining qismi** (`S.tomQ`, `TOM_PRESETS`): qattiq / o'rtacha / yumshoq /
+> qo'lda. Bu yerdagi qiymat — «O'rtacha». Maydon faqat «Qo'lda» darajasida tahrirlanadi.
+
 **Nima:** Qopqoq nechta detaldan tashkil topishi mumkin. Algoritm avval **1 ta yaxlit** detal bilan urinadi, topolmasa 2, keyin 3.
 
 **Qayerda ishlaydi:** `src/js/04-packer.js` → `makeLid()` ning tashqi sikli: `for (var n = 1; n <= S.lidN; n++)`. Har `n` uchun to'rtta saralash tartibi (`ORD`) va pooldagi har qalinlik sinaladi, eng zichi olinadi; birinchi muvaffaqiyatli `n` da sikl to'xtaydi — ya'ni **eng kam detalli variant g'olib**. Nomzodlar teng sharoitda solishtiriladi: har urinishdan keyin pool bo'shatiladi va faqat g'olibning detallari belgilanadi. `readConf()` kiritishni 1…4 oralig'ida cheklaydi.
@@ -294,6 +300,9 @@ Auditda quyruq qavati `TOLDIRISH` ogohlantirishini bermaydi (`05-audit.js` → `
 ---
 
 ### 9. Qopqoq kichikligi maks. — 100 mm (`S.lidTol`)
+
+> **v22: «Tom sifati» darajasining qismi** (`S.tomQ`, `TOM_PRESETS`): qattiq / o'rtacha / yumshoq /
+> qo'lda. Bu yerdagi qiymat — «O'rtacha». Maydon faqat «Qo'lda» darajasida tahrirlanadi.
 
 **Nima:** Qopqoq tag detal gabaritidan har o'lcham bo'yicha shuncha millimetrgacha kichik bo'lishi mumkin. Undan kichik bo'lsa qopqoq deb qabul qilinmaydi.
 
@@ -362,6 +371,9 @@ hech qachon chiqmaydi, `confCheck()` buni ZIDDIYAT deb ko'rsatadi. `maxKg` +
 ---
 
 ### 11. Qalinlik bo'yicha ajratish — yoqilgan (`S.byThick`)
+
+> **v22 — sozlama emas, doimiy (yoqiq).** O'chirilsa qalinliklar bitta guruhga aralashib, qalinlik
+> matritsasini (26) bekor qilardi; matritsa buni nazorat bilan qiladi. Maydon olib tashlandi.
 
 **Nima:** Yoqilgan bo'lsa turli qalinlikdagi detallar hech qachon bitta pochkaga tushmaydi: 16 mm alohida, 3 mm alohida.
 
@@ -433,6 +445,9 @@ Ya'ni `maxLayers` dan tag uchun 1 ta va qopqoq uchun (agar u zaxiraga olingan yo
 
 ### 14. Variatsiya urinishlari — 4 (`S.tries`)
 
+> **v22 — sozlama emas, doimiy 4 (`TRIES_FIXED`).** 205 faylda 8 urinish atigi −15 pochka (−0,3 %)
+> berdi, hisob vaqti esa +47 %. Maydon olib tashlandi.
+
 **Nima:** Butun buyurtma boshidan oxirigacha necha marta qaytadan pochkalanadi. Har urinish boshqa tasodifiy urug' (seed) bilan boshlanadi, eng yaxshi natija saqlanadi.
 
 **Qayerda ishlaydi:** `src/js/04-packer.js` → `packAllGen()` ning tashqi sikli:
@@ -462,6 +477,10 @@ Ball formulasidagi vaznlar: har ortiqcha pochka +1000, har noodatiy detal +300, 
 ---
 
 ### 15. Material katalogi — 5 tur (`S.matCat`)
+
+> **v22:** katalog yozuvida **zichlik (kg/m³)** bo'lishi mumkin — u bo'lsa kg/m² materialning o'z
+> qalinligidan hisoblanadi (`catKgm2`), ya'ni bitta yozuv hamma qalinlikni qoplaydi. Material va kalit
+> nomlari **transliteratsiya** bilan solishtiriladi (`translit`): «ЛДСП» = LDSP, «ХДФ» = XDF.
 
 **Nima:** Material turlari jadvali: kalit so'z, qalinlik, list o'lchami, `kg/m²`. Yangi loyiha yuklanganda material nomiga qarab avtomatik qo'llanadi va **hamma massa hisobining asosi** bo'ladi.
 
@@ -497,6 +516,9 @@ Interfeysda "list kilosi" va "kg/m²" ikki tomonlama bog'langan: birini o'zgarti
 
 ### 16–17. Tag oynasi — `baseWMax`, `baseLMin` (+ `minBase`, `maxLen`)
 
+> **v22: `baseLMin` olib tashlandi (doimiy 0).** Podskaskaning o'zida «odatda kerak emas» deb yozilgan
+> edi — «Paddon qamrovi» (18) kalta tagni allaqachon rad etadi.
+
 **Nima:** To'rt chegara birgalikda **tag oynasini** beradi: qaysi detal pochkaga paddon (tag) bo'la oladi.
 
 ```
@@ -516,6 +538,10 @@ detal qalinligi ≥ minBaseT
 ---
 
 ### 18–19. Paddon qamrovi — `baseCover` 90 %, `baseInset` 40 mm
+
+> **v22: `baseInset` («Chetdan qochish») «Chiqish» (2) bilan birlashtirildi.** Chiqish chegarasi
+> `min(ovh, baseInset)` edi — standartda (20 va 40) faqat chiqish ishlardi. Endi bitta maydon;
+> eski saqlovda chetdan qochish kichik bo'lsa, o'sha qiymat «Chiqish» ga ko'chadi.
 
 **Nima:** Tag detal pochkaning deyarli butun tagini egallashi shart. Ikki shart **birga** tekshiriladi:
 
@@ -557,6 +583,9 @@ detal qalinligi ≥ minBaseT
 ---
 
 ### 21. Tom ulushi, min % — `lidBal` 40 %
+
+> **v22: «Tom sifati» darajasining qismi** (`S.tomQ`, `TOM_PRESETS`): qattiq / o'rtacha / yumshoq /
+> qo'lda. Bu yerdagi qiymat — «O'rtacha». Maydon faqat «Qo'lda» darajasida tahrirlanadi.
 
 **Nima:** Ko'p detalli tomda **eng kichik detalning ulushi** shundan kam
 bo'lmasin. Ulush — detal yuzasining qavat yuzasidagi hissasi.
@@ -891,6 +920,9 @@ sanalmasligi.
 
 ### 33. Tom detali tayanchi, min % — 65 (`S.lidSupp`)
 
+> **v22: «Tom sifati» darajasining qismi** (`S.tomQ`, `TOM_PRESETS`): qattiq / o'rtacha / yumshoq /
+> qo'lda. Bu yerdagi qiymat — «O'rtacha». Maydon faqat «Qo'lda» darajasida tahrirlanadi.
+
 **Nima:** **Har bir** tom detali o'z yuzasining kamida shuncha foizi bilan
 ostidagi qavatga tegishi shart. Ostida qavat bo'lmasa — tag detalga.
 
@@ -947,6 +979,9 @@ Test aynan shuni qo'riqlaydi: «bajarilmagan tayanch jim qolmaydi».
 ---
 
 ### 34. Tom ostidagi qavat («to'shak»), min % — 85 (`S.lidBed`)
+
+> **v22: «Tom sifati» darajasining qismi** (`S.tomQ`, `TOM_PRESETS`): qattiq / o'rtacha / yumshoq /
+> qo'lda. Bu yerdagi qiymat — «O'rtacha». Maydon faqat «Qo'lda» darajasida tahrirlanadi.
 
 **Nima:** Tom ostidagi qavat o'z yuzasining kamida shuncha foizini qoplashi
 shart. Buzilishi — **XATO** (`TOM_TAGI`), ogohlantirish emas.

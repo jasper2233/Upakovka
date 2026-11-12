@@ -848,11 +848,13 @@ $tester = @'
         if (p.odd) return;
         var cv = (p.base.L * p.base.W) / (p.gabL * p.gabW);
         if (cv < S.baseCover/100 - 1e-6) cBad.push("P" + p.no + " " + Math.round(cv*100) + "%");
-        if ((p.gabL - p.base.L)/2 > S.baseInset + 0.5 ||
-            (p.gabW - p.base.W)/2 > S.baseInset + 0.5) iBad.push("P" + p.no);
+        // v22: «Chetdan qochish» olib tashlandi — chegara bitta: «Chiqish» (S.ovh)
+        var insLim = (S.baseInset != null ? S.baseInset : S.ovh);
+        if ((p.gabL - p.base.L)/2 > insLim + 0.5 ||
+            (p.gabW - p.base.W)/2 > insLim + 0.5) iBad.push("P" + p.no);
       });
       chk("paddon qamrovi meʼyorda", cBad.length === 0, cBad.join(",") || "toza");
-      chk("chetdan qochish meʼyorda", iBad.length === 0, iBad.join(",") || "toza");
+      chk("chetga chiqish meʼyorda", iBad.length === 0, iBad.join(",") || "toza");
 
       var svC = S.baseCover;
       S.baseCover = 100; packAll();
@@ -1228,9 +1230,10 @@ $tester = @'
       chk("quyruq mexanizmi ishlashda qoladi", tN > 0, tN + " quyruq qavati");
 
       // sozlama aylanmasi
-      S.lidBed = 75; writeConf(); S.lidBed = 0; readConf();
+      // v22: tom maydonlari «Tom sifati = Qoʻlda» boʻlganda oʻqiladi
+      S.tomQ = "qolda"; S.lidBed = 75; writeConf(); S.lidBed = 0; readConf();
       chk("toʻshak sozlamasi saqlanadi", S.lidBed === 75, "lidBed=" + S.lidBed);
-      S.lidBed = svBed; writeConf(); packAll();
+      S.tomQ = "orta"; S.lidBed = svBed; writeConf(); readConf(); packAll();
     } catch(e){ chk("tom ostidagi qavat", false, e.message); }
 
     /* ================= v20: TOM DETALINING TAYANCHI =================
@@ -1356,9 +1359,9 @@ $tester = @'
           hiBad.length + " ta chegaradan past, " + silent.length + " tasi ogohlantirishsiz");
 
       // sozlama aylanmasi
-      S.lidSupp = 55; writeConf(); S.lidSupp = 0; readConf();
+      S.tomQ = "qolda"; S.lidSupp = 55; writeConf(); S.lidSupp = 0; readConf();
       chk("tom tayanchi sozlamasi saqlanadi", S.lidSupp === 55, "lidSupp=" + S.lidSupp);
-      S.lidSupp = svSupp; S.lidBed = svBed0; writeConf(); packAll();
+      S.tomQ = "orta"; S.lidSupp = svSupp; S.lidBed = svBed0; writeConf(); readConf(); packAll();
     } catch(e){ chk("tom detalining tayanchi", false, e.message); }
 
     /* ================= v20: QUYRUQ TAYANCHINING KENGLIGI =================
@@ -1753,6 +1756,7 @@ $tester = @'
       Array.prototype.forEach.call(cbox.querySelectorAll("input,select"), function(e){
         if (!e.id) return;
         if (e.type === "file" || e.type === "button" || e.type === "submit") return;
+        if (e.getAttribute("data-noconf")) return;      // v22: profil boshqaruvlari — sozlama emas
         confEls.push(e);
       });
       chk("sozlamalar boʻlimida maydonlar topildi", confEls.length > 30,
@@ -1807,6 +1811,8 @@ $tester = @'
         e.value = String(e.value) + "X"; return true;
       }
       var deaf = [], skipped = [];
+      // v22: tom maydonlari faqat «Qoʻlda» darajasida oʻqiladi — tekshiruv shu holatda
+      var svTQ2 = el("cTomQ").value; el("cTomQ").value = "qolda"; readConf();
       confEls.forEach(function(e){
         var was = (e.type === "checkbox") ? e.checked : e.value;
         var before = JSON.stringify(S);
@@ -1816,6 +1822,7 @@ $tester = @'
         if (e.type === "checkbox") e.checked = was; else e.value = was;
         readConf();
       });
+      el("cTomQ").value = svTQ2; readConf();
       chk("har maydon readConf() ga ulangan", deaf.length === 0,
           deaf.join(",") || (confEls.length - skipped.length) + " ta maydon tekshirildi");
 
@@ -1885,10 +1892,11 @@ $tester = @'
          tushib qolsa foydalanuvchi yana adashadi. */
       function inBlk(blk, id){ return !!(blk && blk.querySelector("#" + id)); }
       var stdIds = ["cMaxKg","cMaxLen","cBaseWMax","cMinPartW","cMinPartL",
-                    "cMinBase","cBaseLMin","cBaseT","cBaseCover","cBaseInset",
-                    "cMaxH","cOvhOn"];
+                    "cMinBase","cBaseT","cBaseCover",
+                    "cMaxH","cOvhOn","cOvh"];          // v22: chetdan qochish -> chiqish
       var nstIds = ["cOddKg","cOddLMax","cOddWMax","cOddTol"];
-      var allIds = ["cOneMan","cTare","cMaxPartT","cThick","cTailOver","cTailGap"];
+      var allIds = ["cOneMan","cTare","cMaxPartT","cTomQ","cTailOver","cTailGap",
+                    "cLidFill","cLidN","cLidBal","cLidTol","cLidSupp","cLidBed"];   // v22: tom bir joyda
       var xStd = stdIds.filter(function(i){ return !inBlk(blkStd, i); });
       var xNst = nstIds.filter(function(i){ return !inBlk(blkNst, i); });
       var xAll = allIds.filter(function(i){ return !inBlk(blkAll, i); });
@@ -1918,10 +1926,94 @@ $tester = @'
       // qalinlik matritsasi konteyneri koʻchishda yoʻqolmasin
       chk("qalinlik matritsasi joyida", !!cv.querySelector("#thickMix"), "thickMix");
 
+      /* ================= v22: SOZLAMALARNI SODDALASHTIRISH ================= */
+      chk("soddalashtirish: 4 ta maydon olib tashlandi, qiymati doimiy",
+          !el("cTries") && !el("cThick") && !el("cBaseLMin") && !el("cBaseInset") && !el("btnSave") &&
+          S.tries === TRIES_FIXED && S.byThick === true && S.baseLMin === 0 && S.baseInset === null,
+          "tries=" + S.tries + " byThick=" + S.byThick + " baseLMin=" + S.baseLMin + " baseInset=" + S.baseInset);
+      var svOvh = el("cOvh").value;
+      el("cOvh").value = "30"; readConf();
+      var lpO = layoutPack(PACKS.filter(function(x){ return !x.odd; })[0].base, [], true, 0, 0);
+      chk("chiqish — bitta maydon: konvert aynan shu qiymatda, ziddiyat ogohlantirishi yoʻq",
+          lpO.off === 30 && !confCheck().some(function(w){ return /chetdan qochish/i.test(w.msg); }), "off=" + lpO.off);
+      el("cOvh").value = svOvh; readConf();
+      // tom sifati
+      var svTQ = el("cTomQ").value;
+      el("cTomQ").value = "yumshoq"; readConf();
+      var tq1 = S.lidFill === 80 && S.lidN === 4 && S.lidBal === 30 && S.lidSupp === 55 && el("cLidFill").disabled;
+      el("cTomQ").value = "qolda"; readConf();
+      el("cLidFill").value = "87"; readConf();
+      var tq2 = S.lidFill === 87 && !el("cLidFill").disabled;
+      el("cTomQ").value = svTQ; readConf();
+      chk("tom sifati: daraja 6 meʼyorni oʻrnatadi, «Qoʻlda» — maydonlar ochiq",
+          tq1 && tq2 && S.lidFill === TOM_PRESETS.orta.lidFill, "yumshoq " + tq1 + " · qoʻlda " + tq2);
+      // eski saqlov: «Chetdan qochish» chiqishdan kichik boʻlsa — amaldagi qiymat saqlanadi; tom darajasi aniqlanadi
+      var svConf2 = null; try { svConf2 = localStorage.getItem("upk_conf"); } catch(e){}
+      var mig = {};
+      try {
+        localStorage.setItem("upk_conf", JSON.stringify({ cOvh:"20", cBaseInset:"10" }));
+        restoreConf(); mig.ovh = el("cOvh").value; mig.tq0 = el("cTomQ").value;
+        localStorage.setItem("upk_conf", JSON.stringify({ cLidFill:"95", cLidN:"2", cLidBal:"45", cLidTol:"50", cLidSupp:"75", cLidBed:"90" }));
+        restoreConf(); mig.tq1 = el("cTomQ").value;
+        localStorage.setItem("upk_conf", JSON.stringify({ cLidFill:"88" }));
+        restoreConf(); mig.tq2 = el("cTomQ").value;
+      } finally {
+        try { if (svConf2 === null) localStorage.removeItem("upk_conf"); else localStorage.setItem("upk_conf", svConf2); } catch(e){}
+        restoreConf(); readConf();
+      }
+      chk("eski saqlov koʻchirildi: chiqish 10 mm, tom darajasi qiymatlardan",
+          mig.ovh === "10" && mig.tq0 === "orta" && mig.tq1 === "qattiq" && mig.tq2 === "qolda",
+          JSON.stringify(mig));
+      // avtomatik saqlash (koʻrinishga oid maydon — qayta pochkalamaydi)
+      var svTare = el("cTare").value;
+      el("cTare").value = "1.3"; el("cTare").onchange();
+      var savedT = null; try { savedT = JSON.parse(localStorage.getItem("upk_conf") || "{}").cTare; } catch(e){}
+      el("cTare").value = svTare; el("cTare").onchange();
+      chk("sozlama oʻzgarishi avtomatik saqlanadi (tugma yoʻq)", savedT === "1.3" && /saqlandi/.test(el("saveNote").textContent),
+          "saqlangan cTare=" + savedT);
+      // profil
+      try { localStorage.removeItem("upk_profiles"); } catch(e){}
+      var svTare2 = el("cTare").value;
+      var pe1 = profSave("Sinov-T", "sinovkalit, мебель");
+      el("cTare").value = "2.5"; el("cTare").onchange();
+      var pe2 = profApply("Sinov-T", true);
+      var back = el("cTare").value === svTare2 && S.profile === "Sinov-T";
+      chk("profil: saqlandi va qoʻllanganda meʼyorlar qaytdi", pe1 === null && pe2 === null && back,
+          "cTare " + el("cTare").value + " · joriy " + S.profile);
+      chk("profil: loyiha nomidagi kalit soʻz (kirillcha ham) boʻyicha taklif",
+          profMatch("Buyurtma SINOVKALIT 12") === "Sinov-T" && profMatch("MEBEL zakaz 7") === "Sinov-T" && profMatch("boshqa") === "",
+          profMatch("MEBEL zakaz 7") || "yoʻq");
+      profModal("sinovkalit.project");
+      chk("profil: yuklash oynasida mos profil tanlangan", !!el("mProfSel") && el("mProfSel").value === "Sinov-T",
+          el("mProfSel") ? el("mProfSel").value : "yoʻq");
+      chk("profil boshqaruvlari sozlama emas (CONF_IDS da yoʻq)",
+          CONF_IDS.indexOf("profSel") < 0 && CONF_IDS.indexOf("profName") < 0 && CONF_IDS.indexOf("profMatch") < 0, "");
+      var pe3 = profDel("Sinov-T");
+      chk("profil: oʻchirildi", pe3 === null && !profAll()["Sinov-T"], String(pe3));
+      try { localStorage.removeItem("upk_profiles"); } catch(e){}
+      // katalog: zichlik va kirillcha nom
+      var svCat = JSON.parse(JSON.stringify(S.matCat));
+      S.matCat.push({ key:"ЛДСП", t:0, dens:700, l:2750, w:1830, kgm2:0 });
+      DIAG.warnings = [];
+      var cx = parseProject('<project name="Kirill">' +
+        '<good typeId="sheet" id="k1" name="ЛДСП Белый" t="18" l="2750" w="1830"/>' +
+        '<good typeId="sheet" id="k2" name="МДФ" t="16" l="2800" w="2070"/>' +
+        '<good typeId="sheet" id="k3" name="Керамогранит черный" t="5" l="1200" w="600"/>' +
+        '<good typeId="product" id="kp" code="1" name="X"><part id="a" code="01" name="a" l="500" w="400" count="1"/></good>' +
+        '<operation typeId="CS"><material id="k1"/><part id="a"/></operation></project>');
+      var km = {}; cx.materials.forEach(function(m){ km[m.id] = m; });
+      var tx2 = DIAG.warnings.filter(function(w){ return w.code === "MATERIAL_TAXMINIY"; })[0];
+      S.matCat = svCat;
+      chk("katalog: zichlik (700 kg/m³) — 18 mm ЛДСП 12,6 kg/m², kirillcha МДФ = MDF",
+          Math.abs(km.k1.kgm2 - 12.6) < 1e-6 && Math.abs(km.k2.kgm2 - 12.32) < 1e-6 && (!tx2 || tx2.msg.indexOf("ЛДСП") < 0),
+          km.k1.kgm2 + " · " + km.k2.kgm2);
+      chk("kirillcha «Керамогранит» keramika zichligida (yogʻoch emas)", Math.abs(km.k3.kgm2 - 10) < 1e-6,
+          km.k3.kgm2 + " kg/m² (5 mm × 2000)");
+
       /* v22: SODDALASHTIRISH. P/M kundalik tegadigan maydonlar yopiq boʻlimga
          tushib qolmasin — aks holda soddalik oʻrniga yashirin meʼyor chiqadi. */
       var coreIds = ["cMaxKg","cMaxLen","cBaseWMax","cMinBase","cMaxH","cOvhOn",
-                     "cOddKg","cOddLMax","cOddWMax","cOneMan","cTare","cThick",
+                     "cOddKg","cOddLMax","cOddWMax","cOneMan","cTare","cTomQ","cOvh",
                      "cRackN","cCellN","cPrefix","cLabel","cAutoLbl"];
       var hid = coreIds.filter(function(id){
         var e = cv.querySelector("#" + id); return !e || !!e.closest("details.adv");
@@ -2034,16 +2126,18 @@ $tester = @'
 
     /* ================= v14: SOZLAMA AYLANMASI ================= */
     try {
-      var svAll = { baseWMax:S.baseWMax, baseLMin:S.baseLMin, baseCover:S.baseCover,
-                    baseInset:S.baseInset, maxH:S.maxH, lidBal:S.lidBal,
+      /* v22: baseLMin va baseInset — endi doimiy (maydoni yoʻq); tom ulushi «Qoʻlda» da oʻqiladi */
+      var svAll = { baseWMax:S.baseWMax, baseCover:S.baseCover, tomQ:S.tomQ,
+                    maxH:S.maxH, lidBal:S.lidBal,
                     oddKg:S.oddKg, oddLMax:S.oddLMax, oddWMax:S.oddWMax, oddTol:S.oddTol };
-      S.baseWMax=1234; S.baseLMin=321; S.baseCover=87; S.baseInset=33; S.maxH=555;
+      S.tomQ = "qolda";
+      S.baseWMax=1234; S.baseCover=87; S.maxH=555;
       S.lidBal=45; S.oddKg=44; S.oddLMax=2900; S.oddWMax=1500; S.oddTol=250;
       writeConf();
-      S.baseWMax=0; S.baseLMin=0; S.baseCover=0; S.baseInset=0; S.maxH=0;
+      S.baseWMax=0; S.baseCover=0; S.maxH=0;
       S.lidBal=0; S.oddKg=0; S.oddLMax=0; S.oddWMax=0; S.oddTol=0;
       readConf();
-      var rt = (S.baseWMax===1234 && S.baseLMin===321 && S.baseCover===87 && S.baseInset===33 &&
+      var rt = (S.baseWMax===1234 && S.baseCover===87 && S.baseLMin===0 && S.baseInset===null &&
                 S.maxH===555 && S.lidBal===45 && S.oddKg===44 && S.oddLMax===2900 &&
                 S.oddWMax===1500 && S.oddTol===250);
       chk("v14 sozlamalari yozildi va qayta oʻqildi", rt,
@@ -2053,7 +2147,7 @@ $tester = @'
       chk("nol qiymat saqlanadi (cheklovsiz)", S.baseLMin === 0 && S.maxH === 0,
           "baseLMin=" + S.baseLMin + " maxH=" + S.maxH);
       Object.keys(svAll).forEach(function(k){ S[k] = svAll[k]; });
-      writeConf(); packAll();
+      writeConf(); readConf(); packAll();
     } catch(e){ chk("v14 sozlama aylanmasi", false, e.message); }
 
     /* v13: QUYRUQ — guruh oxirida qoladigan yengil pochka boshqa pochka USTIGA

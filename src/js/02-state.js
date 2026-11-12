@@ -49,7 +49,11 @@ var S = {
        baseInset — tag gabaritdan har tomonga ≤ shuncha mm ichkarida
      Ikkalasi BIRGA tekshiriladi: foiz umumiy qamrovni, mm esa bitta yomon
      tomonni ushlaydi (uzun pochkada 5% ham 60 mm boʻlishi mumkin). */
-  baseCover:90, baseInset:40,
+  /* v22: baseInset («Chetdan qochish») OLIB TASHLANDI — chiqish chegarasi
+     min(chiqish, chetdan qochish) edi, standartda (20 va 40) faqat «Chiqish»
+     ishlardi; ikki maydon bitta narsani boshqarardi. Endi faqat S.ovh. */
+  baseCover:90, baseInset:null,
+  tomQ:"orta",          // v22: «Tom sifati» — TOM_PRESETS (pastda); «qolda» — 6 maydon qoʻlda
 
   /* v14: pochka maks BALANDLIGI, mm. 0 = cheklovsiz. Qavat soni (maxLayers)
      aralash qalinlikda balandlikni yomon oʻlchaydi: 12 ta 3 mm = 36 mm,
@@ -358,6 +362,24 @@ function splitFix(split, mode, rules){
   // eski rejim nomi bor, lekin qoidasi yoʻq — oʻsha rejimning maʼnosi bilan
   return (m === "conv") ? { prod:false, mat:true } : { prod:true, mat:false };
 }
+/* v22: TOM SIFATI — oltita tom meʼyori bitta tanlovga birlashtirildi.
+   205 ta real faylda oʻlchangan (audit xatosi uchalasida ham 0):
+     qattiq  — 2933 pochka (+79): tom toʻliqroq, kam detalli, tayanchi kuchli;
+     orta    — 2854 pochka: avvalgi standart qiymatlar;
+     yumshoq — 2767 pochka (−87): tom siyrakroq boʻlishi mumkin.
+   «qolda» — maydonlar ochiladi va oʻzi kiritiladi. */
+var TOM_PRESETS = {
+  qattiq:  { lidFill:95, lidN:2, lidBal:45, lidTol:50,  lidSupp:75, lidBed:90 },
+  orta:    { lidFill:90, lidN:3, lidBal:40, lidTol:100, lidSupp:65, lidBed:85 },
+  yumshoq: { lidFill:80, lidN:4, lidBal:30, lidTol:150, lidSupp:55, lidBed:75 }
+};
+/* v22: SOZLAMADAN DOIMIYGA AYLANGANLAR (soddalashtirish):
+     tries   — 4 → 8 urinish 205 faylda atigi −15 pochka, hisob vaqti +47 %;
+     byThick — har doim yoqiq: oʻchirilsa qalinliklar aralashib, qalinlik
+               matritsasini bekor qilardi (matritsa buni nazorat bilan qiladi);
+     baseLMin — 0: «Paddon qamrovi» kalta tagni allaqachon rad etadi. */
+var TRIES_FIXED = 4;
+
 var P = null;      // loyiha: {name, uuid, materials[], parts[]}
 var PACKS = [];    // hisoblangan pochkalar
 var CUR = -1;      // tanlangan pochka
