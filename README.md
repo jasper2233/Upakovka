@@ -1131,6 +1131,22 @@ ochiq aytadi va furnitura alohida hujjat bo'yicha topshirilishini ko'rsatadi.
 Brauzer IndexedDB ni qo'llab-quvvatlamasa (private rejim), tizim yiqilmaydi — shunchaki
 saqlamaydi va buni menejerda aytadi.
 
+### Seans, sozlamalar va qayta pochkalash (v22)
+
+| Holat | Endi nima bo'ladi |
+|---|---|
+| Ish boshlangan (pochka yig'ilgan yoki detal saralangan), sozlama yoki material o'zgardi | **Jimgina qayta pochkalanmaydi.** Pastda: «O'zgarish hali qo'llanmadi … [Baribir qayta pochkalash] [Keyin]». Ilgari har tahrir yarim yig'ilgan pochkalar va stelyajdagi saralashni o'chirib yuborardi |
+| Yangi fayl pochkalanayotganda «Bekor qilish» | avvalgi loyiha va pochkalar joyida qoladi (ilgari loyiha yangisi, pochkalar eskisi bo'lib qolardi) |
+| Seans yoki reja fayli boshqa me'yorlar bilan hisoblangan | me'yorlari faqat **o'sha** buyurtmaga; Sozlamalarda farqi aytiladi; yangi buyurtma **tsexning saqlangan** me'yorlari bilan pochkalanadi |
+| Seans tiklanmoqda, shu orada fayl yoki namuna ochildi | kech kelgan seans ochilgan loyiha ustidan yozmaydi |
+| Seans tiklandi | material katalogi qayta qo'llanmaydi — qo'lda tuzatilgan massa saqlanadi |
+| Tizim bitta brauzerning ikki oynasida ochiq | keyin ochilgan oyna seansni **yozmaydi** va buni aytadi (ilgari ikkalasi bir-birining ishini o'chirardi) |
+| P/M detalni qo'lda ko'chirdi | seansga yoziladi; «detal cheki va P05, P07 pochka cheklari eskirdi» + qayta chop etish tugmalari; eski chek skanerda taniladi («chek eski») |
+| Tarixda nomi va hajmi bir xil, lekin mazmuni boshqa fayl | alohida yozuv bo'ladi (ilgari tarixda eski mazmun qolib, qayta ochilganda eski buyurtma ochilardi) |
+| «0,6» kabi vergulli qiymat joylashtirildi | 0.6 deb o'qiladi (ilgari 0 yoki standart qiymat bo'lib ketardi) |
+| Seans brauzer xotirasiga yozilmadi (joy to'lgan) | shapkadagi nuqta qizil — «saqlandi» deb yolg'on ko'rsatilmaydi |
+| Diagnostika seans tiklangandan keyin | fayl nomi va parser ogohlantirishlari saqlangan nusxadan; «fayl yuklanmagan» demaydi |
+
 ---
 
 ## Sozlamalar

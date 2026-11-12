@@ -33,6 +33,10 @@ function upDiagWarn(code, msg){
   if (typeof diagWarn === "function"){ try { diagWarn(code, msg); return; } catch(e){} }
   if (window.console && console.warn) console.warn("[" + code + "] " + msg);
 }
+/* v22 (A11): fayl OʻQILISHIDAN oldingi ogohlantirishlar (kengaytma, hajm, kodirovka).
+   loadXmlText() diagnostikani tozalaydi — ilgari ular shu bilan oʻchib ketardi. */
+var UP_PRE = [];
+function upPreWarn(code, msg){ UP_PRE.push({ code:code, msg:msg }); upDiagWarn(code, msg); }
 function upStore(){ return (typeof Store !== "undefined" && Store) ? Store : null; }
 /* natija oddiy qiymat ham, Promise ham boʻlishi mumkin — ikkalasi ham qoʻllab-quvvatlanadi */
 function upThen(v, cb){
@@ -244,16 +248,17 @@ function readFile(f, enc){
   if (!f) return;
   var nm = f.name || "fayl", low = nm.toLowerCase(), isRetry = !!enc, okExt = false, i;
   if (!isRetry){
+    UP_PRE = [];
     for (i = 0; i < UP_EXT.length; i++){
       if (low.length >= UP_EXT[i].length && low.slice(-UP_EXT[i].length) === UP_EXT[i]) okExt = true;
     }
-    if (!okExt) upDiagWarn("KENGAYTMA", "«" + nm + "» — kutilgani .project, .xml, .txt yoki reja fayli (.upk.json) edi. Fayl baribir oʻqib koʻriladi.");
+    if (!okExt) upPreWarn("KENGAYTMA", "«" + nm + "» — kutilgani .project, .xml, .txt yoki reja fayli (.upk.json) edi. Fayl baribir oʻqib koʻriladi.");
     if (!f.size){
       showLoadError(new Error("Fayl boʻsh — hajmi 0 bayt. Toʻliq koʻchirilmagan yoki nusxa olishda uzilib qolgan boʻlishi mumkin."), "", nm);
       return;
     }
     if (f.size > UP_MAXMB * 1024 * 1024){
-      upDiagWarn("HAJM", "fayl " + upKb(f.size / 1024) + " MB — " + UP_MAXMB + " MB dan katta. Oʻqish sekin kechishi mumkin.");
+      upPreWarn("HAJM", "fayl " + upKb(f.size / 1024) + " MB — " + UP_MAXMB + " MB dan katta. Oʻqish sekin kechishi mumkin.");
     }
   }
   var r = new FileReader();
@@ -265,7 +270,7 @@ function readFile(f, enc){
     // UTF-8 da oʻqilganda buzuq belgilar chiqsa — eʼlon qilingan kodirovkada bir marta qayta oʻqiladi
     if (!isRetry && txt.indexOf("\uFFFD") >= 0){
       var e2 = upDeclEnc(txt) || "windows-1251";
-      upDiagWarn("KODIROVKA", "fayl UTF-8 emas — «" + e2 + "» kodirovkasida qayta oʻqilmoqda");
+      upPreWarn("KODIROVKA", "fayl UTF-8 emas — «" + e2 + "» kodirovkasida qayta oʻqilmoqda");
       try { readFile(f, e2); return; } catch(x){}
     }
     loadXmlText(txt, nm);
@@ -284,7 +289,9 @@ function loadXmlText(xmlText, fname){
     flash(pr.same ? "ok" : "err", pr.msg);
     return P;
   }
+  var pre = UP_PRE; UP_PRE = [];
   upDiagClear();
+  pre.forEach(function(w){ upDiagWarn(w.code, w.msg); });   // v22 (A11): tozalashdan keyin qaytadi
   var d = upDiag(), st = upStore(), data = null, err = null;
   d.fileName = fname || "";
   d.fileSize = String(xmlText || "").length;

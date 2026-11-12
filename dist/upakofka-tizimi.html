@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-<!-- Upakofka tizimi — build 4a393859 -->
+<!-- Upakofka tizimi — build 0b58cd8f -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Upakofka tizimi</title>
@@ -611,6 +611,8 @@ h3 .hint{color:var(--ink3);text-transform:none;letter-spacing:0}
 .srvbanner.warn{border-left-color:var(--mark)}
 .srvbanner.err{border-left-color:var(--alert)}
 .srvbanner .btn{flex:0 0 auto;padding:5px 12px;font-size:12px}
+.repackbar{left:14px;right:auto;max-width:640px}
+.tabbar{top:10px;bottom:auto;left:50%;right:auto;transform:translateX(-50%);max-width:760px}
 
 /* ---- v22: SARALASH POSTI va TV EKRANI — uzoqdan oʻqiladi ---- */
 body.post-sort .sortpad,body.post-tv .sortpad{max-width:1500px}
@@ -1035,6 +1037,9 @@ select:focus-visible,
 
 <!-- v22: server orqali postlar — «yangi reja kutmoqda», aloqa yoʻq -->
 <div id="srvBanner" class="srvbanner" style="display:none"></div>
+<!-- v22: qayta pochkalash boshlangan ishni bekor qiladi — tasdiq; ikki oyna -->
+<div id="repackBar" class="srvbanner repackbar warn" style="display:none"></div>
+<div id="tabBar" class="srvbanner tabbar err" style="display:none"></div>
 
 <main>
   <!-- 2.2b SARALASH — paddondan stelyaj yacheykalariga.
@@ -4013,6 +4018,7 @@ function packAll(){
 var PACK_RUN = 0;   // har chaqiruvga oʻz raqami: yangi hisob boshlansa eskisi oʻz-oʻzidan toʻxtaydi
 function packAllAsync(onProg){
   var prevPacks = PACKS;
+  var prevMainT = MAIN_T;     // v22 (C8): bekor qilinsa asosiy qalinlik ham eskisiga qaytadi
   var myRun = ++PACK_RUN;
   PACKPROG.cancel = false;
   return new Promise(function(resolve, reject){
@@ -4026,6 +4032,7 @@ function packAllAsync(onProg){
       if (PACKPROG.cancel){
         try { gen.return(); } catch(e){}
         PACKS = prevPacks;                       // bekor qilindi — eski natija qoladi
+        MAIN_T = prevMainT;
         resolve({ ok:false, cancelled:true });
         return;
       }
@@ -4037,7 +4044,7 @@ function packAllAsync(onProg){
           var now = nowMs();
           if (now - t0 > 40) break;              // 40 ms ishladik — nafas olamiz
         }
-      } catch(e){ if (myRun === PACK_RUN) PACKS = prevPacks; reject(e); return; }
+      } catch(e){ if (myRun === PACK_RUN){ PACKS = prevPacks; MAIN_T = prevMainT; } reject(e); return; }
       if (onProg) onProg(PACKPROG);
       setTimeout(pump, 0);
     }
@@ -5707,7 +5714,13 @@ var Store = (function(){
     var viaLs = false;
     return withDb("kv", "readwrite", function(st){
       st.put({ k:SES_KEY, v:snap });
-    }, function(){ viaLs = true; lsPut(snap); return null; }).then(function(){
+    }, function(){
+      viaLs = true;
+      /* v22 (A12): joy toʻlgan yoki yopiq — XATO qaytadi. Ilgari javob eʼtiborsiz
+         qolib, shapkadagi nuqta «saqlandi» deb yashil turardi. */
+      if (!lsPut(snap)) return Promise.reject(new Error("brauzer xotirasi toʻlgan yoki yopiq — seans saqlanmadi"));
+      return null;
+    }).then(function(){
       /* IndexedDB ga yozildi — localStorage'dagi eski seansni olib tashlaymiz.
          Aks holda keyinchalik IndexedDB ishdan chiqsa oʻsha ESKI seans tiklanib,
          operator bir necha kun oldingi terishni davom ettirib yuborardi. */
@@ -5749,7 +5762,11 @@ var Store = (function(){
       ts:   (f && f.ts) || Date.now()
     };
     rec.size = rec.xml.length;
-    rec.nk = rec.name + "|" + rec.size;           // bir xil fayl belgisi
+    /* v22 (A10): MAZMUN belgisi ham. Ilgari «nom|hajm» edi: nomi va hajmi bir xil,
+       lekin oʻlchami tuzatilgan fayl («1800» -> «1700») yuklansa, tarixda ESKI
+       mazmun qolardi va qayta ochilganda eski buyurtma ochilardi. */
+    rec.hash = strHash(rec.xml);
+    rec.nk = rec.name + "|" + rec.size + "|" + rec.hash;
     return withDb("files", "readwrite", function(st, set){
       function add(){
         var a = st.add(rec);
@@ -5926,6 +5943,13 @@ function makeSnapshot(){
        maydonlar ham oʻz-oʻzidan tushadi — P da faqat oddiy maʼlumot turadi) */
     // v22: qadoqlash postida skanerlangan MES cheklar — qayta skan himoyasi brauzer yopilsa ham qolsin
     packSeen: (typeof PACK_SEEN === "object" && PACK_SEEN) ? snapClone(PACK_SEEN, {}) : {},
+    // v22 (B9): P/M qoʻlda koʻchirgan detallar — eski chekdagi pochka raqami
+    moved: movedMap(),
+    // v22 (A9): diagnostika xulosasi — qayta yuklangach «fayl yuklanmagan» demasin
+    diag: (typeof DIAG === "object" && DIAG) ? {
+      fileName: DIAG.fileName || "", fileSize: DIAG.fileSize || 0, parseMs: DIAG.parseMs || 0,
+      warnings: snapClone((DIAG.warnings || []).slice(0, 200), [])
+    } : null,
     project: P ? (snapClone(P, null) || { name:P.name, uuid:P.uuid, rev:P.rev || 0,
                    materials: snapClone(P.materials || [], []),
                    parts:     snapClone(P.parts     || [], []) }) : null,
@@ -5939,6 +5963,22 @@ function makeSnapshot(){
    ogʻirligi/bb/h/fill va pochka kg/env/seq/gabarit qayta hisoblanadi.
    Biror uid topilmasa — hech narsa oʻzgarmaydi, false qaytadi.
    ============================================================ */
+/* v22 (A10): satr belgisi — FNV-1a, 8 ta 16-lik belgi */
+function strHash(s){
+  var h = 0x811c9dc5;
+  s = String(s || "");
+  for (var i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return ("0000000" + h.toString(16)).slice(-8);
+}
+/* v22 (B9): koʻchirilgan detallar: uid -> eski chekdagi pochka raqamlari */
+function movedMap(){
+  var m = {};
+  (PACKS || []).forEach(function(p){
+    packItems(p).forEach(function(it){ if (it.movedFrom && it.movedFrom.length) m[it.uid] = it.movedFrom.slice(); });
+  });
+  return m;
+}
+
 function restoreSnapshot(snap){
   function bakState(){
     var b = { conf:{}, P:P, PACKS:PACKS, CUR:CUR, STEP:STEP,
@@ -6150,6 +6190,21 @@ function restoreSnapshot(snap){
 
     PACKS = out;
     if (typeof PACK_SEEN === "object") PACK_SEEN = isObj(snap.packSeen) ? (snapClone(snap.packSeen, {}) || {}) : {};
+    // v22 (B9): koʻchirilgan detallar eski chekini taniydi
+    if (isObj(snap.moved)) Object.keys(snap.moved).forEach(function(u){
+      var mv = snap.moved[u];
+      if (byUid[u] && isArr(mv)) byUid[u].movedFrom = mv.slice(0, 10).map(String);
+    });
+    // v22 (A9): diagnostika — fayl qayta oʻqilmaydi, xulosasi seansdan
+    if (typeof DIAG === "object" && DIAG){
+      var dg = isObj(snap.diag) ? snap.diag : {};
+      DIAG.fileName = typeof dg.fileName === "string" ? dg.fileName : "";
+      DIAG.fileSize = +dg.fileSize || 0;
+      DIAG.parseMs  = +dg.parseMs || 0;
+      DIAG.warnings = isArr(dg.warnings) ? (snapClone(dg.warnings, []) || []) : [];
+      DIAG.xmlInfo  = null;
+      DIAG.restored = true;
+    }
     CUR  = (isFinite(+snap.cur) && +snap.cur >= -1 && +snap.cur < PACKS.length)
              ? Math.round(+snap.cur) : (PACKS.length ? 0 : -1);
     STEP = PACKS[CUR]
@@ -6199,6 +6254,39 @@ function autosave(){
     catch(e){ bad(e); }
   }, AUTOSAVE_MS);
 }
+
+/* v22 (A8): IKKI OYNA. Bitta brauzerda tizim ikki oynada ochilsa ikkalasi bitta
+   seansni yozadi — oxirgisi yutadi, ikkinchisining ishi jimgina yoʻqoladi
+   (qayta yuklanganda boshqa oynaning holati chiqadi). Endi keyin ochilgan oyna
+   seansni YOZMAYDI va buni ekranda aytadi. */
+var TAB_SECOND = false;
+var TAB_BORN = Date.now();
+var TAB_ID = TAB_BORN + "-" + Math.random().toString(36).slice(2, 8);
+function tabBar(){
+  var el = document.getElementById("tabBar"); if (!el) return;
+  if (!TAB_SECOND){ el.style.display = "none"; el.innerHTML = ""; return; }
+  el.style.display = "flex";
+  el.innerHTML = '<span><b>Tizim bu brauzerning boshqa oynasida ham ochiq.</b> Ikki oyna bitta seansni ' +
+    'yozib, bir-birining ishini oʻchiradi — shuning uchun bu oyna seansni SAQLAMAYDI. ' +
+    'Boshqa oynada ishlang yoki uni yopib, bu oynani qayta yuklang (F5).</span>';
+}
+(function tabGuard(){
+  if (typeof BroadcastChannel !== "function") return;
+  var ch;
+  try { ch = new BroadcastChannel("upk-tabs"); } catch(e){ return; }
+  ch.onmessage = function(ev){
+    var m = (ev && ev.data) || {};
+    if (m.id === TAB_ID) return;
+    if (m.t === "hello") { try { ch.postMessage({ t:"here", id:TAB_ID, born:TAB_BORN }); } catch(e){} }
+    if (m.t === "here" && +m.born < TAB_BORN && !TAB_SECOND){
+      TAB_SECOND = true; AUTOSAVE_ON = false;
+      if (AUTOSAVE_T){ clearTimeout(AUTOSAVE_T); AUTOSAVE_T = null; }
+      saveDot("err", "boshqa oynada ham ochiq — bu oyna saqlamaydi");
+      tabBar();
+    }
+  };
+  try { ch.postMessage({ t:"hello", id:TAB_ID, born:TAB_BORN }); } catch(e){}
+})();
 
 /* seansni tozalash — localStorage'dagi "upk_conf" ga TEGILMAYDI */
 function clearSession(){
@@ -6664,8 +6752,13 @@ function checkScan(v, again){
      juftlik BOSHQA detal), oddiy kodda — kod. */
   function sizeOf(it){ return it.L + "x" + it.W + "x" + it.T; }
   function hitIn(pk, s){
-    if (own) return f[1] === "P" + pad2(pk.no) && f[3] === s.it.code && f[4] === sizeOf(s.it);
+    // v22 (B9): P/M koʻchirgan detalning eski chekida eski pochka raqami turadi
+    if (own) return (f[1] === "P" + pad2(pk.no) || (s.it.movedFrom && s.it.movedFrom.indexOf(f[1]) >= 0)) &&
+                    f[3] === s.it.code && f[4] === sizeOf(s.it);
     return s.it.code === v || mesMatch(v, s.it);
+  }
+  function stale(pk){
+    return (own && f[1] !== "P" + pad2(pk.no)) ? " (chek eski: " + f[1] + " — detal koʻchirilgan, yangi chek chiqaring)" : "";
   }
 
   /* v22: BITTA CHEK — BITTA DETAL. MES chekida nusxa raqami bor (…_3), demak
@@ -6703,7 +6796,7 @@ function checkScan(v, again){
   if (STEP >= p.seq.length){ elsewhere(true); return; }
   var step = p.seq[STEP];
 
-  if (hitIn(p, step)){ seenMark(step); advance(); flash("ok","toʻgʻri — qoʻyildi ✓"); return; }
+  if (hitIn(p, step)){ seenMark(step); advance(); flash("ok","toʻgʻri — qoʻyildi ✓" + stale(p)); return; }
 
   /* v22: QAVAT ICHIDA ERKIN TARTIB (MES gʻoyasi: qaror qadoqlovchida). Shu
      qavatdagi hali qoʻyilmagan detal skanerlansa — qabul qilinadi va yigʻish
@@ -6716,7 +6809,7 @@ function checkScan(v, again){
       var sw = p.seq.splice(i, 1)[0];
       p.seq.splice(STEP, 0, sw);
       seenMark(sw);
-      advance(); flash("ok","toʻgʻri — qoʻyildi ✓ (shu qavat, boshqa tartibda)");
+      advance(); flash("ok","toʻgʻri — qoʻyildi ✓ (shu qavat, boshqa tartibda)" + stale(p));
       return;
     }
     if (later < 0) later = i;
@@ -7196,6 +7289,7 @@ function moveDetail(fromIdx, uid, toIdx){
     // sarlavha boʻlib chiqib roʻyxatni ikkiga boʻlardi.
     np.gname = src.gname; np.key = src.key; np.room = src.room;
     PACKS.push(np);
+    markMoved(it, src);
     return null;
   }
   var dst = PACKS[toIdx];
@@ -7231,7 +7325,24 @@ function moveDetail(fromIdx, uid, toIdx){
     packLoad(dst, dstBak);
     return "P"+pad2(src.no)+" bu detalsiz qayta terilmadi — "+srcLeft.length+" detal joysiz qolardi";
   }
+  markMoved(it, src);
   return null;
+}
+/* v22 (B9): koʻchirilgan detal — chop etilgan cheki eski pochka raqamini koʻrsatadi.
+   Skaner (qadoqlash va saralash posti) uni taniydi va «chek eski» deydi. */
+function markMoved(it, src){
+  var lab = "P" + pad2(src.no);
+  if (!it.movedFrom) it.movedFrom = [];
+  if (it.movedFrom.indexOf(lab) < 0) it.movedFrom.push(lab);
+}
+/* bir nechta pochka cheki birdan (koʻchirishdan keyin ikki pochka) */
+function printPackLabels(list){
+  list = (list || []).filter(Boolean);
+  if (!list.length) return;
+  applyPageSize();
+  $("sheet").innerHTML = '<div class="lbls">' + list.map(function(p, i){ return packLabelHTML(p, "qpk" + i); }).join("") + '</div>';
+  list.forEach(function(p, i){ drawQR($("qpk" + i), packQR(p)); });
+  setTimeout(function(){ window.print(); setTimeout(function(){ $("sheet").innerHTML = ""; }, 1000); }, 60);
 }
 /* v12: QOʻLDA TAHRIRLASH ENDI FAQAT P/M DA.
    Ilgari «Tahrirlash» tugmasi Qadoqlash ekranida — 3D sahnaning ustida — turardi
@@ -7295,10 +7406,11 @@ function renderMgrEdit(){
       var uid = b.dataset.mv;
       var sel = box.querySelector('select[data-uid="'+uid+'"]');
       var to = sel.value==="new" ? "new" : parseInt(sel.value,10);
+      var srcP = PACKS[MGR_CUR];
       var err = moveDetail(MGR_CUR, uid, to);
       var m = $("emsg");
       if (err){ m.className="msg err"; m.textContent = err; return; }
-      m.className="msg ok"; m.textContent = "koʻchirildi ✓";
+      var dstP = (to === "new") ? PACKS[PACKS.length - 1] : PACKS[to];
       /* v21: detal boshqa pochkaga oʻtdi — uning eski yacheykadagi belgisi
          endi yolgʻon. `SORT.put[uid]` manba pochkaning yacheykasini
          koʻrsatib turardi, yaʼni saralash ekrani detalni «allaqachon
@@ -7309,6 +7421,23 @@ function renderMgrEdit(){
       if (typeof sortPlan === "function") sortPlan();
       renderPacks(); stats(); renderMgrEdit();
       if (CUR >= 0){ renderStep(); draw3D(); draw2D(); }
+      /* v22 (B9): tahrir seansga yoziladi (ilgari qayta yuklansa yoʻqolardi) va
+         eskirgan cheklar aytiladi. Xabar qayta chizishdan KEYIN — ilgari
+         renderMgrEdit() uni darhol oʻchirib yuborardi. */
+      if (typeof autosave === "function") autosave();
+      var m2 = $("emsg");
+      if (m2){
+        m2.className = "msg ok";
+        m2.innerHTML = 'koʻchirildi ✓ — <b>detal cheki va P' + pad2(srcP.no) + ', P' + pad2(dstP.no) +
+          ' pochka cheklari eskirdi</b>, qayta chop eting ' +
+          '<button type="button" class="btn gh" id="mvLbl">Detal cheki</button> ' +
+          '<button type="button" class="btn gh" id="mvPk">Pochka cheklari</button>';
+        $("mvLbl").onclick = function(){
+          var st = dstP.seq.filter(function(x){ return x.it.uid === uid; })[0];
+          if (st) printSteps([{ p:dstP, s:st }], "koʻchirilgan detal");
+        };
+        $("mvPk").onclick = function(){ printPackLabels([srcP, dstP]); };
+      }
     };
   });
 }
@@ -7638,6 +7767,7 @@ function diagClear(){
   DIAG.parseMs = 0;
   DIAG.packMs = 0;
   DIAG_OV = null;
+  DIAG.restored = false;   // v22 (A9)
 }
 
 /* 3.12.3 ogohlantirish qoʻshish — bir xil code+msg takrorlansa soni oshadi
@@ -7777,7 +7907,11 @@ function diagSafe(fn, ttl){
 function diagFileHTML(){
   var sz = DIAG.fileSize || (DIAG.xmlInfo ? DIAG.xmlInfo.chars : 0);
   var h = '<h3>Fayl</h3>';
-  if (!DIAG.fileName && !DIAG.parseMs){
+  if (DIAG.restored){
+    // v22 (A9): seans tiklangan / reja faylidan — fayl qayta oʻqilmagan
+    h += '<div class="note">Seans tiklangan (yoki reja faylidan ochilgan) — fayl qayta oʻqilmadi. ' +
+         'Parser ogohlantirishlari saqlangan nusxadan; XML tuzilishi faqat fayl yuklanganda koʻrinadi.</div>';
+  } else if (!DIAG.fileName && !DIAG.parseMs){
     h += '<div class="note">Hali .project fayl yuklanmagan — ekranda oʻrnatilgan namuna maʼlumot turibdi. ' +
          'Fayl yuklansa shu yerda oʻqish natijasi va sabablar koʻrinadi.</div>';
   }
@@ -8263,6 +8397,10 @@ function upDiagWarn(code, msg){
   if (typeof diagWarn === "function"){ try { diagWarn(code, msg); return; } catch(e){} }
   if (window.console && console.warn) console.warn("[" + code + "] " + msg);
 }
+/* v22 (A11): fayl OʻQILISHIDAN oldingi ogohlantirishlar (kengaytma, hajm, kodirovka).
+   loadXmlText() diagnostikani tozalaydi — ilgari ular shu bilan oʻchib ketardi. */
+var UP_PRE = [];
+function upPreWarn(code, msg){ UP_PRE.push({ code:code, msg:msg }); upDiagWarn(code, msg); }
 function upStore(){ return (typeof Store !== "undefined" && Store) ? Store : null; }
 /* natija oddiy qiymat ham, Promise ham boʻlishi mumkin — ikkalasi ham qoʻllab-quvvatlanadi */
 function upThen(v, cb){
@@ -8474,16 +8612,17 @@ function readFile(f, enc){
   if (!f) return;
   var nm = f.name || "fayl", low = nm.toLowerCase(), isRetry = !!enc, okExt = false, i;
   if (!isRetry){
+    UP_PRE = [];
     for (i = 0; i < UP_EXT.length; i++){
       if (low.length >= UP_EXT[i].length && low.slice(-UP_EXT[i].length) === UP_EXT[i]) okExt = true;
     }
-    if (!okExt) upDiagWarn("KENGAYTMA", "«" + nm + "» — kutilgani .project, .xml, .txt yoki reja fayli (.upk.json) edi. Fayl baribir oʻqib koʻriladi.");
+    if (!okExt) upPreWarn("KENGAYTMA", "«" + nm + "» — kutilgani .project, .xml, .txt yoki reja fayli (.upk.json) edi. Fayl baribir oʻqib koʻriladi.");
     if (!f.size){
       showLoadError(new Error("Fayl boʻsh — hajmi 0 bayt. Toʻliq koʻchirilmagan yoki nusxa olishda uzilib qolgan boʻlishi mumkin."), "", nm);
       return;
     }
     if (f.size > UP_MAXMB * 1024 * 1024){
-      upDiagWarn("HAJM", "fayl " + upKb(f.size / 1024) + " MB — " + UP_MAXMB + " MB dan katta. Oʻqish sekin kechishi mumkin.");
+      upPreWarn("HAJM", "fayl " + upKb(f.size / 1024) + " MB — " + UP_MAXMB + " MB dan katta. Oʻqish sekin kechishi mumkin.");
     }
   }
   var r = new FileReader();
@@ -8495,7 +8634,7 @@ function readFile(f, enc){
     // UTF-8 da oʻqilganda buzuq belgilar chiqsa — eʼlon qilingan kodirovkada bir marta qayta oʻqiladi
     if (!isRetry && txt.indexOf("\uFFFD") >= 0){
       var e2 = upDeclEnc(txt) || "windows-1251";
-      upDiagWarn("KODIROVKA", "fayl UTF-8 emas — «" + e2 + "» kodirovkasida qayta oʻqilmoqda");
+      upPreWarn("KODIROVKA", "fayl UTF-8 emas — «" + e2 + "» kodirovkasida qayta oʻqilmoqda");
       try { readFile(f, e2); return; } catch(x){}
     }
     loadXmlText(txt, nm);
@@ -8514,7 +8653,9 @@ function loadXmlText(xmlText, fname){
     flash(pr.same ? "ok" : "err", pr.msg);
     return P;
   }
+  var pre = UP_PRE; UP_PRE = [];
   upDiagClear();
+  pre.forEach(function(w){ upDiagWarn(w.code, w.msg); });   // v22 (A11): tozalashdan keyin qaytadi
   var d = upDiag(), st = upStore(), data = null, err = null;
   d.fileName = fname || "";
   d.fileSize = String(xmlText || "").length;
@@ -8973,6 +9114,11 @@ function advMark(){
 function confCheck(){
   var out = [];
   function add(lvl, msg){ out.push({ lvl:lvl, msg:msg }); }
+  // v22: joriy buyurtma seans/reja faylidagi meʼyorlar bilan — tsexnikidan farqli boʻlsa aytiladi
+  var sd = (typeof confSnapDiff === "function") ? confSnapDiff() : [];
+  if (sd.length)
+    add("info", "Joriy buyurtma seans yoki reja faylidagi meʼyorlar bilan hisoblangan — tsexda saqlanganidan farqli: " +
+        sd.slice(0, 6).join(", ") + (sd.length > 6 ? " …" : "") + ". Yangi buyurtma saqlangan meʼyorlar bilan pochkalanadi.");
   var maxKg = +S.maxKg || 0, over = +S.tailKgOver || 0, odd = oddKgCap();
   var eff = maxKg + over, tare = +S.tare || 0;
 
@@ -9045,6 +9191,7 @@ function saveConf(){
   o._thickMixV = 22;            // v22: «false» endi tsexning ANIQ tanlovi (pastda restoreConf)
   try {
     localStorage.setItem("upk_conf", JSON.stringify(o));
+    DEVICE_CONF = confCapture(); CONF_FROM_SNAP = false;   // v22: endi shular — tsex meʼyorlari
     var n = $("saveNote"); n.style.display = "block";
     setTimeout(function(){ n.style.display = "none"; }, 3500);
   } catch(e){
@@ -9117,11 +9264,19 @@ function resetConf(){
   renderThickMix();                                    // shu faylda — tekshiruv shart emas
   advMark();                                           // loyiha boʻlmasa readConf chaqirilmaydi
   readConf();                                          // confCheck ham standart qiymatlarni koʻrsin
+  DEVICE_CONF = confCapture(); CONF_FROM_SNAP = false;  // v22: standart — tsex meʼyorlari
   if (P) recompute();
 }
 
 /* --- 3.14.2 SOZLAMANI OʻQISH / YOZISH --- */
 function readConf(){
+  /* v22: VERGUL (A13). «0,6» joylashtirilsa (paste) beforeinput uni tutmaydi:
+     parseFloat uni 0 deb, «+» esa NaN deb oʻqirdi — tara 0,6 oʻrniga 0 kg boʻlardi,
+     boshqa maydon jimgina standartga qaytardi. Oʻqishdan oldin oʻnlik vergul nuqtaga. */
+  [].slice.call(document.querySelectorAll('input[data-num="1"]')).forEach(function(e){
+    var v = String(e.value || "");
+    if (/^\s*-?\d*[,٫]\d+\s*$/.test(v)) e.value = v.replace(/[,٫]/, ".").trim();
+  });
   S.maxKg    = +$("cMaxKg").value || 35;
   S.ovh      = +$("cOvh").value || 0;
   S.minBase  = +$("cMinBase").value || 190;
@@ -9349,8 +9504,39 @@ function progUpdate(pp){
 
 /* --- 3.14.4 QAYTA HISOB --- */
 var BUSY = false;
-function recompute(){
+/* v22: ISH BOSHLANGANMI (B5). Qayta pochkalash pochkalar tarkibini oʻzgartiradi:
+   yigʻilgan/boshlangan pochkalar va stelyajga saralangan detallar yaroqsiz
+   boʻladi. Ilgari HAR sozlama yoki material tahriri buni jimgina qilardi. */
+function workProgress(){
+  var packs = 0, sorted = 0;
+  (PACKS || []).forEach(function(p){ if ((p.done || 0) > 0) packs++; });
+  if (typeof SORT === "object" && SORT && SORT.put) sorted = Object.keys(SORT.put).length;
+  return { packs:packs, sorted:sorted, any:(packs + sorted) > 0 };
+}
+var REPACK_WAIT = false;   // oʻzgarish bor, qayta pochkalash tasdiq kutmoqda
+function repackBar(wp){
+  var el = $("repackBar"); if (!el) return;
+  if (!wp){ el.style.display = "none"; el.innerHTML = ""; return; }
+  el.style.display = "flex";
+  el.innerHTML = '<span><b>Oʻzgarish hali qoʻllanmadi.</b> Qayta pochkalash boshlangan ishni bekor qiladi: ' +
+    (wp.packs ? wp.packs + ' ta pochka yigʻilgan yoki boshlangan' : '') + (wp.packs && wp.sorted ? ', ' : '') +
+    (wp.sorted ? wp.sorted + ' ta detal stelyajga saralangan' : '') +
+    ' — pochkalar tarkibi oʻzgaradi, saralash va cheklar qaytadan.</span>' +
+    '<button type="button" class="btn" id="btnRepackGo">Baribir qayta pochkalash</button>' +
+    '<button type="button" class="btn gh" id="btnRepackNo">Keyin</button>';
+  $("btnRepackGo").onclick = function(){ recompute(true); };
+  $("btnRepackNo").onclick = function(){ repackBar(null); };
+}
+/* force — ish boshlangan boʻlsa ham (yangi loyiha yuklandi yoki operator tasdiqladi) */
+function recompute(force){
   if (!P) return Promise.resolve();
+  if (!force){
+    var wp = workProgress();
+    /* S oʻzgartirilmaydi: u joriy pochkalarga mos qolishi shart (detallar shu bilan
+       quriladi). Formadagi yangi qiymat tasdiqlanganda qoʻllanadi. */
+    if (wp.any){ REPACK_WAIT = true; repackBar(wp); return Promise.resolve({ pending:true }); }
+  }
+  REPACK_WAIT = false; repackBar(null);
   readConf();
   BUSY = true;
   progShow();
@@ -9388,15 +9574,71 @@ function recomputeSoon(){
 }
 
 /* --- 3.14.5 LOYIHANI ISHGA TUSHIRISH --- */
+/* v22: SEANS VA SOZLAMA — IKKI MANBA (A4/A5).
+   Tsexning SAQLANGAN meʼyorlari (localStorage) — har YANGI buyurtma uchun.
+   Seans yoki reja faylidan kelgan meʼyorlar — faqat OʻSHA buyurtma uchun: uning
+   pochkalari shular bilan hisoblangan va detallari shular bilan quriladi.
+   Ilgari ular yangi buyurtmaga ham oʻtib ketardi (boshqa kompyuterda tuzilgan
+   reja ochilgandan keyin yangi fayl oʻsha kompyuter meʼyorlari bilan
+   pochkalanardi), saqlangan meʼyor esa jimgina eʼtiborsiz qolardi. */
+var BOOT_GEN = 0;            // har yangi loyiha/reja — yangi avlod (ishga tushish poygasi, A14)
+var CONF_FROM_SNAP = false;  // formadagi meʼyorlar seans/reja faylidan kelgan
+var DEVICE_CONF = null;      // tsex meʼyorlari: saqlangan (yoki standart) holat
+function confCapture(){
+  var o = { conf:{}, split:JSON.parse(JSON.stringify(S.split || splitDefault())),
+            matCat:JSON.parse(JSON.stringify(S.matCat || [])) };
+  SNAP_CONF.forEach(function(k){ o.conf[k] = S[k]; });
+  return o;
+}
+function confApply(o){
+  if (!o) return;
+  SNAP_CONF.forEach(function(k){ if (o.conf.hasOwnProperty(k)) S[k] = o.conf[k]; });
+  S.split = JSON.parse(JSON.stringify(o.split));
+  if (o.matCat && o.matCat.length) S.matCat = JSON.parse(JSON.stringify(o.matCat));
+}
+/* Seans meʼyorlari tsexnikidan qayerda farq qiladi (Sozlamalar ogohlantirishi) */
+function confSnapDiff(){
+  if (!CONF_FROM_SNAP || !DEVICE_CONF) return [];
+  var out = [];
+  SNAP_CONF.forEach(function(k){
+    var a = DEVICE_CONF.conf[k], b = S[k];
+    if (String(a) !== String(b)) out.push(k + " " + b + " (saqlangani " + a + ")");
+  });
+  if (JSON.stringify(DEVICE_CONF.split) !== JSON.stringify(S.split)) out.push("modul/material kesimi");
+  return out;
+}
 function boot(data){
+  BOOT_GEN++;
+  var prev = { P:P, PACKS:PACKS, CUR:CUR, STEP:STEP, conf:confCapture(), fromSnap:CONF_FROM_SNAP };
+  var note = "";
+  if (CONF_FROM_SNAP && DEVICE_CONF){
+    if (confSnapDiff().length) note = " — tsexning saqlangan meʼyorlari qoʻllandi";
+    confApply(DEVICE_CONF); writeConf();
+  }
+  CONF_FROM_SNAP = false;
   P = data; CUR = -1; STEP = 0;
   if (!P.rev) P.rev = 0;
   if (!S.rooms) S.rooms = {};
   readConf(); applyCat();
   renderMats(); renderMgr(); renderCat();
-  return recompute().then(function(){
+  return recompute(true).then(function(res){
+    if (res && res.cancelled){
+      /* v22: BEKOR QILINDI (A3) — yangi loyiha ham qolmaydi. Ilgari P yangi, PACKS
+         esa eskisi boʻlib qolardi: roʻyxatda eski pochkalar yangi loyiha nomi bilan. */
+      P = prev.P; PACKS = prev.PACKS; CUR = prev.CUR; STEP = prev.STEP;
+      confApply(prev.conf); writeConf(); CONF_FROM_SNAP = prev.fromSnap;
+      if (P){
+        renderMats(); renderMgr(); renderCat(); renderPacks(); renderParts(); stats();
+        if (PACKS.length) selectPack(Math.max(0, Math.min(CUR < 0 ? 0 : CUR, PACKS.length - 1)));
+        else renderStep();
+      }
+      flash("err", "yuklash bekor qilindi — avvalgi loyiha joyida qoldi");
+      return res;
+    }
     if (PACKS.length) selectPack(0); else renderStep();
     if (typeof renderDiag === "function") renderDiag();
+    if (note) flash("ok", "yangi buyurtma" + note);
+    return res;
   });
 }
 
@@ -9734,22 +9976,31 @@ if (typeof initUpload === "function") initUpload();
 // saralash posti oʻzini oʻzi bogʻlaydi — 14-sort.js oxiriga qarang
 
 (function start(){
-  function fallback(){ boot(JSON.parse(JSON.stringify(SEED))); }
+  /* v22: POYGA (A14). Seans asinxron tiklanadi; shu orada foydalanuvchi fayl
+     yoki namunani ochsa (yoki server rejasi kelsa) — kech kelgan seans uning
+     ustidan yozmaydi. */
+  var gen = BOOT_GEN;
+  DEVICE_CONF = confCapture();           // restoreConf + readConf dan keyin — tsex meʼyorlari
+  function fallback(){ if (gen === BOOT_GEN) boot(JSON.parse(JSON.stringify(SEED))); }
 
   if (typeof Store === "undefined" || !Store.ready){ fallback(); return; }
 
   Store.ready.then(function(){ return Store.getSession(); }).then(function(snap){
+    if (gen !== BOOT_GEN) return;
     if (!snap){ fallback(); return; }
     var ok = false;
     try { ok = restoreSnapshot(snap); } catch(e){ if (window.console) console.warn("seans:", e); }
     if (!ok){ fallback(); return; }
+    BOOT_GEN++; CONF_FROM_SNAP = true;
     // Terish reviziyasi pochkalarda saqlangan. P.rev ni ularning eng kattasiga tenglaymiz —
     // aks holda keyingi qayta pochkalash R1 dan boshlanib, eski cheklar bilan adashtiradi.
     var mx = 0;
     PACKS.forEach(function(p){ if ((p.rev||0) > mx) mx = p.rev||0; });
     P.rev = mx || 1;
     writeConf();
-    applyCat();
+    /* v22: applyCat() bu yerda chaqirilmaydi (A6) — seansdagi materiallar haqiqat:
+       qoʻlda tuzatilgan massa katalog bilan jimgina almashib ketardi, pochkalar
+       esa eski massadagi detallar bilan qolardi. Katalog yangi loyihaga qoʻllanadi. */
     renderPacks(); renderParts(); renderMats(); renderMgr(); renderCat(); stats();
     if (PACKS.length) selectPack(Math.max(0, Math.min(snap.cur || 0, PACKS.length-1)));
     else renderStep();
@@ -10196,9 +10447,11 @@ function sortResolve(raw){
     }
     out.label = f[3];
     PACKS.forEach(function(p){
-      if ("P" + pad2(p.no) !== f[1]) return;
+      var mine = "P" + pad2(p.no) === f[1];
       packItems(p).forEach(function(it){
-        if (it.code === f[3] && (it.L + "x" + it.W + "x" + it.T) === f[4]) out.cands.push({ p:p, it:it });
+        // v22 (B9): P/M koʻchirgan detalning eski chekida eski pochka raqami
+        var moved = it.movedFrom && it.movedFrom.indexOf(f[1]) >= 0;
+        if ((mine || moved) && it.code === f[3] && (it.L + "x" + it.W + "x" + it.T) === f[4]) out.cands.push({ p:p, it:it });
       });
     });
     return out;
@@ -10850,6 +11103,10 @@ function planFileLoad(txt){
   var before = planId(), ok = false;
   try { ok = restoreSnapshot(o.snapshot); } catch(e){ ok = false; }
   if (!ok) return { ok:false, msg:"reja tiklanmadi — fayldagi detallar mos kelmadi (fayl buzilgan yoki boshqa versiya)" };
+  /* v22: reja meʼyorlari — faqat shu buyurtma uchun (13-app «ikki manba»);
+     kech kelgan seans tiklanishi uning ustidan yozmaydi (A14) */
+  if (typeof BOOT_GEN === "number") BOOT_GEN++;
+  if (typeof CONF_FROM_SNAP === "boolean") CONF_FROM_SNAP = true;
   // reviziya fayldagi loyihada bor; boʻlmasa — pochkalardagi eng kattasi (09-storage start bilan bir xil)
   var mx = 0;
   PACKS.forEach(function(p){ if ((p.rev || 0) > mx) mx = p.rev || 0; });

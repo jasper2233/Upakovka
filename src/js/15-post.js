@@ -141,6 +141,10 @@ function planFileLoad(txt){
   var before = planId(), ok = false;
   try { ok = restoreSnapshot(o.snapshot); } catch(e){ ok = false; }
   if (!ok) return { ok:false, msg:"reja tiklanmadi — fayldagi detallar mos kelmadi (fayl buzilgan yoki boshqa versiya)" };
+  /* v22: reja meʼyorlari — faqat shu buyurtma uchun (13-app «ikki manba»);
+     kech kelgan seans tiklanishi uning ustidan yozmaydi (A14) */
+  if (typeof BOOT_GEN === "number") BOOT_GEN++;
+  if (typeof CONF_FROM_SNAP === "boolean") CONF_FROM_SNAP = true;
   // reviziya fayldagi loyihada bor; boʻlmasa — pochkalardagi eng kattasi (09-storage start bilan bir xil)
   var mx = 0;
   PACKS.forEach(function(p){ if ((p.rev || 0) > mx) mx = p.rev || 0; });

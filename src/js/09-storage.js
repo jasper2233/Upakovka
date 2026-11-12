@@ -193,7 +193,13 @@ var Store = (function(){
     var viaLs = false;
     return withDb("kv", "readwrite", function(st){
       st.put({ k:SES_KEY, v:snap });
-    }, function(){ viaLs = true; lsPut(snap); return null; }).then(function(){
+    }, function(){
+      viaLs = true;
+      /* v22 (A12): joy toʻlgan yoki yopiq — XATO qaytadi. Ilgari javob eʼtiborsiz
+         qolib, shapkadagi nuqta «saqlandi» deb yashil turardi. */
+      if (!lsPut(snap)) return Promise.reject(new Error("brauzer xotirasi toʻlgan yoki yopiq — seans saqlanmadi"));
+      return null;
+    }).then(function(){
       /* IndexedDB ga yozildi — localStorage'dagi eski seansni olib tashlaymiz.
          Aks holda keyinchalik IndexedDB ishdan chiqsa oʻsha ESKI seans tiklanib,
          operator bir necha kun oldingi terishni davom ettirib yuborardi. */
@@ -235,7 +241,11 @@ var Store = (function(){
       ts:   (f && f.ts) || Date.now()
     };
     rec.size = rec.xml.length;
-    rec.nk = rec.name + "|" + rec.size;           // bir xil fayl belgisi
+    /* v22 (A10): MAZMUN belgisi ham. Ilgari «nom|hajm» edi: nomi va hajmi bir xil,
+       lekin oʻlchami tuzatilgan fayl («1800» -> «1700») yuklansa, tarixda ESKI
+       mazmun qolardi va qayta ochilganda eski buyurtma ochilardi. */
+    rec.hash = strHash(rec.xml);
+    rec.nk = rec.name + "|" + rec.size + "|" + rec.hash;
     return withDb("files", "readwrite", function(st, set){
       function add(){
         var a = st.add(rec);
@@ -412,6 +422,13 @@ function makeSnapshot(){
        maydonlar ham oʻz-oʻzidan tushadi — P da faqat oddiy maʼlumot turadi) */
     // v22: qadoqlash postida skanerlangan MES cheklar — qayta skan himoyasi brauzer yopilsa ham qolsin
     packSeen: (typeof PACK_SEEN === "object" && PACK_SEEN) ? snapClone(PACK_SEEN, {}) : {},
+    // v22 (B9): P/M qoʻlda koʻchirgan detallar — eski chekdagi pochka raqami
+    moved: movedMap(),
+    // v22 (A9): diagnostika xulosasi — qayta yuklangach «fayl yuklanmagan» demasin
+    diag: (typeof DIAG === "object" && DIAG) ? {
+      fileName: DIAG.fileName || "", fileSize: DIAG.fileSize || 0, parseMs: DIAG.parseMs || 0,
+      warnings: snapClone((DIAG.warnings || []).slice(0, 200), [])
+    } : null,
     project: P ? (snapClone(P, null) || { name:P.name, uuid:P.uuid, rev:P.rev || 0,
                    materials: snapClone(P.materials || [], []),
                    parts:     snapClone(P.parts     || [], []) }) : null,
@@ -425,6 +442,22 @@ function makeSnapshot(){
    ogʻirligi/bb/h/fill va pochka kg/env/seq/gabarit qayta hisoblanadi.
    Biror uid topilmasa — hech narsa oʻzgarmaydi, false qaytadi.
    ============================================================ */
+/* v22 (A10): satr belgisi — FNV-1a, 8 ta 16-lik belgi */
+function strHash(s){
+  var h = 0x811c9dc5;
+  s = String(s || "");
+  for (var i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return ("0000000" + h.toString(16)).slice(-8);
+}
+/* v22 (B9): koʻchirilgan detallar: uid -> eski chekdagi pochka raqamlari */
+function movedMap(){
+  var m = {};
+  (PACKS || []).forEach(function(p){
+    packItems(p).forEach(function(it){ if (it.movedFrom && it.movedFrom.length) m[it.uid] = it.movedFrom.slice(); });
+  });
+  return m;
+}
+
 function restoreSnapshot(snap){
   function bakState(){
     var b = { conf:{}, P:P, PACKS:PACKS, CUR:CUR, STEP:STEP,
@@ -636,6 +669,21 @@ function restoreSnapshot(snap){
 
     PACKS = out;
     if (typeof PACK_SEEN === "object") PACK_SEEN = isObj(snap.packSeen) ? (snapClone(snap.packSeen, {}) || {}) : {};
+    // v22 (B9): koʻchirilgan detallar eski chekini taniydi
+    if (isObj(snap.moved)) Object.keys(snap.moved).forEach(function(u){
+      var mv = snap.moved[u];
+      if (byUid[u] && isArr(mv)) byUid[u].movedFrom = mv.slice(0, 10).map(String);
+    });
+    // v22 (A9): diagnostika — fayl qayta oʻqilmaydi, xulosasi seansdan
+    if (typeof DIAG === "object" && DIAG){
+      var dg = isObj(snap.diag) ? snap.diag : {};
+      DIAG.fileName = typeof dg.fileName === "string" ? dg.fileName : "";
+      DIAG.fileSize = +dg.fileSize || 0;
+      DIAG.parseMs  = +dg.parseMs || 0;
+      DIAG.warnings = isArr(dg.warnings) ? (snapClone(dg.warnings, []) || []) : [];
+      DIAG.xmlInfo  = null;
+      DIAG.restored = true;
+    }
     CUR  = (isFinite(+snap.cur) && +snap.cur >= -1 && +snap.cur < PACKS.length)
              ? Math.round(+snap.cur) : (PACKS.length ? 0 : -1);
     STEP = PACKS[CUR]
@@ -685,6 +733,39 @@ function autosave(){
     catch(e){ bad(e); }
   }, AUTOSAVE_MS);
 }
+
+/* v22 (A8): IKKI OYNA. Bitta brauzerda tizim ikki oynada ochilsa ikkalasi bitta
+   seansni yozadi — oxirgisi yutadi, ikkinchisining ishi jimgina yoʻqoladi
+   (qayta yuklanganda boshqa oynaning holati chiqadi). Endi keyin ochilgan oyna
+   seansni YOZMAYDI va buni ekranda aytadi. */
+var TAB_SECOND = false;
+var TAB_BORN = Date.now();
+var TAB_ID = TAB_BORN + "-" + Math.random().toString(36).slice(2, 8);
+function tabBar(){
+  var el = document.getElementById("tabBar"); if (!el) return;
+  if (!TAB_SECOND){ el.style.display = "none"; el.innerHTML = ""; return; }
+  el.style.display = "flex";
+  el.innerHTML = '<span><b>Tizim bu brauzerning boshqa oynasida ham ochiq.</b> Ikki oyna bitta seansni ' +
+    'yozib, bir-birining ishini oʻchiradi — shuning uchun bu oyna seansni SAQLAMAYDI. ' +
+    'Boshqa oynada ishlang yoki uni yopib, bu oynani qayta yuklang (F5).</span>';
+}
+(function tabGuard(){
+  if (typeof BroadcastChannel !== "function") return;
+  var ch;
+  try { ch = new BroadcastChannel("upk-tabs"); } catch(e){ return; }
+  ch.onmessage = function(ev){
+    var m = (ev && ev.data) || {};
+    if (m.id === TAB_ID) return;
+    if (m.t === "hello") { try { ch.postMessage({ t:"here", id:TAB_ID, born:TAB_BORN }); } catch(e){} }
+    if (m.t === "here" && +m.born < TAB_BORN && !TAB_SECOND){
+      TAB_SECOND = true; AUTOSAVE_ON = false;
+      if (AUTOSAVE_T){ clearTimeout(AUTOSAVE_T); AUTOSAVE_T = null; }
+      saveDot("err", "boshqa oynada ham ochiq — bu oyna saqlamaydi");
+      tabBar();
+    }
+  };
+  try { ch.postMessage({ t:"hello", id:TAB_ID, born:TAB_BORN }); } catch(e){}
+})();
 
 /* seansni tozalash — localStorage'dagi "upk_conf" ga TEGILMAYDI */
 function clearSession(){

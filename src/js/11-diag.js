@@ -35,6 +35,7 @@ function diagClear(){
   DIAG.parseMs = 0;
   DIAG.packMs = 0;
   DIAG_OV = null;
+  DIAG.restored = false;   // v22 (A9)
 }
 
 /* 3.12.3 ogohlantirish qoʻshish — bir xil code+msg takrorlansa soni oshadi
@@ -174,7 +175,11 @@ function diagSafe(fn, ttl){
 function diagFileHTML(){
   var sz = DIAG.fileSize || (DIAG.xmlInfo ? DIAG.xmlInfo.chars : 0);
   var h = '<h3>Fayl</h3>';
-  if (!DIAG.fileName && !DIAG.parseMs){
+  if (DIAG.restored){
+    // v22 (A9): seans tiklangan / reja faylidan — fayl qayta oʻqilmagan
+    h += '<div class="note">Seans tiklangan (yoki reja faylidan ochilgan) — fayl qayta oʻqilmadi. ' +
+         'Parser ogohlantirishlari saqlangan nusxadan; XML tuzilishi faqat fayl yuklanganda koʻrinadi.</div>';
+  } else if (!DIAG.fileName && !DIAG.parseMs){
     h += '<div class="note">Hali .project fayl yuklanmagan — ekranda oʻrnatilgan namuna maʼlumot turibdi. ' +
          'Fayl yuklansa shu yerda oʻqish natijasi va sabablar koʻrinadi.</div>';
   }

@@ -453,8 +453,13 @@ function checkScan(v, again){
      juftlik BOSHQA detal), oddiy kodda — kod. */
   function sizeOf(it){ return it.L + "x" + it.W + "x" + it.T; }
   function hitIn(pk, s){
-    if (own) return f[1] === "P" + pad2(pk.no) && f[3] === s.it.code && f[4] === sizeOf(s.it);
+    // v22 (B9): P/M koʻchirgan detalning eski chekida eski pochka raqami turadi
+    if (own) return (f[1] === "P" + pad2(pk.no) || (s.it.movedFrom && s.it.movedFrom.indexOf(f[1]) >= 0)) &&
+                    f[3] === s.it.code && f[4] === sizeOf(s.it);
     return s.it.code === v || mesMatch(v, s.it);
+  }
+  function stale(pk){
+    return (own && f[1] !== "P" + pad2(pk.no)) ? " (chek eski: " + f[1] + " — detal koʻchirilgan, yangi chek chiqaring)" : "";
   }
 
   /* v22: BITTA CHEK — BITTA DETAL. MES chekida nusxa raqami bor (…_3), demak
@@ -492,7 +497,7 @@ function checkScan(v, again){
   if (STEP >= p.seq.length){ elsewhere(true); return; }
   var step = p.seq[STEP];
 
-  if (hitIn(p, step)){ seenMark(step); advance(); flash("ok","toʻgʻri — qoʻyildi ✓"); return; }
+  if (hitIn(p, step)){ seenMark(step); advance(); flash("ok","toʻgʻri — qoʻyildi ✓" + stale(p)); return; }
 
   /* v22: QAVAT ICHIDA ERKIN TARTIB (MES gʻoyasi: qaror qadoqlovchida). Shu
      qavatdagi hali qoʻyilmagan detal skanerlansa — qabul qilinadi va yigʻish
@@ -505,7 +510,7 @@ function checkScan(v, again){
       var sw = p.seq.splice(i, 1)[0];
       p.seq.splice(STEP, 0, sw);
       seenMark(sw);
-      advance(); flash("ok","toʻgʻri — qoʻyildi ✓ (shu qavat, boshqa tartibda)");
+      advance(); flash("ok","toʻgʻri — qoʻyildi ✓ (shu qavat, boshqa tartibda)" + stale(p));
       return;
     }
     if (later < 0) later = i;
@@ -985,6 +990,7 @@ function moveDetail(fromIdx, uid, toIdx){
     // sarlavha boʻlib chiqib roʻyxatni ikkiga boʻlardi.
     np.gname = src.gname; np.key = src.key; np.room = src.room;
     PACKS.push(np);
+    markMoved(it, src);
     return null;
   }
   var dst = PACKS[toIdx];
@@ -1020,7 +1026,24 @@ function moveDetail(fromIdx, uid, toIdx){
     packLoad(dst, dstBak);
     return "P"+pad2(src.no)+" bu detalsiz qayta terilmadi — "+srcLeft.length+" detal joysiz qolardi";
   }
+  markMoved(it, src);
   return null;
+}
+/* v22 (B9): koʻchirilgan detal — chop etilgan cheki eski pochka raqamini koʻrsatadi.
+   Skaner (qadoqlash va saralash posti) uni taniydi va «chek eski» deydi. */
+function markMoved(it, src){
+  var lab = "P" + pad2(src.no);
+  if (!it.movedFrom) it.movedFrom = [];
+  if (it.movedFrom.indexOf(lab) < 0) it.movedFrom.push(lab);
+}
+/* bir nechta pochka cheki birdan (koʻchirishdan keyin ikki pochka) */
+function printPackLabels(list){
+  list = (list || []).filter(Boolean);
+  if (!list.length) return;
+  applyPageSize();
+  $("sheet").innerHTML = '<div class="lbls">' + list.map(function(p, i){ return packLabelHTML(p, "qpk" + i); }).join("") + '</div>';
+  list.forEach(function(p, i){ drawQR($("qpk" + i), packQR(p)); });
+  setTimeout(function(){ window.print(); setTimeout(function(){ $("sheet").innerHTML = ""; }, 1000); }, 60);
 }
 /* v12: QOʻLDA TAHRIRLASH ENDI FAQAT P/M DA.
    Ilgari «Tahrirlash» tugmasi Qadoqlash ekranida — 3D sahnaning ustida — turardi
@@ -1084,10 +1107,11 @@ function renderMgrEdit(){
       var uid = b.dataset.mv;
       var sel = box.querySelector('select[data-uid="'+uid+'"]');
       var to = sel.value==="new" ? "new" : parseInt(sel.value,10);
+      var srcP = PACKS[MGR_CUR];
       var err = moveDetail(MGR_CUR, uid, to);
       var m = $("emsg");
       if (err){ m.className="msg err"; m.textContent = err; return; }
-      m.className="msg ok"; m.textContent = "koʻchirildi ✓";
+      var dstP = (to === "new") ? PACKS[PACKS.length - 1] : PACKS[to];
       /* v21: detal boshqa pochkaga oʻtdi — uning eski yacheykadagi belgisi
          endi yolgʻon. `SORT.put[uid]` manba pochkaning yacheykasini
          koʻrsatib turardi, yaʼni saralash ekrani detalni «allaqachon
@@ -1098,6 +1122,23 @@ function renderMgrEdit(){
       if (typeof sortPlan === "function") sortPlan();
       renderPacks(); stats(); renderMgrEdit();
       if (CUR >= 0){ renderStep(); draw3D(); draw2D(); }
+      /* v22 (B9): tahrir seansga yoziladi (ilgari qayta yuklansa yoʻqolardi) va
+         eskirgan cheklar aytiladi. Xabar qayta chizishdan KEYIN — ilgari
+         renderMgrEdit() uni darhol oʻchirib yuborardi. */
+      if (typeof autosave === "function") autosave();
+      var m2 = $("emsg");
+      if (m2){
+        m2.className = "msg ok";
+        m2.innerHTML = 'koʻchirildi ✓ — <b>detal cheki va P' + pad2(srcP.no) + ', P' + pad2(dstP.no) +
+          ' pochka cheklari eskirdi</b>, qayta chop eting ' +
+          '<button type="button" class="btn gh" id="mvLbl">Detal cheki</button> ' +
+          '<button type="button" class="btn gh" id="mvPk">Pochka cheklari</button>';
+        $("mvLbl").onclick = function(){
+          var st = dstP.seq.filter(function(x){ return x.it.uid === uid; })[0];
+          if (st) printSteps([{ p:dstP, s:st }], "koʻchirilgan detal");
+        };
+        $("mvPk").onclick = function(){ printPackLabels([srcP, dstP]); };
+      }
     };
   });
 }

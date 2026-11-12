@@ -1522,6 +1522,7 @@ function packAll(){
 var PACK_RUN = 0;   // har chaqiruvga oʻz raqami: yangi hisob boshlansa eskisi oʻz-oʻzidan toʻxtaydi
 function packAllAsync(onProg){
   var prevPacks = PACKS;
+  var prevMainT = MAIN_T;     // v22 (C8): bekor qilinsa asosiy qalinlik ham eskisiga qaytadi
   var myRun = ++PACK_RUN;
   PACKPROG.cancel = false;
   return new Promise(function(resolve, reject){
@@ -1535,6 +1536,7 @@ function packAllAsync(onProg){
       if (PACKPROG.cancel){
         try { gen.return(); } catch(e){}
         PACKS = prevPacks;                       // bekor qilindi — eski natija qoladi
+        MAIN_T = prevMainT;
         resolve({ ok:false, cancelled:true });
         return;
       }
@@ -1546,7 +1548,7 @@ function packAllAsync(onProg){
           var now = nowMs();
           if (now - t0 > 40) break;              // 40 ms ishladik — nafas olamiz
         }
-      } catch(e){ if (myRun === PACK_RUN) PACKS = prevPacks; reject(e); return; }
+      } catch(e){ if (myRun === PACK_RUN){ PACKS = prevPacks; MAIN_T = prevMainT; } reject(e); return; }
       if (onProg) onProg(PACKPROG);
       setTimeout(pump, 0);
     }

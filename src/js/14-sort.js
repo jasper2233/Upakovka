@@ -430,9 +430,11 @@ function sortResolve(raw){
     }
     out.label = f[3];
     PACKS.forEach(function(p){
-      if ("P" + pad2(p.no) !== f[1]) return;
+      var mine = "P" + pad2(p.no) === f[1];
       packItems(p).forEach(function(it){
-        if (it.code === f[3] && (it.L + "x" + it.W + "x" + it.T) === f[4]) out.cands.push({ p:p, it:it });
+        // v22 (B9): P/M koʻchirgan detalning eski chekida eski pochka raqami
+        var moved = it.movedFrom && it.movedFrom.indexOf(f[1]) >= 0;
+        if ((mine || moved) && it.code === f[3] && (it.L + "x" + it.W + "x" + it.T) === f[4]) out.cands.push({ p:p, it:it });
       });
     });
     return out;

@@ -3206,14 +3206,181 @@ $tester = @'
           setStep(sK);
         } catch(e){ chk("qadoqlash posti (v22)", false, e.message); }
 
-        stageSrv(function(){
+        stageB3(function(){ stageSrv(function(){
           chk("test oxirida yangi JS xatosi yo'q", window.__ERRORS.length === 0,
               window.__ERRORS.slice(0,4).join(" ; "));
           done();
-        });
+        }); });
       });
     });
   }
+
+  /* ---------- v22: 3-PARTIYA — SEANS VA SOZLAMALAR ---------- */
+  function stageB3(cb){
+    var ctx = {};
+    function bad(e){ chk("3-partiya bosqichi", false, e && e.message ? e.message : String(e)); fin(); }
+    function fin(){
+      try { if (ctx.bc) ctx.bc.close(); } catch(e){}
+      TAB_SECOND = false; AUTOSAVE_ON = true; tabBar(); repackBar(null);
+      if (el("modal").style.display === "flex") el("mCancel").click();
+      S.split = splitDefault(); packAll(); selectPack(0); sortReset();
+      cb();
+    }
+    try {
+      packAll(); selectPack(0); sortReset();
+      /* B5: ish boshlangan boʻlsa qayta pochkalash tasdiqsiz bajarilmaydi */
+      recompute().then(function(r1){
+        chk("qayta pochkalash: ish yoʻq — darhol bajariladi", !(r1 && r1.pending), r1 ? JSON.stringify(r1) : "—");
+        selectPack(0); setStep(1);
+        ctx.rev = P.rev; ctx.packs = PACKS;
+        return recompute();
+      }).then(function(r2){
+        chk("qayta pochkalash: ish boshlangan — tasdiqsiz pochkalar oʻzgarmaydi",
+            r2 && r2.pending && PACKS === ctx.packs && P.rev === ctx.rev && (PACKS[0].done || 0) === 1 &&
+            el("repackBar").style.display === "flex" && /1 ta pochka/.test(el("repackBar").textContent),
+            el("repackBar").textContent.slice(0, 70));
+        SORT.put["sinov#0"] = "A1";
+        var wp = workProgress();
+        chk("saralangan detal ham ish hisoblanadi", wp.sorted === 1 && wp.any, JSON.stringify(wp));
+        delete SORT.put["sinov#0"];
+        el("btnRepackGo").click();
+        return until2(function(){ return !BUSY && P.rev > ctx.rev; });
+      }).then(function(){
+        chk("qayta pochkalash: tasdiq bilan bajarildi, ogohlantirish yopildi",
+            P.rev > ctx.rev && PACKS !== ctx.packs && el("repackBar").style.display === "none", "R" + ctx.rev + " -> R" + P.rev);
+        /* A3 + C8: yuklash bekor qilinsa avvalgi loyiha, pochkalar va asosiy qalinlik qoladi */
+        ctx.P = P; ctx.packs = PACKS; ctx.mainT = MAIN_T;
+        var data = JSON.parse(JSON.stringify(SEED)); data.name = "Bekor sinovi";
+        var pr = boot(data);
+        PACKPROG.cancel = true;
+        return pr;
+      }).then(function(res){
+        chk("yuklash bekor qilindi — avvalgi loyiha, pochkalar va qalinlik joyida",
+            !!res && res.cancelled === true && P === ctx.P && PACKS === ctx.packs && MAIN_T === ctx.mainT &&
+            el("pname").textContent === P.name, (res && JSON.stringify(res)) + " · " + el("pname").textContent);
+        /* A5: reja faylining meʼyorlari faqat oʻsha buyurtmaga */
+        DEVICE_CONF = confCapture(); CONF_FROM_SNAP = false;
+        ctx.dev = S.maxKg;
+        S.maxKg = ctx.dev - 5; packAll();
+        var po = planFileObj();
+        S.maxKg = ctx.dev; packAll();
+        var r = planFileLoad(po);
+        var cw = confCheck().filter(function(w){ return /saqlanganidan farqli/.test(w.msg); })[0];
+        chk("reja fayli: meʼyorlari shu buyurtmaga, Sozlamalarda farqi aytiladi",
+            r.ok && S.maxKg === ctx.dev - 5 && CONF_FROM_SNAP === true && !!cw && /maxKg/.test(cw.msg),
+            cw ? cw.msg.slice(0, 90) : "ogohlantirish yoʻq");
+        return boot(JSON.parse(JSON.stringify(SEED)));
+      }).then(function(){
+        chk("yangi buyurtma — tsexning saqlangan meʼyorlari qoʻllandi",
+            S.maxKg === ctx.dev && CONF_FROM_SNAP === false && +el("cMaxKg").value === ctx.dev &&
+            !confCheck().some(function(w){ return /saqlanganidan farqli/.test(w.msg); }),
+            "maxKg " + S.maxKg + " · forma " + el("cMaxKg").value);
+        /* A13: vergulli qiymat (paste) */
+        ctx.tare = el("cTare").value;
+        el("cTare").value = "0,6"; readConf();
+        chk("vergulli qiymat toʻgʻri oʻqiladi (tara 0,6)", Math.abs(S.tare - 0.6) < 1e-9 && el("cTare").value === "0.6",
+            S.tare + " · «" + el("cTare").value + "»");
+        el("cTare").value = ctx.tare; readConf();
+        /* A9: diagnostika — seans tiklangach «fayl yuklanmagan» demaydi */
+        DIAG.fileName = "sinov.project"; DIAG.parseMs = 12;
+        DIAG.warnings = [{ code:"SINOV", msg:"sinov ogohlantirish", n:1 }];
+        var sn = JSON.parse(JSON.stringify(makeSnapshot()));
+        diagClear();
+        restoreSnapshot(sn);
+        var dh = diagFileHTML();
+        chk("diagnostika: tiklangan seans fayl nomi va ogohlantirishlarini saqlaydi",
+            DIAG.restored === true && DIAG.fileName === "sinov.project" && DIAG.warnings.length === 1 &&
+            dh.indexOf("Seans tiklangan") >= 0 && dh.indexOf("Hali .project") < 0, DIAG.fileName);
+        diagClear();
+        /* A10: fayl tarixi — nomi va hajmi bir xil, mazmuni boshqa */
+        ctx.nm = "tarix-sinovi-" + Date.now() + ".project";
+        return Promise.resolve(Store.putFile({ name:ctx.nm, xml:"<project a='1800'/>" }))
+          .then(function(){ return Store.putFile({ name:ctx.nm, xml:"<project a='1700'/>" }); })
+          .then(function(){ return Store.listFiles(); });
+      }).then(function(list){
+        var mine = (list || []).filter(function(f){ return f.name === ctx.nm; });
+        chk("fayl tarixi: mazmuni boshqa fayl ESKISINING ustiga tushmaydi", mine.length === 2, mine.length + " ta yozuv");
+        return Promise.all(mine.map(function(f){ return Store.delFile(f.id); }));
+      }).then(function(){
+        /* A11: oʻqishdan oldingi ogohlantirish (kengaytma) diagnostikada qoladi */
+        readFile(new File([NAMUNA], "namuna.dat", { type:"text/plain" }));
+        return until2(function(){ return el("modal").style.display === "flex"; });
+      }).then(function(){
+        var has = DIAG.warnings.some(function(w){ return w.code === "KENGAYTMA"; });
+        chk("yuklash: kengaytma ogohlantirishi fayl oʻqilgach ham qoladi", has,
+            DIAG.warnings.map(function(w){ return w.code; }).join(","));
+        el("mCancel").click();
+        /* A12: brauzer xotirasi yozilmasa — «saqlandi» deyilmaydi */
+        if (Store.available){ note("IndexedDB ishlayapti — localStorage zaxirasi (A12) bu muhitda sinalmadi"); return null; }
+        var orig = localStorage.setItem;
+        localStorage.setItem = function(){ throw new Error("quota"); };
+        return Store.putSession(makeSnapshot()).then(
+          function(){ localStorage.setItem = orig; return "ok"; },
+          function(e){ localStorage.setItem = orig; return "err:" + (e && e.message); });
+      }).then(function(r){
+        if (r !== null) chk("seans yozilmasa xato qaytadi (yashil nuqta yolgʻon gapirmaydi)", /^err:/.test(String(r)), String(r).slice(0, 70));
+        /* A8: ikki oyna */
+        ctx.bc = new BroadcastChannel("upk-tabs");
+        ctx.reply = null;
+        ctx.bc.onmessage = function(ev){ if (ev.data && ev.data.t === "here" && ev.data.id === TAB_ID) ctx.reply = ev.data; };
+        ctx.bc.postMessage({ t:"hello", id:"yangi-oyna", born:Date.now() + 100000 });
+        return until2(function(){ return !!ctx.reply; });
+      }).then(function(){
+        chk("ikki oyna: birinchi oyna «men bor» deb javob beradi", !!ctx.reply && ctx.reply.born === TAB_BORN, ctx.reply ? "javob bor" : "javob yoʻq");
+        ctx.bc.postMessage({ t:"here", id:"eski-oyna", born:1 });
+        return until2(function(){ return TAB_SECOND; });
+      }).then(function(){
+        chk("ikki oyna: keyin ochilgan oyna seansni yozmaydi va aytadi",
+            TAB_SECOND === true && AUTOSAVE_ON === false && el("tabBar").style.display === "flex",
+            el("tabBar").textContent.slice(0, 60));
+        TAB_SECOND = false; AUTOSAVE_ON = true; tabBar();
+        /* B9: P/M qoʻlda koʻchirish — seansga yoziladi, eski chek taniladi */
+        packAll(); selectPack(0); sortReset();
+        var done = false, tried = 0;
+        for (var i = 0; i < PACKS.length && !done; i++){
+          var q = PACKS[i];
+          if (q.odd || (q.done || 0) > 0) continue;
+          var mids = packItems(q).filter(function(it){ return it !== q.base && it.W >= S.minBase && it.L <= S.maxLen; });
+          for (var j = 0; j < mids.length && !done && tried < 25; j++){
+            tried++;
+            MGR_CUR = i; renderMgrEdit();
+            var sel = el("mgrEdit").querySelector('select[data-uid="' + mids[j].uid + '"]');
+            var btn = el("mgrEdit").querySelector('[data-mv="' + mids[j].uid + '"]');
+            if (!sel || !btn) continue;
+            sel.value = "new";
+            ctx.srcNo = q.no;
+            btn.click();
+            if (el("emsg") && /koʻchirildi/.test(el("emsg").textContent)){ done = true; ctx.it = mids[j]; }
+          }
+        }
+        chk("P/M koʻchirish: muvaffaqiyatli, eskirgan cheklar aytildi, seansga yozildi",
+            done && /eskirdi/.test(el("emsg").textContent) && !!el("mvLbl") && !!el("mvPk") &&
+            /busy/.test(el("saveState").className), done ? el("emsg").textContent.slice(0, 80) : tried + " ta urinish");
+        if (!done) return null;
+        var it = ctx.it, np = PACKS[PACKS.length - 1];
+        chk("koʻchirilgan detal eski pochka raqamini eslaydi", it.movedFrom && it.movedFrom[0] === "P" + pad2(ctx.srcNo),
+            String(it.movedFrom));
+        var oldLbl = S.prefix + "." + projTag() + ".R" + (P.rev || 1) + "|P" + pad2(ctx.srcNo) + "|Q1|" +
+                     it.code + "|" + it.L + "x" + it.W + "x" + it.T;
+        selectPack(PACKS.length - 1); setStep(0);
+        checkScan(oldLbl);
+        chk("qadoqlash posti: eski chek tanildi, «chek eski» deyildi", STEP === 1 && /chek eski/.test(el("msg").textContent),
+            "qadam " + STEP + " · " + el("msg").textContent.slice(0, 70));
+        setStep(0);
+        var rs = sortResolve(oldLbl);
+        chk("saralash posti: eski chek tanildi", rs.cands.length >= 1 && rs.cands[0].it === it, rs.cands.length + " nomzod");
+        var sn2 = JSON.parse(JSON.stringify(makeSnapshot()));
+        restoreSnapshot(sn2);
+        var it2 = null;
+        PACKS.forEach(function(pk){ packItems(pk).forEach(function(x){ if (x.uid === it.uid) it2 = x; }); });
+        chk("seans tiklangach ham eski chekni taniydi", !!it2 && !!it2.movedFrom && it2.movedFrom[0] === "P" + pad2(ctx.srcNo),
+            it2 ? String(it2.movedFrom) : "yoʻq");
+        return null;
+      }).then(fin, bad);
+    } catch(e){ bad(e); }
+  }
+  /* shart bajarilguncha kutish — Promise koʻrinishida */
+  function until2(cond){ return new Promise(function(res){ until(cond, function(){ res(); }); }); }
 
   /* ---------- v22: SERVER ORQALI POSTLAR (soxta server bilan) ----------
      server/upk-server.py bilan bir xil API — xotirada. Haqiqiy server va brauzer
@@ -3424,7 +3591,7 @@ $bargs = @(
   "--headless=new", "--disable-gpu", "--no-sandbox", "--no-first-run",
   "--disable-extensions", "--disable-dev-shm-usage",
   "--user-data-dir=$profile",
-  "--virtual-time-budget=60000",
+  "--virtual-time-budget=180000",
   "--dump-dom",
   $pageUrl
 )

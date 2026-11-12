@@ -96,6 +96,11 @@ function advMark(){
 function confCheck(){
   var out = [];
   function add(lvl, msg){ out.push({ lvl:lvl, msg:msg }); }
+  // v22: joriy buyurtma seans/reja faylidagi meʼyorlar bilan — tsexnikidan farqli boʻlsa aytiladi
+  var sd = (typeof confSnapDiff === "function") ? confSnapDiff() : [];
+  if (sd.length)
+    add("info", "Joriy buyurtma seans yoki reja faylidagi meʼyorlar bilan hisoblangan — tsexda saqlanganidan farqli: " +
+        sd.slice(0, 6).join(", ") + (sd.length > 6 ? " …" : "") + ". Yangi buyurtma saqlangan meʼyorlar bilan pochkalanadi.");
   var maxKg = +S.maxKg || 0, over = +S.tailKgOver || 0, odd = oddKgCap();
   var eff = maxKg + over, tare = +S.tare || 0;
 
@@ -168,6 +173,7 @@ function saveConf(){
   o._thickMixV = 22;            // v22: «false» endi tsexning ANIQ tanlovi (pastda restoreConf)
   try {
     localStorage.setItem("upk_conf", JSON.stringify(o));
+    DEVICE_CONF = confCapture(); CONF_FROM_SNAP = false;   // v22: endi shular — tsex meʼyorlari
     var n = $("saveNote"); n.style.display = "block";
     setTimeout(function(){ n.style.display = "none"; }, 3500);
   } catch(e){
@@ -240,11 +246,19 @@ function resetConf(){
   renderThickMix();                                    // shu faylda — tekshiruv shart emas
   advMark();                                           // loyiha boʻlmasa readConf chaqirilmaydi
   readConf();                                          // confCheck ham standart qiymatlarni koʻrsin
+  DEVICE_CONF = confCapture(); CONF_FROM_SNAP = false;  // v22: standart — tsex meʼyorlari
   if (P) recompute();
 }
 
 /* --- 3.14.2 SOZLAMANI OʻQISH / YOZISH --- */
 function readConf(){
+  /* v22: VERGUL (A13). «0,6» joylashtirilsa (paste) beforeinput uni tutmaydi:
+     parseFloat uni 0 deb, «+» esa NaN deb oʻqirdi — tara 0,6 oʻrniga 0 kg boʻlardi,
+     boshqa maydon jimgina standartga qaytardi. Oʻqishdan oldin oʻnlik vergul nuqtaga. */
+  [].slice.call(document.querySelectorAll('input[data-num="1"]')).forEach(function(e){
+    var v = String(e.value || "");
+    if (/^\s*-?\d*[,٫]\d+\s*$/.test(v)) e.value = v.replace(/[,٫]/, ".").trim();
+  });
   S.maxKg    = +$("cMaxKg").value || 35;
   S.ovh      = +$("cOvh").value || 0;
   S.minBase  = +$("cMinBase").value || 190;
@@ -472,8 +486,39 @@ function progUpdate(pp){
 
 /* --- 3.14.4 QAYTA HISOB --- */
 var BUSY = false;
-function recompute(){
+/* v22: ISH BOSHLANGANMI (B5). Qayta pochkalash pochkalar tarkibini oʻzgartiradi:
+   yigʻilgan/boshlangan pochkalar va stelyajga saralangan detallar yaroqsiz
+   boʻladi. Ilgari HAR sozlama yoki material tahriri buni jimgina qilardi. */
+function workProgress(){
+  var packs = 0, sorted = 0;
+  (PACKS || []).forEach(function(p){ if ((p.done || 0) > 0) packs++; });
+  if (typeof SORT === "object" && SORT && SORT.put) sorted = Object.keys(SORT.put).length;
+  return { packs:packs, sorted:sorted, any:(packs + sorted) > 0 };
+}
+var REPACK_WAIT = false;   // oʻzgarish bor, qayta pochkalash tasdiq kutmoqda
+function repackBar(wp){
+  var el = $("repackBar"); if (!el) return;
+  if (!wp){ el.style.display = "none"; el.innerHTML = ""; return; }
+  el.style.display = "flex";
+  el.innerHTML = '<span><b>Oʻzgarish hali qoʻllanmadi.</b> Qayta pochkalash boshlangan ishni bekor qiladi: ' +
+    (wp.packs ? wp.packs + ' ta pochka yigʻilgan yoki boshlangan' : '') + (wp.packs && wp.sorted ? ', ' : '') +
+    (wp.sorted ? wp.sorted + ' ta detal stelyajga saralangan' : '') +
+    ' — pochkalar tarkibi oʻzgaradi, saralash va cheklar qaytadan.</span>' +
+    '<button type="button" class="btn" id="btnRepackGo">Baribir qayta pochkalash</button>' +
+    '<button type="button" class="btn gh" id="btnRepackNo">Keyin</button>';
+  $("btnRepackGo").onclick = function(){ recompute(true); };
+  $("btnRepackNo").onclick = function(){ repackBar(null); };
+}
+/* force — ish boshlangan boʻlsa ham (yangi loyiha yuklandi yoki operator tasdiqladi) */
+function recompute(force){
   if (!P) return Promise.resolve();
+  if (!force){
+    var wp = workProgress();
+    /* S oʻzgartirilmaydi: u joriy pochkalarga mos qolishi shart (detallar shu bilan
+       quriladi). Formadagi yangi qiymat tasdiqlanganda qoʻllanadi. */
+    if (wp.any){ REPACK_WAIT = true; repackBar(wp); return Promise.resolve({ pending:true }); }
+  }
+  REPACK_WAIT = false; repackBar(null);
   readConf();
   BUSY = true;
   progShow();
@@ -511,15 +556,71 @@ function recomputeSoon(){
 }
 
 /* --- 3.14.5 LOYIHANI ISHGA TUSHIRISH --- */
+/* v22: SEANS VA SOZLAMA — IKKI MANBA (A4/A5).
+   Tsexning SAQLANGAN meʼyorlari (localStorage) — har YANGI buyurtma uchun.
+   Seans yoki reja faylidan kelgan meʼyorlar — faqat OʻSHA buyurtma uchun: uning
+   pochkalari shular bilan hisoblangan va detallari shular bilan quriladi.
+   Ilgari ular yangi buyurtmaga ham oʻtib ketardi (boshqa kompyuterda tuzilgan
+   reja ochilgandan keyin yangi fayl oʻsha kompyuter meʼyorlari bilan
+   pochkalanardi), saqlangan meʼyor esa jimgina eʼtiborsiz qolardi. */
+var BOOT_GEN = 0;            // har yangi loyiha/reja — yangi avlod (ishga tushish poygasi, A14)
+var CONF_FROM_SNAP = false;  // formadagi meʼyorlar seans/reja faylidan kelgan
+var DEVICE_CONF = null;      // tsex meʼyorlari: saqlangan (yoki standart) holat
+function confCapture(){
+  var o = { conf:{}, split:JSON.parse(JSON.stringify(S.split || splitDefault())),
+            matCat:JSON.parse(JSON.stringify(S.matCat || [])) };
+  SNAP_CONF.forEach(function(k){ o.conf[k] = S[k]; });
+  return o;
+}
+function confApply(o){
+  if (!o) return;
+  SNAP_CONF.forEach(function(k){ if (o.conf.hasOwnProperty(k)) S[k] = o.conf[k]; });
+  S.split = JSON.parse(JSON.stringify(o.split));
+  if (o.matCat && o.matCat.length) S.matCat = JSON.parse(JSON.stringify(o.matCat));
+}
+/* Seans meʼyorlari tsexnikidan qayerda farq qiladi (Sozlamalar ogohlantirishi) */
+function confSnapDiff(){
+  if (!CONF_FROM_SNAP || !DEVICE_CONF) return [];
+  var out = [];
+  SNAP_CONF.forEach(function(k){
+    var a = DEVICE_CONF.conf[k], b = S[k];
+    if (String(a) !== String(b)) out.push(k + " " + b + " (saqlangani " + a + ")");
+  });
+  if (JSON.stringify(DEVICE_CONF.split) !== JSON.stringify(S.split)) out.push("modul/material kesimi");
+  return out;
+}
 function boot(data){
+  BOOT_GEN++;
+  var prev = { P:P, PACKS:PACKS, CUR:CUR, STEP:STEP, conf:confCapture(), fromSnap:CONF_FROM_SNAP };
+  var note = "";
+  if (CONF_FROM_SNAP && DEVICE_CONF){
+    if (confSnapDiff().length) note = " — tsexning saqlangan meʼyorlari qoʻllandi";
+    confApply(DEVICE_CONF); writeConf();
+  }
+  CONF_FROM_SNAP = false;
   P = data; CUR = -1; STEP = 0;
   if (!P.rev) P.rev = 0;
   if (!S.rooms) S.rooms = {};
   readConf(); applyCat();
   renderMats(); renderMgr(); renderCat();
-  return recompute().then(function(){
+  return recompute(true).then(function(res){
+    if (res && res.cancelled){
+      /* v22: BEKOR QILINDI (A3) — yangi loyiha ham qolmaydi. Ilgari P yangi, PACKS
+         esa eskisi boʻlib qolardi: roʻyxatda eski pochkalar yangi loyiha nomi bilan. */
+      P = prev.P; PACKS = prev.PACKS; CUR = prev.CUR; STEP = prev.STEP;
+      confApply(prev.conf); writeConf(); CONF_FROM_SNAP = prev.fromSnap;
+      if (P){
+        renderMats(); renderMgr(); renderCat(); renderPacks(); renderParts(); stats();
+        if (PACKS.length) selectPack(Math.max(0, Math.min(CUR < 0 ? 0 : CUR, PACKS.length - 1)));
+        else renderStep();
+      }
+      flash("err", "yuklash bekor qilindi — avvalgi loyiha joyida qoldi");
+      return res;
+    }
     if (PACKS.length) selectPack(0); else renderStep();
     if (typeof renderDiag === "function") renderDiag();
+    if (note) flash("ok", "yangi buyurtma" + note);
+    return res;
   });
 }
 
@@ -857,22 +958,31 @@ if (typeof initUpload === "function") initUpload();
 // saralash posti oʻzini oʻzi bogʻlaydi — 14-sort.js oxiriga qarang
 
 (function start(){
-  function fallback(){ boot(JSON.parse(JSON.stringify(SEED))); }
+  /* v22: POYGA (A14). Seans asinxron tiklanadi; shu orada foydalanuvchi fayl
+     yoki namunani ochsa (yoki server rejasi kelsa) — kech kelgan seans uning
+     ustidan yozmaydi. */
+  var gen = BOOT_GEN;
+  DEVICE_CONF = confCapture();           // restoreConf + readConf dan keyin — tsex meʼyorlari
+  function fallback(){ if (gen === BOOT_GEN) boot(JSON.parse(JSON.stringify(SEED))); }
 
   if (typeof Store === "undefined" || !Store.ready){ fallback(); return; }
 
   Store.ready.then(function(){ return Store.getSession(); }).then(function(snap){
+    if (gen !== BOOT_GEN) return;
     if (!snap){ fallback(); return; }
     var ok = false;
     try { ok = restoreSnapshot(snap); } catch(e){ if (window.console) console.warn("seans:", e); }
     if (!ok){ fallback(); return; }
+    BOOT_GEN++; CONF_FROM_SNAP = true;
     // Terish reviziyasi pochkalarda saqlangan. P.rev ni ularning eng kattasiga tenglaymiz —
     // aks holda keyingi qayta pochkalash R1 dan boshlanib, eski cheklar bilan adashtiradi.
     var mx = 0;
     PACKS.forEach(function(p){ if ((p.rev||0) > mx) mx = p.rev||0; });
     P.rev = mx || 1;
     writeConf();
-    applyCat();
+    /* v22: applyCat() bu yerda chaqirilmaydi (A6) — seansdagi materiallar haqiqat:
+       qoʻlda tuzatilgan massa katalog bilan jimgina almashib ketardi, pochkalar
+       esa eski massadagi detallar bilan qolardi. Katalog yangi loyihaga qoʻllanadi. */
     renderPacks(); renderParts(); renderMats(); renderMgr(); renderCat(); stats();
     if (PACKS.length) selectPack(Math.max(0, Math.min(snap.cur || 0, PACKS.length-1)));
     else renderStep();

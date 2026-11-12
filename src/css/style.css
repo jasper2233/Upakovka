@@ -597,6 +597,8 @@ h3 .hint{color:var(--ink3);text-transform:none;letter-spacing:0}
 .srvbanner.warn{border-left-color:var(--mark)}
 .srvbanner.err{border-left-color:var(--alert)}
 .srvbanner .btn{flex:0 0 auto;padding:5px 12px;font-size:12px}
+.repackbar{left:14px;right:auto;max-width:640px}
+.tabbar{top:10px;bottom:auto;left:50%;right:auto;transform:translateX(-50%);max-width:760px}
 
 /* ---- v22: SARALASH POSTI va TV EKRANI — uzoqdan oʻqiladi ---- */
 body.post-sort .sortpad,body.post-tv .sortpad{max-width:1500px}
