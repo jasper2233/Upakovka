@@ -70,6 +70,10 @@ function srvDetect(){
     SRV.on = !!(r.ok && r.json && r.json.server === "upk");
     srvUi();
     if (SRV.on) srvStart();
+    /* TV kun boʻyi yoniq turadi: u yoqilganda server hali koʻtarilmagan boʻlsa
+       (tarmoq xatosi — status 0) har 10 s qayta soʻraladi. 404 — bu hostda API
+       yoʻq (GitHub Pages, oddiy fayl serveri): qayta soʻralmaydi. */
+    else if (!SRV.mock && r.status === 0) setTimeout(srvDetect, 10000);
     return SRV.on;
   });
 }
