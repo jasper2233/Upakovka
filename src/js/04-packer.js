@@ -82,7 +82,12 @@ function centerLayer(items, baseL, baseW){
   var x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
   items.forEach(function(q){ x0=Math.min(x0,q.x); y0=Math.min(y0,q.y); x1=Math.max(x1,q.x+q.a); y1=Math.max(y1,q.y+q.b); });
   var dx = (baseL-(x1-x0))/2 - x0, dy = (baseW-(y1-y0))/2 - y0;
-  items.forEach(function(q){ q.x = Math.round(q.x+dx); q.y = Math.round(q.y+dy); });
+  /* v22: siljish BIR MARTA yaxlitlanadi va hamma detalga bir xil qoʻshiladi.
+     Ilgari har koordinata alohida yaxlitlanardi: oʻlcham kasr boʻlsa (600,5 mm)
+     qoʻshni detallar turli tomonga surilib 1 mm ustma-ust tushardi va audit
+     USTMA_UST xatosini berardi. Butun oʻlchamlarda natija avvalgidek. */
+  dx = Math.round(dx); dy = Math.round(dy);
+  items.forEach(function(q){ q.x = q.x + dx; q.y = q.y + dy; });
   return items;
 }
 function bboxOf(items){
@@ -101,8 +106,9 @@ function bboxOf(items){
    ============================================================ */
 function mirrorLayer(items, baseL, baseW){
   items.forEach(function(q){
-    q.x = Math.round(baseL - q.x - q.a);
-    q.y = Math.round(baseW - q.y - q.b);
+    // v22: aks ettirish masofani saqlaydi — yaxlitlash shart emas (u ustma-ust tushirardi)
+    q.x = baseL - q.x - q.a;
+    q.y = baseW - q.y - q.b;
   });
   return items;
 }
@@ -408,7 +414,9 @@ function layoutPack(base, mids, allowOvh, ord, strat, rndj){
     return h <= S.maxH + 1e-9;
   }
 
-  if (strat === 0){
+  /* v22: qavat limiti 1 — faqat tag. Ilgari qopqoq baribir yasalardi va har
+     pochka 2 qavat boʻlib auditda QAVAT xatosini berardi. */
+  if (strat === 0 && S.maxLayers !== 1){
     lid = makeLid(mids, base, budget);
     /* v20: qopqoq qavat siklidan OLDIN yasaladi, shuning uchun `heightOK` uni
        hisobga oladi — lekin qopqoqning OʻZI chegaradan chiqarib yuborishi
@@ -518,8 +526,16 @@ function* greedyPackGen(list, rnd){
        birorta detal boʻlmasa (masalan butun guruh 3 mm orqa devor), talab shu
        guruhning eng qalin detaliga tushiriladi. Aks holda butun guruh
        nostandartga oʻtib ketardi — bu qoidaning maqsadi emas. */
+    /* v22: eng qalin detal faqat TAG OYNASIGA sigʻadiganlar ichidan olinadi.
+       Ilgari butun qoldiqdan olinardi: tag boʻlolmaydigan tor 16 mm planka
+       talabni 16 ga koʻtarar, keng 3 mm panellar esa tag boʻlolmay qolardi —
+       butun qoldiq nostandart oqimga oʻtib 40 kg limit bilan terilardi
+       (3 mm tagli 37,4 kg li «standart» pochka, audit jim). */
     var maxT = 0;
-    rem.forEach(function(x){ if (x.T > maxT) maxT = x.T; });
+    rem.forEach(function(x){
+      if (x.W>=S.minBase && x.W<=(S.baseWMax||1e9) && x.L>=(S.baseLMin||0) &&
+          x.L<=S.maxLen && x.kg<=S.maxKg && x.T > maxT) maxT = x.T;
+    });
     var minT = Math.min(S.minBaseT || 0, maxT);
     var elig=[];
     for (var i=0;i<rem.length;i++){
@@ -1081,9 +1097,24 @@ function packKey(it, rule){
    (makeLayer `tOnly`), tag va qopqoq esa minBaseT bilan himoyalangan.
    Demak «qoʻshish» degani: bitta pochkada, alohida qavatlarda. */
 var MAIN_T = null;
+/* v22: YUPQA DETALLAR STANDART HOLDA ASOSIY POCHKAGA.
+   Asosiy qalinlikdan yupqa va THIN_AUTO_MM dan yupqa detal (3 mm HDF/XDF orqa
+   devor, 6 mm MDF …) tsex hech narsa belgilamasa ham asosiy pochkaga qoʻshiladi —
+   alohida qavat boʻlib. Sabab — 205 ta real faylda oʻlchandi: ilgari har modulning
+   2–3 ta orqa devori oʻz guruhiga ajralib, 1–2 detalli mayda pochka boʻlib qolardi;
+   qoʻshilganda pochka −146 ta, «faqat tagdan iborat» pochka −123 ta, audit toza.
+   10 mm va undan qalin (masalan kafel) avtomatik qoʻshilmaydi.
+   Tsexning qoʻlda tanlovi har doim ustun: matritsada katak olib tashlansa
+   S.thickMix[k] = false boʻladi va oʻsha qalinlik yana alohida pochkalanadi. */
+var THIN_AUTO_MM = 10;
+function thickMixOn(k, T, mainT){
+  var v = S.thickMix ? S.thickMix[k] : undefined;
+  if (v === true || v === false) return v;              // tsex belgilagan
+  return mainT != null && +T < +mainT && +T < THIN_AUTO_MM;
+}
 function thickKey(T){
   var k = String(T);
-  if (MAIN_T != null && S.thickMix && S.thickMix[k]) return String(MAIN_T);
+  if (MAIN_T != null && thickMixOn(k, T, MAIN_T)) return String(MAIN_T);
   return k;
 }
 /* Asosiy qalinlikni aniqlash — detal soni boʻyicha. Teng boʻlsa qalini gʻolib
@@ -1190,14 +1221,21 @@ function groupSortKey(list){
    40 boʻlib qolardi va keyingi qayta hisobgacha butun interfeys notoʻgʻri
    chegara koʻrsatardi. */
 function oddLimitsOn(){
-  var sv = { maxKg:S.maxKg, maxLen:S.maxLen, baseWMax:S.baseWMax };
-  S.maxKg    = Math.max(S.maxKg,  +S.oddKg   || S.maxKg);
+  var sv = { maxKg:S.maxKg, maxLen:S.maxLen, baseWMax:S.baseWMax, tailKgOver:S.tailKgOver };
+  S.maxKg    = oddKgCap();                                // v22: tsex soni aynan
+  /* v22: NOSTANDART POCHKADA ZAXIRA YOʻQ. Tsex qoidasi: nostandart detallar
+     bir-biriga qoʻshiladi, faqat yigʻindi nostandart limitidan OSHMASA.
+     Ilgari guruh ichidagi singdirish (`absorbTails`) shu yerda ham zaxira
+     ochardi: S.maxKg = 40 boʻlgani uchun shift 40 + 10 = 50 boʻlardi va
+     46 kg li nostandart pochka audit «toza» bilan chiqardi. */
+  S.tailKgOver = 0;
   S.maxLen   = Math.max(S.maxLen, +S.oddLMax || S.maxLen);
   S.baseWMax = Math.max(S.baseWMax || 0, +S.oddWMax || 0) || S.baseWMax;
   return sv;
 }
 function oddLimitsOff(sv){
   S.maxKg = sv.maxKg; S.maxLen = sv.maxLen; S.baseWMax = sv.baseWMax;
+  S.tailKgOver = sv.tailKgOver;
 }
 
 /* BOGʻ — tor detallarni oʻlchami yaqinlari bilan ustma-ust yigʻish.
@@ -1228,17 +1266,16 @@ function oddBundles(list){
     return b.L - a.L || b.W - a.W ||
            (a.code < b.code ? -1 : (a.code > b.code ? 1 : 0));
   }).forEach(function(it){
-    var b = out.length ? out[out.length-1] : null;
-    var fits = !!b &&
-      b.kg + it.kg <= kgCap + 1e-9 &&
-      (!hCap || b.h + it.T <= hCap + 1e-9) &&          // v20: balandlik
-      (!nCap || b.items.length < nCap) &&              // v20: qavat soni
-      Math.abs(it.L - b.L0) <= tol + 1e-9 &&
-      Math.abs(it.W - b.W0) <= tol + 1e-9 &&
-      Math.max(b.gabL, it.L) <= (+S.oddLMax || 1e9) + 1e-9 &&
-      Math.max(b.gabW, it.W) <= (+S.oddWMax || 1e9) + 1e-9 &&
-      (!S.byThick || Math.abs(b.t - it.T) < 1e-9);
-    if (!fits){
+    /* v22: HAMMA bogʻ sinaladi, faqat oxirgisi emas. Ilgari detal oxirgi
+       bogʻga sigʻmasa — oldingi bogʻlarda joy boʻlsa ham — yangi bogʻ ochilardi.
+       Mos keladiganlardan ENG TOʻLASI tanlanadi (best-fit): bogʻlar limitga
+       yaqin toʻladi, yengil bogʻ kamroq qoladi. Tartib qatʼiy — determinizm
+       saqlanadi (teng boʻlsa oldingi bogʻ). */
+    var b = null;
+    for (var bi = 0; bi < out.length; bi++){
+      if (bundleFits(out[bi], it) && (!b || out[bi].kg > b.kg + 1e-9)) b = out[bi];
+    }
+    if (!b){
       /* Yangi bogʻ. Detal YOLGʻIZ oʻzi chegaradan oshsa ham shu yerga tushadi —
          detalni boʻlib boʻlmaydi. Audit buni XATO emas, ogohlantirish deb
          koʻrsatadi (massa uchun MASSA_NOODATIY qanday boʻlsa, shunday). */
@@ -1249,6 +1286,16 @@ function oddBundles(list){
     b.gabL = Math.max(b.gabL, it.L);
     b.gabW = Math.max(b.gabW, it.W);
   });
+  function bundleFits(b, it){
+    return b.kg + it.kg <= kgCap + 1e-9 &&
+      (!hCap || b.h + it.T <= hCap + 1e-9) &&          // v20: balandlik
+      (!nCap || b.items.length < nCap) &&              // v20: qavat soni
+      Math.abs(it.L - b.L0) <= tol + 1e-9 &&
+      Math.abs(it.W - b.W0) <= tol + 1e-9 &&
+      Math.max(b.gabL, it.L) <= (+S.oddLMax || 1e9) + 1e-9 &&
+      Math.max(b.gabW, it.W) <= (+S.oddWMax || 1e9) + 1e-9 &&
+      (!S.byThick || Math.abs(b.t - it.T) < 1e-9);
+  }
   out.forEach(function(b){ delete b.L0; delete b.W0; });   // faqat qurishda kerak edi
   return out;
 }
@@ -1290,13 +1337,18 @@ function* oddPackGen(list, rule){
       /* packGroupGen — greedyPackGen ustiga konsolidatsiya (3.6.7) va quyruq
          (3.6.7.1) qoʻshadi. Nostandart oqimga ular ayniqsa kerak: u yerda
          detal kam, demak yarim boʻsh pochka ehtimoli yuqori. */
-      var sv = oddLimitsOn(), res;
+      /* v22: nostandart LIMITLAR faqat haqiqiy nostandart guruhga (NS/).
+         Standart guruh qoldigʻi (ST/) bu yerga tushsa ham standart detal
+         boʻlib qoladi — 35 kg bilan teriladi va «NS» belgisini olmaydi.
+         Ilgari u ham 40 kg bilan terilardi va audit jim qolardi. */
+      var nstG = !!g[0].nst;
+      var sv = nstG ? oddLimitsOn() : null, res;
       try { res = yield* packGroupGen(wide, mulberry(ODD_SEED)); }
-      finally { oddLimitsOff(sv); }
+      finally { if (sv) oddLimitsOff(sv); }
       for (var pi = 0; pi < res.packs.length; pi++){
         var pk = res.packs[pi];
         pk.key = pkey; pk.gname = gl; pk.room = gr;
-        pk.oddSrc = true;                   // «nostandart oqimdan chiqqan» belgisi
+        pk.oddSrc = nstG;                   // «nostandart limit bilan terilgan» belgisi (v22: faqat NS/)
         pk.nst = !!g[0].nst;                // v18: qaysi oqim — aralashmasin
         out.push(pk);
       }
@@ -1574,9 +1626,16 @@ function pad2(n){ return (n<10?"0":"")+n; }
    kattaroq limit bilan terilgan — audit ham, qoʻlda tahrirlash ham shu bilan
    oʻlchashi kerak, aks holda toʻgʻri terilgan pochka «limitdan ogʻir» boʻlib
    qizarardi. */
+/* v22: NOSTANDART MASSA CHEGARASI — tsex qoʻygan son AYNAN.
+   Ilgari ikki joy ikki xil hisoblardi: bogʻ yasashda `oddKg` oʻzi
+   (`oddBundles`), pochka va auditda esa `max(maxKg, oddKg)`. Tsex nostandartga
+   standartdan PAST limit qoʻysa (masalan 30 < 35) bogʻ 30 da yopilar, pochka esa
+   35 gacha terilardi — bitta sozlama ikki maʼno berardi. Endi hamma joyda shu
+   funksiya; ziddiyatli qiymat sozlamalar ekranida ogohlantiriladi (`confCheck`). */
+function oddKgCap(){ return +S.oddKg || +S.maxKg || 0; }
 /* Pochkaning ASOSIY massa chegarasi — zaxirasiz. */
 function packKgBase(p){
-  return (p && p.oddSrc) ? Math.max(+S.maxKg || 0, +S.oddKg || 0) : (+S.maxKg || 0);
+  return (p && p.oddSrc) ? oddKgCap() : (+S.maxKg || 0);
 }
 /* JORIY chegara: zaxiradan foydalangan pochkada u kengaygan. Audit, chek va
    qoʻlda tahrirlash shu bilan oʻlchaydi. */
@@ -1594,6 +1653,10 @@ function packKgCap(p){
    standart limit + zaxira (35 + 10 = 45). Nostandartning oʻz 40 kg i shundan
    past turadi va oʻzgarishsiz qoladi. */
 function packKgAbs(p){
+  /* v22: nostandart pochkaning mutlaq shifti — oʻz limiti, zaxirasiz. Ilgari
+     max(40, 35 + 10) = 45 edi: yakuniy singdirish 30 kg li nostandart limit
+     bilan terilgan pochkani 43 kg ga koʻtarar, audit esa MASSA xatosi berardi. */
+  if (p && p.oddSrc) return packKgBase(p);
   return Math.max(packKgBase(p), (+S.maxKg || 0) + (+S.tailKgOver || 0));
 }
 
@@ -1601,3 +1664,14 @@ function packKgAbs(p){
    Tara pochkalash hisobiga KIRMAYDI (u sof detal massasi bilan ishlaydi),
    faqat chek va «2 kishi» ogohlantirishi uchun qoʻshiladi. */
 function packBrutto(p){ return (p ? p.kg : 0) + (+S.tare || 0); }
+
+/* v22: KOʻTARISH DARAJASI — brutto boʻyicha, chegaralarni tsex belgilaydi.
+   1 — bir kishi (≤ oneMan), 2 — ikki kishi (≤ twoMan), 3 — undan ogʻir:
+   yaxlit list kabi nostandart detal, arava yoki uch kishi kerak.
+   twoMan = 0 — uchinchi daraja oʻchiq (hammasi «2 KISHI»). */
+function liftTier(kg){
+  if (kg <= (+S.oneMan || 0) + 1e-9) return 1;
+  if (!(+S.twoMan) || kg <= +S.twoMan + 1e-9) return 2;
+  return 3;
+}
+function liftText(kg){ return ["", "1 KISHI", "2 KISHI", "3+ KISHI / ARAVA"][liftTier(kg)]; }

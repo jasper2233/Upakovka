@@ -40,6 +40,7 @@ Hujjatda ixtiro qilingan raqam yoki soxta havola yo'q. Standart raqami keltirilg
 | 8 | Qopqoq detallari maks. | `lidN` | 3 | 1…4 | qopqoq |
 | 9 | Qopqoq kichikligi maks. | `lidTol` | 100 mm | ≥ 0 | qopqoq |
 | 10 | 1 kishi ko'tarish chegarasi | `oneMan` | 25 kg | bo'sh/0 → 25 | faqat chek/interfeys |
+| 10a | 2 kishi ko'tarish chegarasi | `twoMan` | 50 kg | 0…500, 0 = o'chiq | faqat chek/interfeys |
 | 11 | Qalinlik bo'yicha ajratish | `byThick` | yoqilgan | belgi (checkbox) | guruhlash |
 | 12 | Chiqishga ruxsat | `ovhOn` | yoqilgan | belgi (checkbox) | qavat konverti |
 | 13 | Maks. qavat soni | `maxLayers` | 12 | ≥ 0 (0 = cheklovsiz) | pochka balandligi |
@@ -312,14 +313,14 @@ Uchinchi shart — to'liq TOM qoidasi (`lidOK` = `tomOK`): yuza, detal soni, ulu
 
 **Nima:** Pochka massasi shu qiymatdan oshsa interfeysda va bosma chekda "2 KISHI" ogohlantirishi chiqadi. **Pochkalash algoritmiga umuman ta'sir qilmaydi.**
 
-**Qayerda ishlaydi:** Faqat ko'rsatish qatlamida:
-- `src/js/10-ui.js` → `renderPacks()` — pochka ro'yxatidagi kartochkada `packBrutto(p) > S.oneMan` bo'lsa "2 KISHI" yorlig'i;
-- `src/js/10-ui.js` → `renderStep()` — pochka tugagach "⚠ N kg — 2 kishi ko'taradi" xabari (bu yerda **sof** `p.kg` solishtiriladi, tarasiz);
-- `src/js/08-labels.js` → `packLabelHTML()` — bosma pochka chekida `var two = brutto > S.oneMan;` va "⚠ N KG — 2 KISHI KO'TARADI" satri.
-
-> **Diqqat (v10):** `renderPacks()` va chek **brutto** (`packBrutto(p) = p.kg + S.tare`, standart tara 0,6 kg) bilan solishtiradi, `renderStep()` esa hali sof massa bilan. Ya'ni 24,5 kg li pochka ro'yxatda va chekda "2 KISHI" bo'lib chiqishi, ish oynasidagi qadam xabarida esa chiqmasligi mumkin. Bu farqni bilib turing; tarani 0 qilsangiz uchala joy ham bir xil ishlaydi.
-
-`src/js/04-packer.js` da `S.oneMan` o'zgaruvchisi bir marta ham o'qilmaydi — u yerda faqat `packBrutto()` yordamchisi turadi.
+**Qayerda ishlaydi:** Faqat ko'rsatish qatlamida, bitta funksiya orqali —
+`src/js/04-packer.js` → `liftTier(kg)` / `liftText(kg)` (v22). U brutto
+(`packBrutto(p) = p.kg + S.tare`) bo'yicha uch darajadan birini qaytaradi:
+**1 KISHI** (≤ `oneMan`), **2 KISHI** (≤ `twoMan`), **3+ KISHI / ARAVA**.
+Ro'yxat kartochkasi (`renderPacks`), «pochka tayyor» oynasi (`renderStep`),
+bosma chek (`packLabelHTML`, «Ko'tarish» qatori) va MES rejasi (`lift`) —
+hammasi shu funksiyani chaqiradi, ya'ni uch joy hech qachon ajralib ketmaydi.
+Packer `liftTier` ni terishda **ishlatmaydi**.
 
 **Nega shunday:** Bu yagona me'yor bo'lib, uning ortida to'g'ridan-to'g'ri xalqaro standart turadi:
 
@@ -332,9 +333,28 @@ Tizim ikkovining yuqorisini (25 kg) ogohlantirish chegarasi qilib olgan, chunki 
 
 **Kamaytirsa nima bo'ladi:** Deyarli har pochkada "2 KISHI" chiqadi. Agar ogohlantirish har doim chiqsa, u ma'nosini yo'qotadi — operator e'tibor bermay qo'yadi. Ayollar smenasi uchun ISO 11228-1 pastroq qiymat tavsiya qiladi; bunday holda `maxKg` ni ham birga tushirish to'g'riroq bo'ladi.
 
-**Bog'liqligi:** `maxKg` (1) — mantiqan `oneMan < maxKg` bo'lishi kerak, aks holda me'yor ishlamaydi. `S.tare` (v10) — brutto orqali bilvosita: tarani oshirsangiz ogohlantirish chegarasi amalda pasaygandek bo'ladi. Boshqa me'yorlarga hech qanday ta'siri yo'q.
+**Bog'liqligi:** `twoMan` (10a) — ikkinchi chegara. `maxKg` (1) — `oneMan < maxKg` bo'lmasa «1 KISHI» dan boshqa belgi chiqmaydi (tsex qarori, xato emas). `S.tare` (v10) — brutto orqali bilvosita: tarani oshirsangiz ogohlantirish chegarasi amalda pasaygandek bo'ladi. Boshqa me'yorlarga hech qanday ta'siri yo'q.
 
 > `readConf()` da `S.oneMan = Math.max(0, +$("cOneMan").value || 25)` — maydonga **0** yozib ogohlantirishni o'chirib bo'lmaydi, u 25 ga qaytadi. O'chirish uchun `maxKg` ga teng (35) qo'ying.
+
+### 10a. 2 kishi ko'tarish chegarasi — 50 kg (`S.twoMan`, v22)
+
+**Nima:** brutto shundan oshsa «3+ KISHI / ARAVA» belgisi chiqadi. Terishga
+ta'sir qilmaydi. `0` — uchinchi daraja o'chiq (hammasi «2 KISHI»).
+
+**Nega kerak:** sexda odatda pochkani ikki kishi ko'taradi, yengilini — bitta.
+Nostandart detallar esa katta va og'ir bo'ladi: yaxlit 2800×2070×16 LDSP list
+≈ 65 kg. Ilgari 65 kg li bog' ham, 26 kg li pochka ham bir xil «2 KISHI»
+olardi — chek ishchiga arava kerakligini aytmasdi.
+
+**Nega 50:** ISO 11228-1 bo'yicha bir kishi 25 kg → 2 × 25. Jamoaviy ko'tarishda
+amaldagi chegara yig'indidan past bo'ladi (ushlash, qadam muvofiqligi) — tsex
+o'z tajribasiga qarab pasaytiradi.
+
+**Bog'liqligi:** `oneMan` (10) dan katta bo'lishi shart — aks holda «2 KISHI»
+hech qachon chiqmaydi, `confCheck()` buni ZIDDIYAT deb ko'rsatadi. `maxKg` +
+`tailKgOver` + `tare` undan oshsa — standart pochkada ham «3+» chiqishi mumkin
+(BILIB QO'YING).
 
 ---
 
@@ -586,6 +606,13 @@ natijani yomonlashtiradi.
 
 **`oddKg` = 40 kg:** Nostandart pochka standartdan og'irroq bo'lishi mumkin. Sabab: uzun bok yoki tom bitta o'zi 30 kg bo'lishi mumkin va uni 35 kg limitiga siqish bitta detallik pochkalar ko'payishiga olib keladi. 40 kg — ikki kishi ko'taradigan chegara (`oneMan` = 25 dan yuqori, ISO 11228-1 bo'yicha ikki kishilik ish). Audit va qo'lda tahrirlash bu pochkalarni aynan shu limit bilan o'lchaydi (`packKgCap()`), aks holda to'g'ri terilgan pochka «limitdan og'ir» bo'lib qizarardi.
 
+**v22: limit — tsex soni AYNAN** (`oddKgCap()`). Ilgari bog' yasashda `oddKg`,
+pochka va auditda esa `max(maxKg, oddKg)` olinardi: tsex nostandartga 30 kg
+qo'ysa bog' 30 da yopilar, pochka 35 gacha terilardi. Endi hamma joyda bitta
+son; `oddKg < maxKg` ruxsat, lekin sozlamalarda ZIDDIYAT deb ko'rsatiladi.
+Limitdan og'ir **yaxlit** detal bo'linmaydi — yolg'iz bog'ga tushadi, audit
+`MASSA_NOODATIY` ogohlantirishi beradi, chekda «3+ KISHI / ARAVA».
+
 **`oddTol` = 300 mm:** «O'lchami yaqin» chegarasi. Bog'ga qo'shiladigan detalning bo'yi ham, eni ham bog'ning birinchi detalidan shuncha mm dan ko'p farq qilmasligi kerak. Kattalashtirsa bog' kamayadi, lekin bog' ichida turli o'lchamlar aralashadi va u fizik jihatdan bog' bo'lmay qoladi.
 
 **Namuna buyurtmada:** `oddTol` ni 100 dan 2000 gacha o'zgartirish natijani
@@ -612,6 +639,14 @@ Ya'ni «qo'shish» degani: **bitta pochkada, alohida qavatlarda**. 3 mm orqa dev
 **Nega qavat aralashmaydi:** Aralash qalinlikdagi qavat notekis bo'ladi — 16 mm detal yonidagi 3 mm detal ustidagi qavatni 13 mm ga qiyshaytiradi, pochka burchagi ko'tariladi va tasma bo'shab qoladi.
 
 **Auditda:** `QALINLIK` xatosi endi qavat ICHINI tekshiradi («2-qavatda ikki xil qalinlik: 16 mm va 3 mm»), tag bilan solishtirmaydi.
+
+**v22 — standart qiymat:** belgilanmagan qalinlik uchun `thickMixOn()` qaror
+qiladi: asosiy qalinlikdan yupqa VA `THIN_AUTO_MM` (10 mm) dan yupqa bo'lsa —
+qo'shiladi. Tsex katak bilan belgilagan qiymat (`true`/`false`) har doim ustun.
+v22 dan oldin saqlangan matritsadagi `false` lar tanlov emas edi (ko'rinib
+turgan har katak yozilardi) — `restoreConf()` ularni bir marta olib tashlaydi;
+yangi saqlashda `_thickMixV = 22` belgisi turadi. O'lchov (205 fayl): −146
+pochka (95 fayl), «faqat tag» −123, ochiq tom +3, zaxirali pochka −11, audit xatosi 0.
 
 ---
 
@@ -659,7 +694,7 @@ Ilgari filtr darhol `packKgAbs` ni ruxsat berardi va eng zich joylashuv g'olib b
 
 **Kamaytirsa nima bo'ladi:** 0 da singdirish faqat limit ichida ishlaydi — namunada 56 o'rniga **62 pochka** chiqadi va yarim bo'sh pochkalar qaytadi.
 
-**Bog'liqligi:** `maxKg` (1) — zaxira uning ustiga qo'shiladi; `oneMan` (10) — «2 KISHI» chegarasi; `oddKg` (22) — nostandart pochkada asos boshqa, zaxira ular ustiga ham qo'shiladi.
+**Bog'liqligi:** `maxKg` (1) — zaxira uning ustiga qo'shiladi; `oneMan` (10) — «2 KISHI» chegarasi; `oddKg` (22) — **v22: nostandart pochkaga zaxira berilmaydi** (tsex qoidasi: nostandart detallar faqat yig'indi `oddKg` dan oshmasa qo'shiladi). Ilgari guruh ichidagi singdirish `oddKg + tailKgOver` (50 kg) gacha borardi va audit buni ushlamasdi; korpusda 10 ta shunday pochka bor edi — endi ular bo'lingan (+10 pochka, 205 faylda).
 
 ---
 
@@ -687,6 +722,32 @@ Ilgari filtr darhol `packKgAbs` ni ruxsat berardi va eng zich joylashuv g'olib b
 **Kamaytirsa nima bo'ladi:** 50 dan pastda `MATO` (yumshoq mebel qoplamasi) chiqarib tashlanadi — u haqiqiy mahsulot, mijozga yetkazilishi kerak. 40 dan pastda stolishnitsa ham yo'qoladi.
 
 ---
+
+### 28a. Alohida ketadigan materiallar — `OYNA, KOZGU, ZERKAL, STEKL` (`S.sepMat`, v22)
+
+**Nima:** material nomida shu so'zlardan biri bo'lsa detal pochkalanmaydi —
+Diagnostikadagi «Pochkalanmagan obyektlar» ro'yxatiga «alohida ketadi» sababi
+bilan tushadi (`partSkipWhy` → `sepMatHit`).
+
+**Nega:** TZ-v2 §5 (kelishilgan): oyna va shunga o'xshash narsalar pochkaga
+qo'shilmaydi, TMO da tayyor buyurtmaga qo'shiladi. 205 ta real faylda `Oyna YOD`,
+`Kozgu fatset` (4–6 mm) uchraydi va v21 gacha ular oddiy pochkaga terilardi.
+
+**Bog'liqligi:** `buildItems()` natijasini o'zgartiradi — shuning uchun
+`SNAP_CONF` da (matn sifatida tiklanadi). Bo'sh qoldirilsa hammasi pochkalanadi.
+
+### 28b. Bitta detal maks. massasi — 65 kg (`S.partKgMax`, v22)
+
+**Nima:** shundan og'ir **bitta** detal — Diagnostikada «Shubhali og'ir detallar»
+va auditda `DETAL_OGIR` ogohlantirishi. Pochkalashni o'zgartirmaydi.
+
+**Nega 65:** sexdagi eng og'ir detal — yaxlit list, 2800×2070×16 LDSP ≈ 65 kg
+(tsex ma'lumoti). Undan og'iri amalda **massa xatosi**: korpusda 30 mm «MATO»
+paneli katalogsiz bo'lib LDSP zichligida (700 kg/m³) 90,7 kg chiqqan.
+
+**Massa manbalari tartibi (v22):** material katalogi → nomdan fizik zichlik
+(`NAME_DENS`: shisha 2500, keramika 2000 kg/m³) → `DENS[qalinlik]` → 700.
+Katalogga tushmagan har material parserda `MATERIAL_TAXMINIY` bilan aytiladi.
 
 ### 29–30. Standart detal min. o'lchami — 0 (`S.minPartW`, `S.minPartL`)
 
@@ -1075,6 +1136,22 @@ O'lchov (korpusdagi real buyurtma, `maxH = 160`): eng ko'p detalli bog' 12 → *
 (10 × 16 mm = 160 mm), chegaradan oshgan 0.
 
 ---
+
+### SOZLAMALAR ORASIDAGI ZIDDIYATLAR — `confCheck()` (v22, invariant)
+
+`readConf()` har maydonni alohida chegaralaydi; ikki maydon bir-biriga zid
+bo'lsa `confCheck()` Sozlamalar boshida aytadi. Hech narsani **taqiqlamaydi va
+o'zgartirmaydi** — chegaralarni tsex belgilaydi.
+
+| Daraja | Holat |
+|---|---|
+| XATO | tag eni/bo'yi min > maks; standart detal min > tag maks (hamma detal nostandartga o'tadi) |
+| ZIDDIYAT | `oddKg < maxKg`; `oddLMax < maxLen`; `oddWMax < baseWMax`; `twoMan ≤ oneMan` |
+| BILIB QO'YING | `maxKg + tailKgOver > oddKg`; brutto shifti `> twoMan`; `lidBed > minFill` (amalda `minFill`); qamrov 100 % + chiqish; `ovh > baseInset` (amalda `baseInset`) |
+
+Standart sozlamada faqat bitta «bilib qo'ying» chiqadi: zaxira bilan standart
+pochka 45 kg, nostandart limiti 40 kg. `lidBal` endi 0…50 (50 dan kattasi
+2+ detalli qopqoqni matematik imkonsiz qilardi).
 
 ### INTERFEYS: ME'YORLAR OQIM BO'YICHA AJRATILGAN (me'yor emas, talab)
 

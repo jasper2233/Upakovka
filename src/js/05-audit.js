@@ -31,6 +31,7 @@ function audCfg(){
     byThick:   !!c.byThick,
     oddKg:     audNum(c.oddKg, 0),        // v14: nostandart oqim limiti
     tailOver:  audNum(c.tailKgOver, 0),   // v16: qoldiq zaxirasi
+    partKgMax: audNum(c.partKgMax, 0),    // v22: bitta detal maks massasi (0 = oʻchiq)
     // v12: pochkalash qoidasi — qaysi oʻq boʻyicha ajratilgani. GURUH tekshiruvi
     // shunga tayanadi. Rejim yoʻq, qoida bitta.
     rule:      (c.split && typeof c.split === "object") ? c.split : { prod:true, mat:false }
@@ -83,6 +84,11 @@ function auditPacks(packs, items){
     if (!it) return;
     var uid = it.uid || ("?" + audCode(it));
     var r = placed[uid] || (placed[uid] = { n:0, packs:[], it:it });
+    /* v22: tsex chegarasidan ogʻir BITTA detal — massa xatosi boʻlishi ehtimoli
+       katta (katalogsiz material). Har detal uchun bir marta. */
+    if (!r.n && cfg.partKgMax && audNum(it.kg, 0) > cfg.partKgMax + 0.001)
+      wrn("DETAL_OGIR", lab, audCode(it) + " — " + audNum(it.kg, 0).toFixed(1) + " kg > " +
+          cfg.partKgMax + " kg (bitta detal chegarasi): material massasini tekshiring");
     r.n++;
     if (r.packs.indexOf(lab) < 0) r.packs.push(lab);
     placedN++;
@@ -105,12 +111,13 @@ function auditPacks(packs, items){
     if (p.odd){
       oddPacks++;
       var its = p.items || [], heavy = null;
+      var oCap = cfg.oddKg || cfg.maxKg;          // v22: tsex soni aynan (packer: oddKgCap)
       its.forEach(function(it){
         mark(it, lab);
-        if (it && audNum(it.kg, 0) > cfg.maxKg + 0.001 &&
+        // v22: «ogʻir detal» — bogʻ limitidan ogʻiri (ilgari maxKg bilan oʻlchanardi)
+        if (it && audNum(it.kg, 0) > oCap + 0.001 &&
             (!heavy || audNum(it.kg, 0) > audNum(heavy.kg, 0))) heavy = it;
       });
-      var oCap = Math.max(cfg.maxKg, cfg.oddKg);
       if (kg > oCap + 0.001){
         // bitta detalning oʻzi limitdan ogʻir boʻlsa — buni boʻlib boʻlmaydi, xato emas
         if (heavy){
@@ -267,8 +274,11 @@ function auditPacks(packs, items){
     /* MASSA / QAVAT / SEQ */
     /* v14: nostandart oqimdan chiqqan pochka oʻz (kattaroq) limiti bilan
        terilgan — uni standart limit bilan oʻlchash notoʻgʻri boʻlardi. */
-    var kgCap = (p.oddSrc ? Math.max(cfg.maxKg, cfg.oddKg) : cfg.maxKg) +
-                (p.overKg ? cfg.tailOver : 0);      // v16: singdirish zaxirasi
+    /* v22: nostandart pochkada zaxira YOʻQ — tsex qoidasi: yigʻindi nostandart
+       limitidan oshmaydi. Ilgari bu yerda oddKg + tailOver (50) turardi va
+       46 kg li nostandart pochka «toza» oʻtardi. */
+    var kgCap = p.oddSrc ? (cfg.oddKg || cfg.maxKg)
+                         : cfg.maxKg + (p.overKg ? cfg.tailOver : 0);   // v16: singdirish zaxirasi
     if (kg > kgCap + 0.001)
       err("MASSA", lab, kg.toFixed(2) + " kg > " + kgCap + " kg limit");
     if (cfg.maxLayers > 0 && (layers.length + 1) > cfg.maxLayers)

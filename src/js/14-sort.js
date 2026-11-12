@@ -247,7 +247,16 @@ function scanCode(v){
   v = String(v || "").trim();
   if (!v) return "";
   var f = v.split("|");
-  return (f.length > 3 && f[3]) ? f[3].trim() : v;
+  if (f.length > 3 && f[3]) return f[3].trim();
+  /* v22: MES cheki — `B-2026-047_100701_03_002_1`. Saralash detalni KOD
+     bilan qidiradi, shuning uchun MES satri shu buyurtmadagi detal kodiga
+     oʻgiriladi. Topilmasa matn oʻzicha qaytadi — «buyurtmada yoʻq» javobi
+     odatdagi yoʻldan chiqadi. */
+  for (var i = 0; i < PACKS.length; i++){
+    var its = packItems(PACKS[i]);
+    for (var j = 0; j < its.length; j++) if (mesMatch(v, its[j])) return its[j].code;
+  }
+  return v;
 }
 
 /* Shu kodli, hali qoʻyilmagan detalni topish.

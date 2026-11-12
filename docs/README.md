@@ -12,6 +12,7 @@ ikkinchisi esa bugungi kodning holatini tasvirlaydi.
 | [TZ-v2.md](TZ-v2.md) | **talab** (spec) | buyurtmachi bilan kelishilgan qarorlar; bir qismi hali bajarilmagan |
 | [TZ-v3-mantiq.md](TZ-v3-mantiq.md) | **tahlil** | guruhlash modeli, dunyo amaliyoti (CODP, ISA-95), keyingi qadamlar |
 | [ochiq-qarorlar.md](ochiq-qarorlar.md) | **backlog** | hali hal qilinmagan narsalar: buyurtmachidan so'raladigan 6 savol, 8 taklif |
+| [mes-integratsiya.md](mes-integratsiya.md) | **holat** + talab | MebeliX MES bilan bog'lanish: MES ID, reja JSON formati, MES jamoasiga topshiriladigan o'zgarishlar |
 
 Foydalanuvchi hujjati — ildizdagi [README.md](../README.md).
 

@@ -221,15 +221,38 @@ function diagSkipHTML(){
   var n = sk.reduce(function(a, x){ return a + (x.q || 1); }, 0);
   var h = '<h3>Pochkalanmagan obyektlar · ' + n + '</h3>' +
     '<div class="note" style="border-left-color:var(--mark)">' +
-    'Bular mebel detali emas — proyekt faylida xona obyektlari (devor, pol, shift) ' +
-    'ham «detal» boʻlib keladi. Ular pochkalanmaydi va buyurtma massasiga kirmaydi. ' +
-    'Chegara: <b>Sozlamalar → Detal maks. qalinligi</b>.</div>';
+    'Ikki xil obyekt: xona devori, pol, shift (proyekt faylida ular ham «detal» boʻlib ' +
+    'keladi) va <b>alohida ketadigan</b> materiallar — oyna, koʻzgu (TZ-v2 §5: pochkaga ' +
+    'qoʻshilmaydi, TMO da buyurtmaga qoʻshiladi). Ular pochkalanmaydi va massaga kirmaydi. ' +
+    'Chegara: <b>Sozlamalar → Umumiy → Kengaytirilgan</b>.</div>';
   var rows = '<tr><th>Kod</th><th>Nom</th><th>Soni</th><th>Sabab</th></tr>';
   sk.forEach(function(x){
     rows += '<tr><td class="m">' + esc(x.code || "—") + '</td>' +
       '<td style="white-space:normal">' + esc(x.name || "—") + '</td>' +
       '<td class="m">' + (x.q || 1) + '</td>' +
       '<td style="white-space:normal">' + esc(x.why || "") + '</td></tr>';
+  });
+  return h + diagTbl(rows);
+}
+
+/* (b3) v22: TSEX CHEGARASIDAN OGʻIR DETALLAR — bitta detal «Bitta detal maks.
+   massasi» dan ogʻir. Deyarli har doim massa xatosi: material katalogda yoʻq
+   (zichlik taxminiy) yoki qalinlik notoʻgʻri. Pochkalanadi — faqat aytiladi. */
+function diagHeavyHTML(){
+  var hv = (DIAG && DIAG.heavy) ? DIAG.heavy : [];
+  if (!hv.length) return "";
+  var h = '<h3>Shubhali ogʻir detallar · ' + hv.length + '</h3>' +
+    '<div class="note" style="border-left-color:var(--alert)">' +
+    'Bu detallar <b>' + S.partKgMax + ' kg</b> dan ogʻir — sexdagi eng ogʻir yaxlit listdan ham. ' +
+    'Odatda sabab materialda: katalogda yoʻq, massasi taxminiy. Materialni ' +
+    '<b>Sozlamalar → Material katalogi</b> ga toʻgʻri kg/m² bilan qoʻshing.</div>';
+  var rows = '<tr><th>Kod</th><th>Nom</th><th>Soni</th><th>Massa</th><th>Material</th></tr>';
+  hv.forEach(function(x){
+    rows += '<tr><td class="m">' + esc(x.code || "—") + '</td>' +
+      '<td style="white-space:normal">' + esc(x.name || "—") + '</td>' +
+      '<td class="m">' + (x.q || 1) + '</td>' +
+      '<td class="m">' + (+x.kg).toFixed(1) + ' kg</td>' +
+      '<td style="white-space:normal">' + esc(x.mat || "—") + '</td></tr>';
   });
   return h + diagTbl(rows);
 }
@@ -376,6 +399,7 @@ function renderDiag(){
   var h = diagSafe(diagFileHTML,    "Fayl") +
           diagSafe(diagWarnHTML,    "Parser ogohlantirishlari") +
           diagSafe(diagSkipHTML,    "Pochkalanmagan obyektlar") +
+          diagSafe(diagHeavyHTML,   "Shubhali ogʻir detallar") +
           diagSafe(diagAuditHTML,   "Audit") +
           diagSafe(diagProjectHTML, "Loyiha tarkibi") +
           diagSafe(diagXmlHTML,     "XML tuzilishi");

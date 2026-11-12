@@ -1,10 +1,23 @@
 /* ============================================================
    3.3 HOLAT — barcha sozlamalar (S), loyiha (P), pochkalar (PACKS)
    ============================================================ */
-var APP_VER = 20;  // har yangilanishda +1
+var APP_VER = 22;  // har yangilanishda +1 (v21 — audit kommiti, raqam oshirilmagan edi)
 var S = {
   maxKg:35, ovh:20, minBase:190, maxLen:2100, minBaseT:16, tries:4, prefix:"SM", byThick:true,
   minFill:85, lidFill:90, lidN:3, lidTol:100, oneMan:25, maxLayers:12, sepCls:{},
+  /* v22: KOʻTARISH DARAJASI — tsex oʻzi belgilaydi. Brutto ≤ oneMan — «1 KISHI»,
+     ≤ twoMan — «2 KISHI», undan ogʻiri — «3+ KISHI / ARAVA» (yaxlit list kabi
+     nostandart detal shunday boʻlishi tabiiy). 50 = 2 × 25 kg (ISO 11228-1).
+     0 = uchinchi daraja oʻchiq. Terishga taʼsir qilmaydi — faqat belgi. */
+  twoMan:50,
+  /* v22: BITTA DETAL MAKS. MASSASI — tsex soni. Sexdagi eng ogʻir detal —
+     yaxlit list (2800×2070×16 LDSP ≈ 65 kg); undan ogʻiri deyarli har doim
+     massa xatosi (katalogsiz material, notoʻgʻri qalinlik). Detal baribir
+     pochkalanadi — faqat Diagnostika va audit aytadi. 0 = tekshiruv oʻchiq. */
+  partKgMax:65,
+  /* v22: ALOHIDA KETADIGAN MATERIALLAR (TZ-v2 §5) — nomida shu soʻzlardan biri
+     boʻlsa detal pochkalanmaydi. Vergul bilan, katta-kichik harf farqsiz. */
+  sepMat:"OYNA, KOZGU, ZERKAL, STEKL",
 
   /* ---- v14: TAG (PADDON) OʻLCHOV OYNASI ----------------------------------
      Qaysi detal tag boʻla oladi. Toʻrt chegara bitta oynani beradi:

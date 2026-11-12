@@ -264,6 +264,86 @@ $tester = @'
       chk("kant qirralari o'qildi", d3.parts[0].e === "T", d3.parts[0].e);
     } catch(e){ chk("sun'iy yupqa material sinovi", false, e.message); }
 
+    /* v22: YOGʻOCH EMAS MATERIALLAR. Real fayllardan: 30 mm «MATO» LDSP deb
+       90,7 kg chiqqan, 4 mm oyna esa yogʻoch zichligida oddiy pochkaga
+       terilgan (TZ-v2 §5 ga zid). */
+    var svP = P;
+    try {
+      var nw = '<project name="Material sinovi">' +
+        '<good typeId="sheet" id="m1" name="LDSP Oq" t="16" l="2750" w="1830"/>' +
+        '<good typeId="sheet" id="m2" name="Oyna YOD" t="4" l="2550" w="1605"/>' +
+        '<good typeId="sheet" id="m3" name="MATO" t="30" l="2750" w="1830"/>' +
+        '<good typeId="product" id="pp" code="990009" name="Spalniy">' +
+          '<part id="b1" code="01_001" name="bok" l="1800" w="450" count="1"/>' +
+          '<part id="b2" code="01_002" name="oyna" l="1000" w="500" count="1"/>' +
+          '<part id="b3" code="01_003" name="mato" l="2400" w="1800" count="1"/>' +
+        '</good>' +
+        '<operation typeId="CS"><material id="m1"/><part id="b1"/></operation>' +
+        '<operation typeId="CS"><material id="m2"/><part id="b2"/></operation>' +
+        '<operation typeId="CS"><material id="m3"/><part id="b3"/></operation>' +
+        '</project>';
+      DIAG.warnings = [];
+      var dn = parseProject(nw);
+      var glass = dn.materials.filter(function(m){ return m.id === "m2"; })[0];
+      chk("oyna massasi shisha zichligida", glass && Math.abs(glass.kgm2 - 10) < 0.01,
+          glass ? glass.kgm2 + " kg/m² (4 mm × 2500)" : "yoʻq");
+      var tx = DIAG.warnings.filter(function(w){ return w.code === "MATERIAL_TAXMINIY"; })[0];
+      chk("katalogsiz material ogohlantirildi", !!tx && tx.msg.indexOf("MATO") >= 0 && tx.msg.indexOf("LDSP") < 0,
+          tx ? tx.msg.slice(0, 70) : "yoʻq");
+      P = dn;
+      var itn = buildItems();
+      var codes = itn.map(function(it){ return it.code; }).join(",");
+      chk("oyna pochkalanmaydi (TZ-v2 §5)", codes.indexOf("01_002") < 0, codes);
+      var skG = (DIAG.skipped || []).filter(function(x){ return x.code === "01_002"; })[0];
+      chk("oyna «alohida ketadi» roʻyxatida", !!skG && skG.why.indexOf("alohida") >= 0, skG ? skG.why : "yoʻq");
+      var hv = (DIAG.heavy || []).map(function(x){ return x.code + " " + x.kg.toFixed(1); }).join(",");
+      chk("65 kg dan ogʻir detal shubhali deb belgilandi", /^01_003 /.test(hv), hv || "yoʻq");
+      var svSep = S.sepMat; S.sepMat = "";
+      var allIn = buildItems().length;
+      S.sepMat = svSep;
+      chk("kalit soʻz olib tashlansa oyna pochkalanadi", allIn === 3, allIn + " detal");
+      var hvA = auditPacks([{ odd:true, no:1, items:itn.filter(function(it){ return it.code === "01_003"; }),
+                              kg:itn.filter(function(it){ return it.code === "01_003"; })[0].kg, key:"x" }], itn)
+                  .warnings.filter(function(w){ return w.code === "DETAL_OGIR"; }).length;
+      chk("audit ogʻir detalni koʻradi (DETAL_OGIR)", hvA === 1, hvA + " ta");
+    } catch(e){ chk("yogʻoch emas materiallar", false, e.message); }
+    P = svP; buildItems();
+
+    /* v22: DETAL SONI MES QOIDASI BILAN — jami = detal × max(mahsulot, 1).
+       Real fayllarda mahsulot count="7" (7 ta parta) boʻlganda 1 ta parta
+       pochkalanardi; count="0" li detal esa 1 dona boʻlib pochkaga tushardi. */
+    try {
+      var cx = '<project name="Soni sinovi">' +
+        '<good typeId="sheet" id="m1" name="LDSP Oq" t="16" l="2750" w="1830"/>' +
+        '<good typeId="product" id="pp" code="990077" name="Parta" count="3">' +
+          '<part id="c1" code="01_001" name="qopqoq" l="1200" w="600" count="2"/>' +
+          '<part id="c2" code="01_002" name="bok" l="700" w="500" count="0"/>' +
+          '<part id="c3" code="01_003" name="polka" l="600" w="300" count="1" minusCount="1"/>' +
+        '</good>' +
+        '<operation typeId="CS"><material id="m1"/><part id="c1"/><part id="c2"/><part id="c3"/></operation>' +
+        '</project>';
+      DIAG.warnings = [];
+      var dc = parseProject(cx);
+      var qc1 = dc.parts.filter(function(x){ return x.id === "c1"; })[0].q;
+      var qc2 = dc.parts.filter(function(x){ return x.id === "c2"; })[0].q;
+      var qc3 = dc.parts.filter(function(x){ return x.id === "c3"; })[0].q;
+      chk("mahsulot soni detal soniga koʻpaytiriladi", qc1 === 6 && qc3 === 3, "2×3=" + qc1 + " · 1×3=" + qc3);
+      chk("soni 0 — 0 boʻlib qoladi (1 ga aylanmaydi)", qc2 === 0, "q=" + qc2);
+      var wc = DIAG.warnings.map(function(w){ return w.code; }).join(",");
+      chk("mahsulot soni / soni 0 / minus miqdor ogohlantirildi",
+          /MAHSULOT_SONI/.test(wc) && /SONI_NOL/.test(wc) && /MINUS_MIQDOR/.test(wc), wc);
+      var svPc = P; P = dc;
+      var ic = buildItems();
+      P = svPc;
+      var ids = ic.filter(function(it){ return it.code === "01_001"; }).map(function(it){ return it.mes; });
+      chk("MES ID nusxa raqami jami son boʻyicha (_1…_6)",
+          ids.length === 6 && ids[0] === "990077_01_001_1" && ids[5] === "990077_01_001_6", ids.join(" "));
+      chk("soni 0 detal pochkalanmaydi", ic.filter(function(it){ return it.code === "01_002"; }).length === 0 &&
+          (DIAG.skipped || []).some(function(x){ return x.code === "01_002" && /soni 0/.test(x.why); }),
+          ic.length + " nusxa");
+    } catch(e){ chk("detal soni (MES qoidasi)", false, e.message); }
+    P = svP; buildItems();
+
     try {
       var t1 = false; try { parseProject("<html><body>salom</body></html>"); } catch(e){ t1 = true; }
       chk("noto'g'ri ildiz teg rad etildi", t1);
@@ -529,6 +609,16 @@ $tester = @'
 
     /* ================= v16: QOLDIQ UCHUN MASSA ZAXIRASI ================= */
     try {
+      /* v22: bu blok zaxira mantigʻini KALIBRLANGAN sharoitda tekshiradi — yupqa
+         detallar alohida (v21 gacha shunday edi). Yupqa detal asosiy pochkaga
+         qoʻshilganda u massa limitidan joy oladi va guruh oxiridagi 16 mm qoldiq
+         zaxira bilan koʻproq singdiriladi (namunada 6 → 10 pochka, hammasi 45 kg
+         ichida) — bu aralashtirishning narxi, «zaxira birinchi tanlov» xatosi emas.
+         Pastdagi ulush chegarasi esa aynan oʻsha xatoga kalibrlangan. Standart
+         holatdagi massa chegarasini boshidagi umumiy audit tekshiradi. */
+      var zThin = null;
+      buildItems().forEach(function(it){ if (it.T < MAIN_T && (zThin === null || it.T < +zThin)) zThin = String(it.T); });
+      S.thickMix = {}; if (zThin !== null) S.thickMix[zThin] = false; packAll();
       var z0 = PACKS.length;
       var over = PACKS.filter(function(p){ return p.overKg; });
       chk("zaxiradan foydalanilgan", over.length > 0, over.length + " ta pochka");
@@ -597,7 +687,8 @@ $tester = @'
       // sozlama aylanmasi
       S.tailKgOver = 7; writeConf(); S.tailKgOver = 0; readConf();
       chk("zaxira sozlamasi saqlanadi", S.tailKgOver === 7, "tailKgOver=" + S.tailKgOver);
-      S.tailKgOver = svZ; writeConf(); packAll();
+      S.tailKgOver = svZ; writeConf();
+      S.thickMix = {}; packAll();               // v22: standart holat (yupqa — asosiyga)
     } catch(e){ chk("qoldiq zaxirasi", false, e.message); }
 
     /* ================= v14: TAG OYNASI va PADDON QAMROVI ================= */
@@ -672,7 +763,39 @@ $tester = @'
       chk("asosiy qalinlik aniqlandi", MAIN_T === +top, "MAIN_T=" + MAIN_T + " · kutilgan " + top);
 
       var thin = null;
-      Object.keys(cnt).forEach(function(k){ if (+k !== MAIN_T && thin === null) thin = k; });
+      Object.keys(cnt).forEach(function(k){ if (+k < MAIN_T && thin === null) thin = k; });
+
+      /* v22: yupqa detal (10 mm dan yupqa) STANDART HOLDA asosiy pochkaga qoʻshiladi,
+         tsex katakni olib tashlasa (false) — yana alohida. */
+      function mixedPacks(){
+        return PACKS.filter(function(p){
+          if (p.odd) return false;
+          var ts = {}; ts[p.base.T] = 1;
+          p.layers.forEach(function(L){ L.items.forEach(function(x){ ts[x.it.T] = 1; }); });
+          return Object.keys(ts).length > 1;
+        }).length;
+      }
+      var mixDef = mixedPacks();
+      chk("yupqa detal standart holda asosiy pochkada", thin !== null && mixDef > 0,
+          "yupqa " + thin + " mm · " + mixDef + " ta aralash pochka");
+      S.thickMix = {}; S.thickMix[thin] = false; packAll();
+      var mixOff = mixedPacks(), nOff = PACKS.length;
+      chk("katak olib tashlansa yupqa alohida pochkalanadi", mixOff === 0 && nOff > q0,
+          mixOff + " ta aralash · " + q0 + " → " + nOff + " pochka");
+      var wasLS = null;
+      try { wasLS = localStorage.getItem("upk_conf"); } catch(e){}
+      var svMix = S.thickMix;
+      localStorage.setItem("upk_conf", JSON.stringify({ _thickMix: { "3": false } }));
+      restoreConf();
+      var migOld = S.thickMix["3"];
+      localStorage.setItem("upk_conf", JSON.stringify({ _thickMix: { "3": false }, _thickMixV: 22 }));
+      restoreConf();
+      var migNew = S.thickMix["3"];
+      if (wasLS === null) localStorage.removeItem("upk_conf"); else localStorage.setItem("upk_conf", wasLS);
+      S.thickMix = svMix;
+      chk("eski saqlangan «false» olib tashlanadi, v22 tanlovi saqlanadi",
+          migOld === undefined && migNew === false, "eski: " + migOld + " · v22: " + migNew);
+
       S.thickMix = {}; S.thickMix[thin] = true;
       packAll();
       /* Yupqa tag/qopqoq ZAXIRA yoʻli bilan ruxsat etiladi: pochkada minBaseT ga
@@ -706,7 +829,7 @@ $tester = @'
       chk("matritsada audit toza", mAud.errors.length === 0,
           mAud.errors.map(function(e){ return e.code; }).join(",") || "toza");
       S.thickMix = {}; packAll();
-      chk("matritsa oʻchirildi — eski holat", PACKS.length === q0, PACKS.length + " pochka");
+      chk("matritsa standart holatga qaytdi", PACKS.length === q0, PACKS.length + " pochka");
 
       var mp = null;
       PACKS.forEach(function(p){ if (!mp && !p.odd && p.layers.length && p.layers[0].items.length > 1) mp = p; });
@@ -1621,6 +1744,111 @@ $tester = @'
       // qalinlik matritsasi konteyneri koʻchishda yoʻqolmasin
       chk("qalinlik matritsasi joyida", !!cv.querySelector("#thickMix"), "thickMix");
 
+      /* v22: SODDALASHTIRISH. P/M kundalik tegadigan maydonlar yopiq boʻlimga
+         tushib qolmasin — aks holda soddalik oʻrniga yashirin meʼyor chiqadi. */
+      var coreIds = ["cMaxKg","cMaxLen","cBaseWMax","cMinBase","cMaxH","cOvhOn",
+                     "cOddKg","cOddLMax","cOddWMax","cOneMan","cTare","cThick",
+                     "cRackN","cCellN","cPrefix","cLabel","cAutoLbl"];
+      var hid = coreIds.filter(function(id){
+        var e = cv.querySelector("#" + id); return !e || !!e.closest("details.adv");
+      });
+      chk("asosiy maydonlar koʻrinib turadi", hid.length === 0, hid.join(",") || coreIds.length + " ta");
+      var advN = cv.querySelectorAll("details.adv").length;
+      chk("kengaytirilgan boʻlimlar bor", advN >= 4, advN + " ta");
+
+      // yashirin maydon oʻzgarsa yopiq sarlavha buni aytadi, qaytarilsa yoʻqoladi
+      var tolEl = el("cOddTol"), tolSv = tolEl.value;
+      var tolAdv = tolEl.closest("details.adv");
+      tolEl.value = "250"; advMark();
+      var mk1 = tolAdv.querySelector(".advmod").textContent;
+      tolEl.value = tolSv; advMark();
+      var mk2 = tolAdv.querySelector(".advmod").textContent;
+      chk("yopiq boʻlim oʻzgarishni koʻrsatadi", /^1 ta/.test(mk1) && mk2 === "",
+          "oʻzgargan: «" + mk1 + "», qaytgan: «" + mk2 + "»");
+
+      /* v22: KOʻTARISH DARAJASI VA ZIDDIYATLAR — chegaralarni tsex belgilaydi,
+         tizim ularni aynan bajaradi va zid boʻlsa aytadi. */
+      var svL = { one:S.oneMan, two:S.twoMan };
+      S.oneMan = 25; S.twoMan = 50;
+      var tiers = [liftTier(20), liftTier(30), liftTier(64.9)].join(",");
+      S.twoMan = 0;
+      var tierOff = liftTier(64.9);
+      S.oneMan = svL.one; S.twoMan = svL.two;
+      chk("koʻtarish: 1 / 2 / 3+ kishi darajasi", tiers === "1,2,3" && tierOff === 2,
+          tiers + " · twoMan=0 da " + tierOff);
+      chk("koʻtarish: yaxlit list «3+ KISHI / ARAVA»", liftText(64.9) === "3+ KISHI / ARAVA", liftText(64.9));
+      chk("pochka chekida koʻtarish qatori bor", packLabelHTML(PACKS[0], "lblx").indexOf("KISHI") > 0, "KISHI");
+      chk("2 kishi maydoni umumiy blokda", inBlk(blkAll, "cTwoMan") && !el("cTwoMan").closest("details.adv"), "cTwoMan");
+
+      var cw0 = confCheck();
+      chk("standart sozlamada xato/ziddiyat yoʻq",
+          cw0.filter(function(w){ return w.lvl !== "info"; }).length === 0,
+          cw0.map(function(w){ return w.lvl; }).join(",") || "toza");
+      var svC = { odd:S.oddKg, mb:S.minBase };
+      S.oddKg = 30; S.minBase = 5000;
+      var cw1 = confCheck().map(function(w){ return w.lvl + ":" + w.msg.slice(0, 22); });
+      S.oddKg = svC.odd; S.minBase = svC.mb; confCheck();
+      chk("ziddiyat: nostandart < standart ogohlantiriladi", cw1.some(function(s){ return /^wrn:Nostandart massa/.test(s); }), cw1.join(" | "));
+      chk("ziddiyat: tag oynasi yopiq — xato", cw1.some(function(s){ return /^err:Tag eni min/.test(s); }), cw1.join(" | "));
+      chk("ziddiyat ekranda koʻrinadi", (el("confWarn").innerHTML || "").length === 0 ||
+          cw0.length === el("confWarn").querySelectorAll(".note").length, el("confWarn").querySelectorAll(".note").length + " ta");
+
+      // nostandart limiti hamma joyda tsex soni AYNAN — standartdan past boʻlsa ham
+      var nBase = PACKS.length;                // v22: namuna soni qattiq yozilmaydi
+      S.oddKg = 30; packAll();
+      var oA = auditPacks(PACKS, buildItems());
+      var oOver = PACKS.filter(function(p){
+        return p.oddSrc && p.kg > 30 + 1e-6 && !(p.odd && p.items.length === 1) &&
+               !(!p.odd && !p.layers.length);
+      }).length;
+      S.oddKg = svC.odd; packAll();
+      chk("nostandart limit standartdan past boʻlsa ham aynan bajariladi", oOver === 0, oOver + " ta oshgan pochka");
+      chk("past nostandart limitda audit toza", oA.errors.length === 0,
+          oA.errors.slice(0,3).map(function(e){ return e.code + " P" + e.pack; }).join(" | ") || "toza");
+      chk("nostandart sinovidan keyin holat tiklandi", PACKS.length === nBase, PACKS.length + " pochka");
+
+      /* v22: tsex qoidasi — nostandart detallar qoʻshiladi, faqat yigʻindi
+         nostandart limitidan OSHMASA. Zaxira nostandart pochkaga berilmaydi
+         (ilgari 46 kg li nostandart pochka audit «toza» bilan chiqardi). */
+      var oddOver = PACKS.filter(function(p){
+        var single = p.odd ? p.items.length === 1 : !p.layers.length;
+        return (p.odd || p.oddSrc) && !single && p.kg > oddKgCap() + 1e-6;
+      }).map(function(p){ return "P" + p.no + " " + p.kg.toFixed(1); });
+      chk("nostandart pochka limitdan oshmaydi (zaxirasiz)", oddOver.length === 0, oddOver.join(", ") || "toza");
+      chk("nostandart pochkada zaxira belgisi yoʻq", PACKS.filter(function(p){ return p.oddSrc && p.overKg; }).length === 0, "overKg");
+      // v22: qavat limiti 1 — faqat tag, qopqoq yasalmaydi
+      var svLay = S.maxLayers; S.maxLayers = 1; packAll();
+      var lAud = auditPacks(PACKS, buildItems());
+      var lBad = PACKS.filter(function(p){ return !p.odd && p.layers.length > 0; }).length;
+      S.maxLayers = svLay; packAll();
+      chk("qavat limiti 1: faqat tag, audit toza", lBad === 0 && lAud.errors.length === 0,
+          lBad + " ta qavatli · " + lAud.errors.slice(0,2).map(function(e){ return e.code; }).join(","));
+
+      // v22: kasrli oʻlchamlar — detallar ustma-ust tushmaydi
+      P.parts.forEach(function(pp){ pp.l += 0.5; pp.w += 0.3; });
+      packAll();
+      var fAud = auditPacks(PACKS, buildItems());
+      var fOv = fAud.errors.filter(function(e){ return e.code === "USTMA_UST"; }).length;
+      P.parts.forEach(function(pp){ pp.l -= 0.5; pp.w -= 0.3; });
+      packAll();
+      chk("kasrli oʻlchamda ustma-ust yoʻq", fOv === 0 && fAud.errors.length === 0,
+          fOv + " USTMA_UST · jami xato " + fAud.errors.length);
+
+      // v22: «chiqishga ruxsat» katagi pochkani boʻlib yubormaydi
+      var tIdx = -1;
+      for (var ti = 0; ti < PACKS.length; ti++) if (!PACKS[ti].odd && !PACKS[ti].done && PACKS[ti].layers.length){ tIdx = ti; break; }
+      var tp = PACKS[tIdx], nPk = PACKS.length, nIt = tp.seq.length, ovh0 = tp.allowOvh;
+      togglePackOvh(tp, !ovh0);
+      var nPk2 = PACKS.length, nIt2 = tp.seq.length;
+      togglePackOvh(tp, ovh0);
+      chk("chiqish katagi pochkani boʻlmaydi", nPk2 === nPk && nIt2 === nIt && tp.allowOvh === ovh0,
+          "P" + tp.no + ": " + nPk + "→" + nPk2 + " pochka, " + nIt + "→" + nIt2 + " detal");
+      packAll();
+
+      var svT = S.tailKgOver, svM = S.maxKg; oddLimitsOff(oddLimitsOn());
+      chk("nostandart rejimdan keyin zaxira va limit tiklanadi", S.tailKgOver === svT && S.maxKg === svM,
+          "tail=" + S.tailKgOver + " max=" + S.maxKg);
+
       // ajratishdan keyin ham sozlamalar oʻqiladi
       var svM = S.maxKg, svO = S.oddKg;
       S.maxKg = 33; S.oddKg = 41; writeConf();
@@ -1636,13 +1864,13 @@ $tester = @'
                     baseInset:S.baseInset, maxH:S.maxH, lidBal:S.lidBal,
                     oddKg:S.oddKg, oddLMax:S.oddLMax, oddWMax:S.oddWMax, oddTol:S.oddTol };
       S.baseWMax=1234; S.baseLMin=321; S.baseCover=87; S.baseInset=33; S.maxH=555;
-      S.lidBal=66; S.oddKg=44; S.oddLMax=2900; S.oddWMax=1500; S.oddTol=250;
+      S.lidBal=45; S.oddKg=44; S.oddLMax=2900; S.oddWMax=1500; S.oddTol=250;
       writeConf();
       S.baseWMax=0; S.baseLMin=0; S.baseCover=0; S.baseInset=0; S.maxH=0;
       S.lidBal=0; S.oddKg=0; S.oddLMax=0; S.oddWMax=0; S.oddTol=0;
       readConf();
       var rt = (S.baseWMax===1234 && S.baseLMin===321 && S.baseCover===87 && S.baseInset===33 &&
-                S.maxH===555 && S.lidBal===66 && S.oddKg===44 && S.oddLMax===2900 &&
+                S.maxH===555 && S.lidBal===45 && S.oddKg===44 && S.oddLMax===2900 &&
                 S.oddWMax===1500 && S.oddTol===250);
       chk("v14 sozlamalari yozildi va qayta oʻqildi", rt,
           JSON.stringify({wmax:S.baseWMax,lmin:S.baseLMin,cov:S.baseCover,ins:S.baseInset,
@@ -1859,6 +2087,12 @@ $tester = @'
        massa boʻlmasa (3 mm orqa devorlar butun modulda 15 kg) — bu kamchilik emas,
        shuning uchun ogohlantirish chiqmasligi kerak. */
     try {
+      /* v22: «kichik guruh» namunada 3 mm orqa devorlar edi. Endi ular standart
+         holda asosiy pochkaga qoʻshiladi — shuning uchun blok yupqa ALOHIDA
+         sharoitda yuradi va oxirida standart holat qaytadi. */
+      var yThin = null;
+      buildItems().forEach(function(it){ if (it.T < MAIN_T && (yThin === null || it.T < +yThin)) yThin = String(it.T); });
+      S.thickMix = {}; if (yThin !== null) S.thickMix[yThin] = false; packAll();
       var yA = auditPacks(PACKS, buildItems());
       var yKg = {};
       PACKS.forEach(function(p){ if (!p.odd) yKg[p.key || "*"] = (yKg[p.key || "*"] || 0) + p.kg; });
@@ -1884,6 +2118,7 @@ $tester = @'
         if (yKg[p.key || "*"] > S.maxKg && p.kg < S.maxKg * 0.5 && yWarn[lab]) yBig++;
       });
       chk("katta guruhdagi yengil pochka ogohlantiriladi", yBig > 0, yBig + " ta");
+      S.thickMix = {}; packAll();               // v22: standart holat
     } catch(e){ chk("YENGIL guruh mantigʻi", false, e.message); }
 
     /* v13: seansda key/room/tail saqlanadi. Ilgari key saqlanmasdi va shu sabab
@@ -2320,6 +2555,84 @@ $tester = @'
 
       sortReset(); S.rackN = sR; S.cellN = sC;
     } catch(e){ chk("saralash posti", false, e.message); }
+
+    /* ================= v22: MebeliX MES DETAL ID SI =================
+       Qadoqlash postida MES chiqargan chek skanerlanadi:
+       {buyurtma}_{mahsulot}_{detal}[-N][_n]. Qoidalar MES parseridan koʻchirilgan —
+       bu blok ularning har birini alohida qoʻriqlaydi. */
+    try {
+      var allIt = buildItems();
+      var noMes = allIt.filter(function(it){ return !it.mes; }).length;
+      chk("MES: har detalga ID berildi", noMes === 0, noMes + " ta IDsiz / " + allIt.length);
+      var uniq = {}, dupMes = 0;
+      allIt.forEach(function(it){ if (uniq[it.mes]) dupMes++; uniq[it.mes] = 1; });
+      chk("MES: ID lar takrorlanmaydi", dupMes === 0, dupMes + " ta takror");
+      var many = allIt.filter(function(it){ return it.of > 1; })[0];
+      var one  = allIt.filter(function(it){ return it.of === 1; })[0];
+      chk("MES: koʻp nusxada _n, yagonada suffiks yoʻq",
+          !!many && /_1$/.test(many.mes) && !!one && one.mes === one.mesKey,
+          (many ? many.mes : "—") + " | " + (one ? one.mes : "—"));
+
+      // kodsiz detal, takror kod va kodsiz mahsulot — MES parser.py qoidalari
+      var mx = new DOMParser().parseFromString(
+        '<project><good typeId="product" code="100701">' +
+        '<part code="03_002"/><part code="03_002"/><part/><part code="03_002"/></good>' +
+        '<good typeId="product" name="Shkaf"><part code="01"/></good></project>', "application/xml");
+      var keys = [];
+      Array.prototype.forEach.call(mx.querySelectorAll("good"), function(g){
+        var pc = mesProdCode(g), seen = {}, n = 0;
+        Array.prototype.forEach.call(g.querySelectorAll("part"), function(pp){
+          keys.push(mesPartKey(pp, pc, n++, seen));
+        });
+      });
+      chk("MES: takror kod -2/-3, kodsiz detal tartib raqami, kodsiz mahsulot nomi",
+          keys.join(",") === "100701_03_002,100701_03_002-2,100701_003,100701_03_002-3,Shkaf_01",
+          keys.join(","));
+
+      // qadoqlash ekrani MES chekini taniydi
+      selectPack(0);
+      var s0 = STEP, wantIt = PACKS[0].seq[s0].it;
+      checkScan("B-2026-047_" + wantIt.mes);
+      chk("MES: qadoqlashda MES cheki qabul qilindi", STEP === s0 + 1,
+          wantIt.mes + " -> STEP " + s0 + "→" + STEP);
+      setStep(s0);
+      // bir xil detalning nusxalari almashinadi — begona detal boshqa KALITLI boʻlsin
+      var alien = packItems(PACKS[1]).filter(function(it){ return it.mesKey !== wantIt.mesKey; })[0];
+      checkScan("B-2026-047_" + alien.mes);
+      chk("MES: boshqa pochka detali rad etildi", STEP === s0, alien.mes);
+      checkScan("B-2026-047_YOQ_999");
+      chk("MES: notanish ID qadamni surmaydi", STEP === s0, "STEP=" + STEP);
+
+      // buyurtma raqami: notoʻgʻrisi rad, toʻgʻrisi yoziladi
+      var e1 = mesOrderSet("2026-47"), e2 = mesOrderSet(" b-2026-047 ");
+      chk("MES: buyurtma raqami tekshiriladi", !!e1 && e2 === "" && P.mesOrder === "B-2026-047",
+          (e1 || "—") + " | " + P.mesOrder);
+      checkScan("B-2026-999_" + wantIt.mes);
+      chk("MES: boshqa buyurtma cheki rad etildi", STEP === s0, "STEP=" + STEP);
+      checkScan("B-2026-047_" + wantIt.mes);
+      chk("MES: oʻz buyurtmasi cheki qabul qilindi", STEP === s0 + 1, "STEP=" + STEP);
+      setStep(s0);
+
+      // reja: hamma pochka va hamma detal, toʻliq ID bilan
+      var plan = mesPlan(), stepsN = 0, badId = 0;
+      plan.packs.forEach(function(pk){ pk.steps.forEach(function(st){
+        stepsN++; if (st.mes_id.indexOf("B-2026-047_") !== 0) badId++;
+      }); });
+      chk("MES rejasi: hamma pochka va detal", plan.packs.length === PACKS.length && stepsN === allIt.length,
+          plan.packs.length + " pochka, " + stepsN + " qadam");
+      chk("MES rejasi: ID lar buyurtma raqami bilan", badId === 0, badId + " ta notoʻgʻri");
+      chk("MES rejasi: tag qadamida joy bor", !!plan.packs.filter(function(pk){ return pk.kind === "standart"; })[0].steps[0].place,
+          "place");
+      chk("MES rejasi: JSON ga aylanadi", JSON.parse(JSON.stringify(plan)).format === "upakofka-plan", "ok");
+      chk("MES: P/M da buyurtma maydoni bor", !!el("mgrMesOrder") && !!el("btnMesPlan"), "mgrMesOrder");
+      mesOrderSet("");
+      chk("MES: raqam tozalanadi", P.mesOrder === null, String(P.mesOrder));
+
+      // saralash posti ham MES chekidan kodni oladi
+      chk("MES: saralashda MES chekidan detal kodi olinadi",
+          scanCode("B-2026-047_" + wantIt.mes) === wantIt.code,
+          scanCode("B-2026-047_" + wantIt.mes) + " vs " + wantIt.code);
+    } catch(e){ chk("MES detal ID", false, e.message); }
 
     /* v11: klass sinonimlari */
     try {

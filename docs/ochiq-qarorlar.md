@@ -81,6 +81,10 @@ Ilgari uchta edi, endi **oltita**: `lidFill`, `lidN`, `lidTol`, `lidBal`,
 **Taklif:** kamida bir qismini konstantaga chiqarish.
 **Qarshi dalil:** oxirgi uchtasi sexdan kelgan aniq nosozliklar bo'yicha
 qo'shilgan va ular hali sozlanmoqda — muzlatish erta bo'lishi mumkin.
+**v22 oraliq yechim:** konstantaga aylantirilmadi, lekin oltalasi ham yopiq
+«Kengaytirilgan» bo'limlarga o'tdi va standartdan farq qilsa sarlavhada
+ko'rinadi ([README](../README.md) → «Asosiy va kengaytirilgan maydonlar»).
+Muzlatish qarori ochiq qoladi.
 
 ### B9 — `tries` ni konstantaga aylantirish
 Butun buyurtma `S.tries` (4) marta qayta teriladi, eng yaxshisi olinadi.

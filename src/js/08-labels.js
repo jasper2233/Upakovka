@@ -44,7 +44,7 @@ function packQR(p){
 }
 function packLabelHTML(p, id){
   var brutto = packBrutto(p);         // detallar + qadoq materiali (tara)
-  var two = brutto > S.oneMan;
+  var tier = liftTier(brutto);        // v22: 1 / 2 / 3+ kishi — chegaralarni tsex belgilaydi
   var mats = {}; p.seq.forEach(function(s){ mats[s.it.mat?s.it.mat.name:"—"] = 1; });
   /* v12: chekda XONA va MODUL nomi turadi (TZ-v2 §8: «qaysi xona yoki modul»).
      Modul nomi P/M bergan nom — fayl faqat «01» beradi. Bir nechta modul bitta
@@ -66,8 +66,9 @@ function packLabelHTML(p, id){
         '<tr><td>Gabarit</td><td class="big">'+(p.odd?"—":p.gabL+" × "+p.gabW+" × "+Math.round(p.h)+" mm")+'</td></tr>'+
         '<tr><td>Netto</td><td>'+p.kg.toFixed(1)+' kg</td></tr>'+
         '<tr><td>Brutto</td><td class="big">'+brutto.toFixed(1)+' kg</td></tr>'+
+        '<tr><td>Koʻtarish</td><td class="big">'+liftText(brutto)+'</td></tr>'+
         '</table>'+
-        (two ? '<div class="warn">⚠ '+brutto.toFixed(0)+' KG — 2 KISHI KOʻTARADI</div>' : '')+
+        (tier > 1 ? '<div class="warn">⚠ '+brutto.toFixed(0)+' KG — '+liftText(brutto)+'</div>' : '')+
       '</div>'+
       '<div style="text-align:center"><canvas id="'+id+'"></canvas>'+
         '<div style="font-size:7.5px;margin-top:2px;word-break:break-all">'+esc(packQR(p))+'</div></div>'+

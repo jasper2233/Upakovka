@@ -159,7 +159,8 @@ function renderPacks(){
     d.innerHTML = '<div class="no">'+mark+'</div>'+
       '<div><div class="ttl">'+cellTag+esc(ttl)+'</div><div class="sub">'+sub+'</div>'+
       '<div class="bar"><i class="'+(fill>92?"hot":"")+'" style="width:'+fill.toFixed(0)+'%"></i></div></div>'+
-      '<div class="kg">'+brutto.toFixed(1)+(brutto>S.oneMan?'<em>2 KISHI</em>':'')+'</div>';
+      // v22: koʻtarish darajasi — 1 kishilik pochka ham belgilanadi (xira), 3+ — qizil
+      '<div class="kg">'+brutto.toFixed(1)+'<em class="lift t'+liftTier(brutto)+'">'+liftText(brutto)+'</em></div>';
     d.onclick = function(){ selectPack(i); };
     // v10: qator <div> edi — klaviatura bilan 55 ta pochkaning birortasiga ham
     // yetib boʻlmasdi. Endi u tugma sifatida ishlaydi.
@@ -263,26 +264,21 @@ function togglePackOvh(p, on){
      BOSHQA pochkalarga ketgan edi. Natijada katakni bir marta bosish oʻsha
      detallarni ikkinchi marta shu pochkaga tiqib, auditda TAKROR xatosini
      berardi. Endi manba `packMids(p)` — refreshPack va moveDetail bilan bir xil. */
-  var mids = packMids(p);
-  /* strat=0 ATAYIN yozilgan: usiz strat undefined boʻlib qopqoq zaxirasi
-     (04-packer.js:193) ishlamas va qavat limiti boshqacha hisoblanardi — yaʼni
-     «chiqishga ruxsat» katagi bitta pochkani refreshPack/moveDetail dan BOSHQA
-     qoida bilan qayta terardi. Uchalasi endi bir xil. */
-  var np = layoutPack(p.base, mids, on, 0, 0);
-  p.layers = np.layers; p.kg = np.kg; p.envL = np.envL; p.envW = np.envW;
-  p.off = np.off; p.allowOvh = on; p.left = [];
-  packDerive(p);
-  p.done = 0;                      // terish oʻzgardi — progress nolga
-  if (np.left.length){
-    /* v21: bogʻ manba pochkaning GURUHINI meros oladi (moveDetail dagi
-       «+ yangi pochka» kabi). Ilgari u kalitsiz chiqardi va roʻyxatda oʻz
-       xonasidan uzilib, «Noodatiy» sarlavhasi ostiga tushib qolardi. */
-    var b = { odd:true, items:np.left, kg:np.left.reduce(function(s,x){ return s+x.kg; },0),
-              no:PACKS.length+1, rev:P.rev||1, t:np.left[0].T, done:0,
-              gname:p.gname, key:p.key, room:p.room, nst:!!p.nst };
-    b.seq = packSeq(b); b.h = np.left.reduce(function(s,x){ return s+x.T; },0);
-    PACKS.push(b);
-    flash("err", np.left.length+" detal sigʻmadi — noodatiy pochkaga oʻtdi");
+  /* v22: qayta terish `refreshPack` orqali — moveDetail bilan BIR yoʻl.
+     Ilgari bu yerda layoutPack toʻgʻridan-toʻgʻri chaqirilardi: nostandart
+     pochka standart (35 kg) limit bilan terilar, zaxirali quyruq qayta
+     qurilmas va sigʻmagan detallar jimgina yangi bogʻga chiqarib
+     yuborilardi — bitta katak bosilishi yaroqli pochkani boʻlib tashlardi.
+     Endi sigʻmasa pochka oʻzgarmaydi va sababi aytiladi. */
+  var was = p.allowOvh;
+  p.allowOvh = on;
+  var left = refreshPack(p, packMids(p));
+  if (left.length){
+    p.allowOvh = was;
+    var tb = $("pkOvh"); if (tb) tb.checked = was;
+    flash("err", "P"+pad2(p.no)+": "+(on ? "chiqish bilan" : "chiqishsiz")+" "+left.length+
+                 " detal sigʻmaydi — pochka oʻzgartirilmadi");
+    return;
   }
   STEP = 0; renderPacks(); renderStep(); stats();
   if (typeof autosave === "function") autosave();
@@ -305,8 +301,8 @@ function renderStep(){
       // v10: ilgari bu yerda NETTO (p.kg) tekshirilardi, roʻyxatda va chekda esa BRUTTO.
       // Natijada 24.7 kg netto pochkada ekran jim turib, chekda «2 KISHI» chiqardi.
       // Endi uch joyda ham bitta manba — packBrutto().
-      (packBrutto(p)>S.oneMan
-        ? '<div class="heavy">⚠ '+packBrutto(p).toFixed(0)+' KG — 2 KISHI KOʻTARADI</div>' : '')+
+      (liftTier(packBrutto(p)) > 1
+        ? '<div class="heavy">⚠ '+packBrutto(p).toFixed(0)+' KG — '+liftText(packBrutto(p))+'</div>' : '')+
       '<div class="btnrow" style="margin-top:14px"><button class="btn" id="bBack">← Orqaga</button>'+
       (CUR+1 < PACKS.length
         ? '<button class="btn pri" id="bNextPack">Keyingi pochka →</button>'
@@ -335,6 +331,7 @@ function renderStep(){
       '<div class="step">qadam '+(STEP+1)+' · '+role+'</div>'+
       '<div class="code">'+esc(it.code)+'</div>'+
       '<div class="nm">'+esc(it.name)+'</div>'+
+      (it.mes ? '<div class="mesid" title="MES chekidagi ID">'+esc(mesFull(it))+'</div>' : '')+
       '<div class="grid2">'+
         '<div class="cell"><u>Oʻlcham</u><b>'+it.L+'×'+it.W+'</b></div>'+
         '<div class="cell"><u>Qalinlik</u><b>'+it.T+' mm</b></div>'+
@@ -413,9 +410,14 @@ function checkScan(v){
 
   // bir xil koddagi detallar oʻzaro almashinadi: pochka + kod mos kelsa yetarli
   var sameCode = f.length>3 && f[1]==="P"+pad2(p.no) && f[3]===step.it.code;
-  if (v === want || v === step.it.code || sameCode){ advance(); flash("ok","toʻgʻri — qoʻyildi ✓"); return; }
+  /* v22: MES cheki (`B-2026-047_100701_03_002_1`) — detalga MES chiqargan chek.
+     Qadoqlash postida asosan shu skanerlanadi, oʻz chekimiz esa zaxira. */
+  function hit(s){ return qrText(p, s) === v || s.it.code === v || mesMatch(v, s.it); }
+  if (v === want || v === step.it.code || sameCode || mesMatch(v, step.it)){
+    advance(); flash("ok","toʻgʻri — qoʻyildi ✓"); return;
+  }
   var at = -1;
-  for (var i=0;i<p.seq.length;i++){ if (qrText(p,p.seq[i])===v || p.seq[i].it.code===v){ at=i; break; } }
+  for (var i=0;i<p.seq.length;i++){ if (hit(p.seq[i])){ at=i; break; } }
   if (at>=0){ flash("err","bu detal shu pochkada, lekin "+(at+1)+"-qadamda"); return; }
 
   // boshqa pochkada bormi? — operatorga aniq yoʻl koʻrsatamiz
@@ -423,11 +425,17 @@ function checkScan(v){
     if (k===CUR) continue;
     var q = PACKS[k];
     for (var j=0;j<q.seq.length;j++){
-      if (qrText(q,q.seq[j])===v || q.seq[j].it.code===v){
+      if (qrText(q,q.seq[j])===v || q.seq[j].it.code===v || mesMatch(v, q.seq[j].it)){
         flash("err","bu detal P"+pad2(q.no)+" pochkasiga tegishli ("+(j+1)+"-qadam)");
         return;
       }
     }
+  }
+  // v22: MES cheki, lekin boshqa buyurtmaniki — umumiy «topilmadi» dan aniqroq
+  var vo = mesOrderOf(v);
+  if (vo && P && P.mesOrder && vo !== P.mesOrder){
+    flash("err","bu detal boshqa buyurtmadan ("+vo+"), joriy buyurtma "+P.mesOrder);
+    return;
   }
   flash("err","bu detal bu buyurtmada topilmadi");
 }
@@ -627,10 +635,10 @@ function printPackLabel(p){
 }
 
 function csv(){
-  var rows = [["pochka","pochka_qalinlik","qavat","tartib","kod","nomi","mahsulot","uzunlik","eni","qalinlik","massa_kg","material","kant","qavat_toldirish_%","pochka_brutto_kg","pochka_gabarit","reviziya"]];
+  var rows = [["pochka","pochka_qalinlik","qavat","tartib","kod","mes_id","nomi","mahsulot","uzunlik","eni","qalinlik","massa_kg","material","kant","qavat_toldirish_%","pochka_brutto_kg","pochka_gabarit","reviziya"]];
   PACKS.forEach(function(p){ p.seq.forEach(function(s,i){
     var it=s.it;
-    rows.push([p.no, p.t||"", s.layer, i+1, it.code, it.name, it.prod, it.L, it.W, it.T, it.kg.toFixed(3), it.mat?it.mat.name:"", it.edges, s.fill!=null?Math.round(s.fill*100):"",
+    rows.push([p.no, p.t||"", s.layer, i+1, it.code, mesFull(it), it.name, it.prod, it.L, it.W, it.T, it.kg.toFixed(3), it.mat?it.mat.name:"", it.edges, s.fill!=null?Math.round(s.fill*100):"",
       packBrutto(p).toFixed(2), p.odd?"":p.gabL+"x"+p.gabW+"x"+Math.round(p.h), "R"+(p.rev||1)]);
   }); });
   /* yozib berishni dlCsv() bajaradi \u2014 ilgari bu yerda o\u02bbz nusxasi turardi va u
@@ -654,13 +662,79 @@ function partsCsv(){
   });
   dlCsv(rows, (P.name||"loyiha")+"_detallar.csv");
 }
-/* umumiy CSV yozib berish (Excel uchun ; ajratgich va BOM) */
-function dlCsv(rows, fname){
-  var txt = rows.map(function(r){
-    return r.map(function(c){ return '"'+String(c==null?"":c).replace(/"/g,'""')+'"'; }).join(";");
-  }).join("\n");
+/* 3.9.6.2 v22: MES REJASI — MebeliX MES uchun pochkalash rejasi (JSON).
+   MES qadoqni qoʻlda yigʻdiradi (`pachka`), algoritmi yoʻq. Bu fayl — MES
+   tomoni oʻqiy oladigan REJA: qaysi detal (MES ID si bilan) qaysi pochkaga,
+   qaysi qavatga va qayerga. Tuzilishi `docs/mes-integratsiya.md` da.
+   Reja tavsiya: MES dagi haqiqiy qadoq (as-built) undan farq qilishi mumkin. */
+var MES_PLAN_VER = 1;
+function mesPlan(){
+  if (!P) return null;
+  return {
+    format: "upakofka-plan", version: MES_PLAN_VER, app: "UPK v" + APP_VER,
+    order: P.mesOrder || null,
+    project: { name: P.name || "", uuid: P.uuid || "", rev: P.rev || 1 },
+    settings: { max_kg: S.maxKg, odd_max_kg: oddKgCap(), tare_kg: +S.tare || 0,
+                one_man_kg: S.oneMan, two_man_kg: +S.twoMan || null },
+    packs: PACKS.map(function(p){
+      return {
+        no: p.no, code: "P" + pad2(p.no),
+        kind: p.odd ? "nostandart" : "standart",
+        group: packGrpName(p), room: p.room || null,
+        thickness: p.t || null,
+        net_kg: +p.kg.toFixed(2), gross_kg: +packBrutto(p).toFixed(2),
+        lift: liftTier(packBrutto(p)),                    // 1 / 2 / 3 (3 = 3+ kishi yoki arava)
+        size_mm: p.odd ? null : [Math.round(p.gabL), Math.round(p.gabW), Math.round(p.h)],
+        steps: p.seq.map(function(s, i){
+          var it = s.it, pos = s.pos;
+          return {
+            step: i + 1, layer: s.layer, role: s.role,
+            mes_id: mesFull(it), mes_key: it.mesKey, code: it.code, name: it.name,
+            size_mm: [it.L, it.W, it.T], kg: +it.kg.toFixed(3),
+            // tag detalning chap-orqa burchagidan, mm; manfiy = tagdan chiqib turadi
+            place: pos ? { x: Math.round(pos.x), y: Math.round(pos.y), rot90: !!pos.rot } : null
+          };
+        })
+      };
+    })
+  };
+}
+function mesPlanSave(){
+  var plan = mesPlan(); if (!plan) return;
+  dlText(JSON.stringify(plan, null, 2), (P.mesOrder || P.name || "reja") + "_mes-reja.json",
+         "application/json;charset=utf-8", false);
+  /* Buyurtma raqamisiz reja ham yaroqli (ID prefikssiz), lekin MES uni
+     qaysi buyurtmaga bogʻlashni bilmaydi — ogohlantiramiz, toʻxtatmaymiz. */
+  var n = $("mesNote");
+  if (n && !plan.order){
+    n.textContent = "Diqqat: MES buyurtma raqami kiritilmagan — rejadagi ID lar prefikssiz chiqdi.";
+    n.style.borderLeftColor = "var(--mark)";
+  }
+}
+/* MES buyurtma raqami: B-2026-047. Boʻsh qoldirish mumkin (prefikssiz ishlash). */
+function mesOrderSet(raw){
+  var v = String(raw || "").trim().toUpperCase();
+  if (v && !MES_NO_RE.test(v)) return "Notoʻgʻri raqam: «" + raw + "». Namuna: B-2026-047";
+  if (!P) return "Avval loyiha yuklang";
+  P.mesOrder = v || null;
+  if (typeof autosave === "function") autosave();
+  return "";
+}
+function mesRender(){
+  var inp = $("mgrMesOrder"), n = $("mesNote");
+  if (inp && document.activeElement !== inp) inp.value = (P && P.mesOrder) || "";
+  if (!n || !P) return;
+  var it = buildItems()[0];
+  n.style.borderLeftColor = P.mesOrder ? "var(--ok)" : "var(--info)";
+  n.textContent = P.mesOrder
+    ? "MES cheki: " + (it ? mesFull(it) : P.mesOrder + "_…") + " — boshqa buyurtma cheki rad etiladi"
+    : "Raqam kiritilmagan: MES cheki prefiksiz solishtiriladi" + (it ? " (" + it.mes + ")" : "");
+}
+
+/* umumiy fayl yozib berish */
+function dlText(txt, fname, mime, bom){
   var a = document.createElement("a");
-  var url = URL.createObjectURL(new Blob(["﻿"+txt], {type:"text/csv;charset=utf-8"}));
+  var url = URL.createObjectURL(new Blob([(bom ? "﻿" : "") + txt], {type:mime}));
   a.href = url; a.download = fname;
   /* Firefox faqat hujjatga QOʻSHILGAN havolani bosishga ruxsat beradi —
      11-diag.js dagi `diagSave()` da bu allaqachon hisobga olingan edi,
@@ -672,6 +746,13 @@ function dlCsv(rows, fname){
     try { if (a.parentNode) a.parentNode.removeChild(a); } catch(e){}
     URL.revokeObjectURL(url);
   }, 4000);
+}
+/* CSV — Excel uchun ; ajratgich va BOM */
+function dlCsv(rows, fname){
+  var txt = rows.map(function(r){
+    return r.map(function(c){ return '"'+String(c==null?"":c).replace(/"/g,'""')+'"'; }).join(";");
+  }).join("\n");
+  dlText(txt, fname, "text/csv;charset=utf-8", true);
 }
 
 /* 3.9.7 QOʻLDA TAHRIRLASH — detal koʻchirish, himoyalar bilan */
@@ -895,6 +976,7 @@ function renderMgr(){
   // koʻrsatadi, oʻrtada sinxronlanadigan ikkinchi holat yoʻq
   if ($("mgrByRoom")) $("mgrByRoom").checked = !!(S.split && S.split.prod);
   if ($("mgrByMat"))  $("mgrByMat").checked  = !!(S.split && S.split.mat);
+  mesRender();
   renderUnitSrc();
   var box = $("mgrRooms"); box.innerHTML = "";
   roomStats().forEach(function(r){

@@ -307,8 +307,8 @@ var Store = (function(){
    OʻZINI oʻzgartiradi. Qolganlari (rooms, matCat, unitNames…) allaqachon
    snapshotda alohida maydon boʻlib turadi. */
 var SNAP_CONF = ["maxKg","ovh","minBase","maxLen","minBaseT","tries","prefix","byThick",
-                 "minFill","lidFill","lidN","lidTol","oneMan","maxLayers","ovhOn",
-                 "maxPartT"];
+                 "minFill","lidFill","lidN","lidTol","oneMan","twoMan","maxLayers","ovhOn",
+                 "maxPartT","sepMat"];   // v22: sepMat ham buildItems ni oʻzgartiradi
 
 function snapPacks(packs){
   return (packs || []).map(function(p){
@@ -454,6 +454,7 @@ function restoreSnapshot(snap){
       var v = conf[k];
       if (v === undefined || v === null) return;
       if (k === "prefix"){ if (typeof v === "string" && v) S.prefix = v; return; }
+      if (k === "sepMat"){ if (typeof v === "string") S.sepMat = v; return; }   // v22: matn, son emas
       if (k === "byThick" || k === "ovhOn"){ S[k] = !!v; return; }
       var n = +v;
       if (isFinite(n)) S[k] = n;            // "abc" yoki null kelsa eskisi qoladi

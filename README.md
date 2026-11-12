@@ -68,6 +68,16 @@ Fayl yuklangach **«Yangi buyurtma»** oynasi ochiladi va ko'rsatadi:
 - **Modullar** — faylda qanaqa modul bor
 - **Detal klasslari** — qaysilari alohida pochkalansin (fasad alohida, bok alohida...)
 
+### Detal soni — MES qoidasi bilan (v22)
+
+`<part count>` — **bitta mahsulotdagi** soni. Mahsulotning o'zida `count="N"`
+bo'lsa (masalan 7 ta parta), buyurtmadagi jami = detal soni × N — MebeliX MES
+ham aynan shunday hisoblaydi. Ilgari mahsulot soni o'qilmasdi va 205 ta real
+faylning 8 tasida detal kam pochkalanardi (masalan `count="7"` li partadan
+bittasi). `count="0"` li detal ishlab chiqarilmaydi — pochkaga tushmaydi,
+Diagnostikada «soni 0» bo'lib ko'rinadi (ilgari 1 dona bo'lib pochkalanardi).
+Korpusda: detal 15 891 → 16 065, 15 faylda pochkalar to'g'rilandi.
+
 ### Modul chegarasi qayerdan olinadi
 
 Bu **sozlama emas** — faylning o'z xossasi. Qoida bitta va avtomatik:
@@ -245,6 +255,7 @@ To'liq hisobot: **Diagnostika** bo'limi.
 | `BOSH_POCHKA` | pochka faqat tag detaldan iborat, ustida qavat yo'q |
 | `YENGIL` | pochka limitning yarmidan yengil, lekin guruhda zaxira bor |
 | `MASSA_NOODATIY` | bitta detalning o'zi limitdan og'ir — bo'linmaydi |
+| `DETAL_OGIR` | bitta detal «Bitta detal maks. massasi» (65 kg) dan og'ir — deyarli har doim massa xatosi: material katalogda yo'q (v22) |
 | `BALANDLIK_NOODATIY` | bitta detalning o'zi balandlik limitidan qalin — bo'linmaydi |
 | `BEGONA` | natijada kutilgan ro'yxatda yo'q detal bor (natija eskirgan — qayta pochkalang) |
 
@@ -402,7 +413,20 @@ Katak belgilansa, o'sha qalinlik asosiy pochkaga qo'shiladi — lekin **alohida 
 bo'lib. Ya'ni «qo'shish» degani: bitta pochkada, alohida qavatlarda. Tag va qopqoq
 baribir yupqa detaldan bo'lmaydi.
 
-Katak bo'sh bo'lsa — o'sha qalinlik eskicha, o'z pochkasini oladi.
+Katak bo'sh bo'lsa — o'sha qalinlik o'z pochkasini oladi.
+
+**v22: yupqa detallar standart holda asosiy pochkaga.** Asosiy qalinlikdan yupqa
+va **10 mm dan yupqa** detallar (orqa devor, HDF/XDF, 6 mm MDF) uchun katak o'zi
+belgilangan turadi (`THIN_AUTO_MM`). Tsex katakni olib tashlasa — o'sha qalinlik
+yana alohida pochkalanadi va bu tanlov saqlanadi. 10 mm va undan qalin (masalan
+kafel) avtomatik qo'shilmaydi.
+
+Nega: ilgari har modulning 2–3 ta orqa devori o'z guruhiga ajralib, 1–2 detalli
+mayda pochka bo'lib qolardi. 205 ta real faylda o'lchandi: qo'shilganda
+**−146 pochka** (95 faylda o'zgardi), «faqat tagdan iborat» pochka −123, zaxirali pochka −11, audit xatosi 0. Namunada
+56 → 51 pochka. Narxi: yupqa qavat massa limitidan joy oladi, shuning uchun
+guruh oxiridagi qoldiq zaxira bilan biroz ko'proq singdiriladi (namunada 6 → 10
+pochka, hammasi 45 kg ichida).
 
 ---
 
@@ -636,6 +660,52 @@ Ilgari bunday ortiqcha detal pochkadan jimgina chiqib ketardi va faqat auditda
 detalni buyurtmadan yo'qotmaydi.
 
 ---
+
+## MebeliX MES bilan moslik (v22)
+
+Tizim [MebeliX MES](https://github.com/dshukriddinov/MebeliX-Mes-System) ga
+ulanadi. MES har jismoniy detalga **o'z chekini** chiqaradi va qadoqlash
+postida aynan shu chek skanerlanadi:
+
+```
+{buyurtma}_{mahsulotKodi}_{detalKodi}[-N][_n]
+B-2026-047_100701_03_002_1
+```
+
+Shuning uchun har detal MES bilan **bir xil ID** oladi (`item.mes`). Qoidalar
+MES parseridan (`backend/app/services/giblab/parser.py`) aynan ko'chirilgan:
+
+| Qism | Qoida |
+|---|---|
+| mahsulot kodi | good `code`, bo'lmasa `name`, u ham bo'lmasa `PRODUCT` |
+| detal kodi | `code`, bo'lmasa `part.code`, bo'lmasa mahsulot ichidagi tartib raqami `001` |
+| `-N` | bitta mahsulot kodi ichida kod takrorlansa — ikkinchisi `-2`, uchinchisi `-3` |
+| `_n` | nusxa raqami — **faqat** detal 1 dan ko'p nusxada bo'lsa |
+
+Buyurtma prefiksi (`B-2026-047_`) faylda yo'q — u MES da beriladi, skanerda
+olib tashlanadi. Qadoqlash ekrani ham, saralash posti ham MES chekini o'z
+chekidek taniydi; o'z chekimiz (`SM.…|P01|…`) zaxira bo'lib qoladi.
+
+**P/M → «MES» bloki:**
+
+- **MES buyurtma raqami** (`B-2026-047`) — kiritilsa boshqa buyurtmaning cheki
+  rad etiladi («bu detal boshqa buyurtmadan»), reja va CSV dagi ID lar to'liq
+  chiqadi. Loyihaga tegishli, seans bilan saqlanadi.
+- **MES rejasi (JSON)** — pochka → qavat → detal, har biri MES ID si va joyi
+  bilan. Format va MES tomonida kerakli o'zgarishlar —
+  [docs/mes-integratsiya.md](docs/mes-integratsiya.md).
+
+Qadoqlash ekranidagi «keyingi detal» kartasida MES ID ham ko'rinadi —
+upakovshik qo'lidagi chek bilan solishtiradi.
+
+**`-N` nega muhim.** 205 ta real faylning **150 tasida** bitta mahsulot ichida
+detal kodi takrorlanadi (jami 1279 holat) — odatda ko'zgu juftlik: chap va o'ng
+bok, teshiklari qarama-qarshi. Ilgari skaner bir xil kodli detallarni
+almashinadigan deb hisoblardi; MES ID esa ularni ajratadi.
+
+> Testda qo'riqlanadi: har detalda ID bor va takrorlanmaydi, `-2`/`-3`, kodsiz
+> detal, kodsiz mahsulot va `_n` qoidalari, qadoqlashda MES cheki qabul qilinishi
+> va begona detal rad etilishi.
 
 ## Chek va QR
 
@@ -900,6 +970,29 @@ oshirsa/kamaytirsa nima o'zgaradi — imkoni bo'lsa o'lchangan raqam bilan
 > standart blokka sizib o'tmagan va **har** maydonda ≥ 40 belgili podskaska bor —
 > ya'ni podskaskasiz yangi sozlama qo'shib bo'lmaydi.
 
+### Asosiy va kengaytirilgan maydonlar (v22)
+
+Sozlamalar 46 taga yetgan edi, P/M esa amalda 15–20 tasiga tegadi. v9 ning eng
+yaxshi tomoni — soddalik — shu tarzda qaytarildi: har blokda faqat kundalik
+maydonlar ko'rinib turadi, qolganlari blok ichidagi yopiq
+**«Kengaytirilgan»** bo'limida. Hech bir sozlama olib tashlanmagan, mantiq va
+natija o'zgarmagan (namunada 56 pochka, korpusda ham shunday).
+
+| Ko'rinib turadi | Yopiq bo'limda |
+|---|---|
+| maks. massa, tag bo'yi/eni maks, tag eni min, maks. balandlik, chiqishga ruxsat | standart detal min. eni/bo'yi, tag bo'yi min, tag/qopqoq qalinligi, paddon qamrovi, chetdan qochish |
+| nostandart massa, bo'yi, eni | «o'lchami yaqin» |
+| 1 kishi chegarasi, tara, qalinlik bo'yicha ajratish, qalinlik matritsasi | detal maks. qalinligi, quyruq (3 ta), tom (2 ta) |
+| stelyaj va yacheyka soni | yacheyka o'lchamlari |
+| prefiks, chek o'lchami, avtomatik chek | — |
+
+Yopiq maydon **standartdan farq qilsa**, bo'lim sarlavhasi buni o'zi aytadi:
+«▸ KENGAYTIRILGAN — QUYRUQ VA TOM · **2 ta o'zgartirilgan**». Aks holda
+yashirin me'yor pochka sonini o'zgartirib qo'yardi-yu, sababi ko'rinmasdi.
+
+> Testda qo'riqlanadi: kundalik maydonlar yopiq bo'limga tushib qolmagan va
+> hisoblagich o'zgarishni ko'rib, qiymat qaytarilganda yo'qoladi.
+
 ### Har sozlama tizimga bog'langan
 
 Sozlamalar bo'limidagi **hamma** maydon uch narsaga ulangan va bu testda
@@ -1000,10 +1093,11 @@ Fayllar `namuna\Project` da kutiladi. **Bu papka `.gitignore` da** — u yerda
 haqiqiy mijoz buyurtmalari turadi va repo ochiq. Skript faqat statistika
 chiqaradi, tarkibni emas.
 
-Oxirgi o'lchov (205 fayl, 15 958 detal, 61 414 kg):
-**205/205 o'qildi, audit xatosi 0, detal yo'qolmadi** — 4892 pochka
-(shundan 881 tasi nostandart bog'), o'rtacha 12,6 kg, ochiq tom 434/2932 (14,8 %),
-zaxiradan foydalangan 97 pochka, pochkalanmagan xona obyekti 6 ta.
+Oxirgi o'lchov (v22, 205 fayl, 15 891 detal, 61 456 kg):
+**205/205 o'qildi, audit xatosi 0, detal yo'qolmadi** — 4735 pochka
+(shundan 888 tasi nostandart bog'), o'rtacha 13 kg, ochiq tom 437/2886 (15,1 %),
+zaxiradan foydalangan 76 pochka, pochkalanmagan obyekt 73 ta (xona devori, pol
+va v22 dan boshlab oyna/ko'zgu — TZ-v2 §5).
 
 Skript sahifani **haqiqiy brauzerda** (Edge yoki Chrome, headless) yuklaydi va
 **394 ta** tekshiruvni bajaradi. Node.js kerak emas. Nima tekshiriladi:

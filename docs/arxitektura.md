@@ -106,10 +106,19 @@ Bitta global obyekt. Uchta manba bir-biriga mos bo'lishi shart va buni
 ```
 P = { name, uuid, rev, unitSrc, materials:[…], parts:[…] }
       materials[i] = { id, name, l, w, t, kgm2, cat, sheets }
-      parts[i]     = { id, c, n, p, pc, l, w, q, m, noMat, e, eb }
+      parts[i]     = { id, c, mk, n, p, pc, l, w, q, m, noMat, e, eb }
 ```
 
-`parts[i]` — faylda yozilgani, ya'ni **pozitsiya** (`q` dona). `rev` — terish
+`mk` (v22) — MebeliX MES dagi detal kaliti `{mahsulotKodi}_{detalKodi}[-N]`,
+MES parseri qoidalari bilan hisoblanadi (`mesProdCode`, `mesPartKey`). U `pc`
+dan ataylab farq qiladi: `pc` kodsiz mahsulotda good **id** ga qaytadi va modul
+mantig'i shunga tayanadi, MES esa mahsulot **nomini** oladi. SEED va v22 dan
+oldingi seanslarda `mk` yo'q — `buildItems()` uni `pc` dan o'zi hisoblaydi.
+
+`parts[i]` — faylda yozilgani, ya'ni **pozitsiya** (`q` dona). v22: `q` —
+**buyurtmadagi jami** = `<part count>` × max(`<good typeId="product" count>`, 1),
+MES dagidek (`giblab/parser.py`). `q = 0` — ishlab chiqarilmaydi, `buildItems()`
+uni «soni 0» sababi bilan Diagnostikaga chiqaradi. `rev` — terish
 reviziyasi: har qayta pochkalashda +1 bo'ladi va QR ichiga tushadi.
 
 `materials[i].sheets` (fayldagi list soni) va `parts[i].eb` (kant materiali)
@@ -122,9 +131,15 @@ qaytarib yozadi — ya'ni ular fayl modelining bir qismi.
 audit va saralash faqat shular bilan ishlaydi.
 
 ```
-item = { uid, code, name, prod, prodCode, unit, unitName, cls,
+item = { uid, code, name, prod, prodCode, mesKey, mes, unit, unitName, cls,
          L, W, T, mat, matId, edges, kg, of }
 ```
+
+* `mes` — MES chekidagi ID ning buyurtmasiz qismi: `mesKey`, ko'p nusxali
+  detalda `_n` qo'shimchasi bilan (`990101_01_043_1`). Skaner MES chekini
+  `mesMatch()` bilan taniydi: buyurtma prefiksi (`B-2026-047_`) olib
+  tashlanadi, bir xil detalning nusxalari o'zaro almashinadi, lekin `-2`
+  (ko'zgu juftlik) — **boshqa** detal.
 
 * `uid = part.id + "#" + nusxa raqami` — **seansni tiklashning kaliti**.
   Snapshot faqat `uid` va koordinatani saqlaydi, qolgani `buildItems()` bilan
@@ -263,7 +278,9 @@ ketma-ketlikni bit-ma-bit solishtiradi.
 Beshta joy, beshalasi ham majburiy:
 
 1. **`index.html`** — `#v-conf` ichidagi kerakli blokka (`.blk-std` /
-   `.blk-nst` / `.blk-all`) maydon qo'shing. `id` `c` bilan boshlansin,
+   `.blk-nst` / `.blk-all`) maydon qo'shing. P/M uni kundalik o'zgartirmasa —
+   blok ichidagi `details.adv` («Kengaytirilgan») ga qo'ying; u yerda
+   standartdan farqi `advMark()` orqali sarlavhada avtomatik ko'rinadi. `id` `c` bilan boshlansin,
    `.q[data-tip]` podskaska **shart** (test ≥ 40 belgi talab qiladi), yorliqda
    `for="…"` bo'lsin.
 2. **`02-state.js`** — `S` ga standart qiymat va nima uchun shunday ekani.

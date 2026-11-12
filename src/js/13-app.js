@@ -47,7 +47,7 @@ var CONF_IDS = (function(){
    eng yaxshisi ishlaydi. Teskarisi (standart «taʼsir qilmaydi») aynan yuqoridagi
    jim nosozlikni qaytarardi. */
 var CONF_VIEW_ONLY = {
-  cTare:1, cOneMan:1,                                    // chek va ogohlantirish
+  cTare:1, cOneMan:1, cTwoMan:1,                         // chek va ogohlantirish
   cPrefix:1, cLabel:1, cLabelW:1, cLabelH:1, cAutoLbl:1, // chek chop etish
   cRackN:1, cCellN:1, cCellW:1, cCellD:1, cCellH:1,      // saralash posti
   cBigN:1, cBigW:1, cBigD:1
@@ -59,6 +59,91 @@ CONF_IDS.forEach(function(id){
   var e = $(id); if (!e) return;
   CONF_DEFAULTS[id] = (e.type === "checkbox") ? e.checked : e.value;
 });
+
+/* v22: YIGʻILADIGAN BOʻLIMLAR — «nechtasi oʻzgartirilgan».
+   Sozlamalar 45 taga yetgan edi; P/M amalda 10–12 tasiga tegadi. Qolganlari
+   har blok ichidagi `details.adv` ga yigʻildi — lekin yashirin maydon
+   standartdan farq qilsa, buni bilmay qolish xavfli: pochka soni oʻzgaradi,
+   sababi esa koʻrinmaydi. Shuning uchun yopiq boʻlim sarlavhasi
+   standartdan farq qiluvchi maydonlar sonini oʻzi aytadi. */
+function advMark(){
+  var box = $("v-conf"); if (!box) return;
+  Array.prototype.forEach.call(box.querySelectorAll("details.adv"), function(d){
+    var n = 0;
+    Array.prototype.forEach.call(d.querySelectorAll("input,select"), function(e){
+      if (!(e.id in CONF_DEFAULTS)) return;
+      var a = e.type === "checkbox" ? e.checked : e.value, b = CONF_DEFAULTS[e.id];
+      // raqam «35» va «35.0», «0,6» va «0.6» bir xil hisoblanadi
+      var na = parseFloat(String(a).replace(",", ".")), nb = parseFloat(String(b).replace(",", "."));
+      if (isFinite(na) && isFinite(nb) ? na !== nb : a !== b) n++;
+    });
+    var m = d.querySelector(".advmod");
+    if (m) m.textContent = n ? n + " ta oʻzgartirilgan" : "";
+    d.classList.toggle("mod", n > 0);
+  });
+}
+/* v22: SOZLAMALAR ORASIDAGI ZIDDIYATLAR.
+   `readConf()` har maydonni ALOHIDA chegaralaydi, lekin ikki maydon bir-biriga
+   zid boʻlsa tizim jimgina birini ustun qoʻyardi: tom ostidagi qavat 85 %
+   koʻrinib turib amalda 60 % ishlatilardi, «2 kishi» chegarasi 1 kishinikidan
+   kichik boʻlishi mumkin edi va hokazo. Chegaralarni tsex oʻzi belgilaydi —
+   shuning uchun bu yerda HECH NARSA taqiqlanmaydi va oʻzgartirilmaydi, faqat
+   aytiladi: nima zid, amalda nima boʻladi va qanday tuzatiladi.
+     err  — natija bemaʼni (masalan hech bir detal tag boʻlolmaydi);
+     wrn  — mantiq teskari (nostandart standartdan yengil);
+     info — bir sozlama boshqasini cheklaydi, bilib qoʻyish kerak.
+   Qaytaradi: [{lvl, msg}] — test ham shuni tekshiradi. */
+function confCheck(){
+  var out = [];
+  function add(lvl, msg){ out.push({ lvl:lvl, msg:msg }); }
+  var maxKg = +S.maxKg || 0, over = +S.tailKgOver || 0, odd = oddKgCap();
+  var eff = maxKg + over, tare = +S.tare || 0;
+
+  if (S.minBase > (S.baseWMax || 1e9))
+    add("err", "Tag eni min (" + S.minBase + " mm) maks (" + S.baseWMax + " mm) dan katta — hech bir detal tag boʻlolmaydi.");
+  if ((S.baseLMin || 0) > S.maxLen)
+    add("err", "Tag boʻyi min (" + S.baseLMin + " mm) maks (" + S.maxLen + " mm) dan katta — hech bir detal tag boʻlolmaydi.");
+  if (S.minPartW && S.minPartW > (S.baseWMax || 1e9))
+    add("err", "Standart detal min. eni (" + S.minPartW + " mm) tag eni maks (" + S.baseWMax + " mm) dan katta — hamma detal nostandartga oʻtadi.");
+  if (S.minPartL && S.minPartL > S.maxLen)
+    add("err", "Standart detal min. boʻyi (" + S.minPartL + " mm) tag boʻyi maks (" + S.maxLen + " mm) dan katta — hamma detal nostandartga oʻtadi.");
+
+  if (odd < maxKg)
+    add("wrn", "Nostandart massa limiti (" + odd + " kg) standartdan (" + maxKg + " kg) past — katta detallar bogʻi oddiy pochkadan yengil chiqadi. Odatda nostandart ≥ standart.");
+  if (S.oddLMax < S.maxLen)
+    add("wrn", "Nostandart maks. boʻyi (" + S.oddLMax + " mm) tag boʻyi maks (" + S.maxLen + " mm) dan qisqa — har bir uzun detal yolgʻiz qoladi, bogʻ yasalmaydi.");
+  if (S.oddWMax < (S.baseWMax || 0))
+    add("wrn", "Nostandart maks. eni (" + S.oddWMax + " mm) tag eni maks (" + S.baseWMax + " mm) dan tor — har bir keng detal yolgʻiz qoladi.");
+  if (+S.partKgMax && +S.partKgMax < maxKg)
+    add("wrn", "Bitta detal maks. massasi (" + S.partKgMax + " kg) pochka limitidan (" + maxKg + " kg) kichik — har bir oddiy ogʻir detal «massa xatosi» deb koʻrsatiladi.");
+  if (+S.twoMan && +S.twoMan <= +S.oneMan)
+    add("wrn", "2 kishi chegarasi (" + S.twoMan + " kg) 1 kishinikidan (" + S.oneMan + " kg) katta boʻlishi kerak — «2 KISHI» belgisi hech qachon chiqmaydi.");
+
+  if (over && eff > odd)
+    add("info", "Zaxira bilan standart pochka " + eff + " kg gacha boradi — nostandart limitidan (" + odd + " kg) ogʻir." +
+        (odd >= maxKg ? " Teng boʻlsin desangiz zaxirani " + (odd - maxKg) + " kg qiling." : ""));
+  if (+S.twoMan && eff + tare > +S.twoMan)
+    add("info", "Standart pochka brutto " + (eff + tare).toFixed(1) + " kg gacha boʻlishi mumkin — 2 kishi chegarasidan (" + S.twoMan + " kg) ogʻir, bunday pochkada «3+ KISHI» chiqadi.");
+  if (S.lidBed && S.minFill && S.lidBed > S.minFill)
+    add("info", "Tom ostidagi qavat " + S.lidBed + " % — qavat toʻldirish (" + S.minFill + " %) dan qatʼiy boʻlolmaydi, amalda " + S.minFill + " % ishlatiladi.");
+  if (S.ovhOn && S.baseCover >= 100)
+    add("info", "Paddon qamrovi 100 % — «Chiqishga ruxsat» yoqilgan boʻlsa ham chiqish amalda boʻlmaydi.");
+  if (S.ovhOn && S.ovh > (S.baseInset != null ? S.baseInset : S.ovh))
+    add("info", "Chiqish " + S.ovh + " mm, chetdan qochish " + S.baseInset + " mm — amalda " + S.baseInset + " mm ishlatiladi.");
+
+  var box = $("confWarn");
+  if (box){
+    var col = { err:"var(--alert)", wrn:"var(--mark)", info:"var(--info)" };
+    var ttl = { err:"XATO", wrn:"ZIDDIYAT", info:"BILIB QOʻYING" };
+    box.innerHTML = out.map(function(w){
+      return '<div class="note cw-' + w.lvl + '" style="margin:0 0 8px;border-left-color:' + col[w.lvl] + '">' +
+             '<b>' + ttl[w.lvl] + '.</b> ' + esc(w.msg) + '</div>';
+    }).join("");
+  }
+  var me = $("maxKgEff");
+  if (me) me.textContent = over ? " · zaxira bilan maks " + eff + " kg" : "";
+  return out;
+}
 var MATCAT_DEFAULT = JSON.parse(JSON.stringify(S.matCat));
 
 function isArr(x){ return Object.prototype.toString.call(x) === "[object Array]"; }
@@ -77,6 +162,7 @@ function saveConf(){
   o._split = S.split;           // v12: bitta pochkalash qoidasi (rejim oʻrniga)
   o._cellOff = S.cellOff;       // yopiq yacheykalar — sexning fizik holati
   o._thickMix = S.thickMix;     // v20: qalinlik matritsasi ham meʼyor edi, saqlanmasdi
+  o._thickMixV = 22;            // v22: «false» endi tsexning ANIQ tanlovi (pastda restoreConf)
   try {
     localStorage.setItem("upk_conf", JSON.stringify(o));
     var n = $("saveNote"); n.style.display = "block";
@@ -113,7 +199,18 @@ function restoreConf(){
        hamma modul oʻchirilgandek koʻrinardi. */
     if (o._modSrc === "code"){ S.rooms = {}; S.modGroups = []; }
     if (o._cellOff && typeof o._cellOff === "object") S.cellOff = o._cellOff;
-    if (o._thickMix && typeof o._thickMix === "object") S.thickMix = o._thickMix;   // v20
+    if (o._thickMix && typeof o._thickMix === "object"){
+      S.thickMix = o._thickMix;                                                    // v20
+      /* v22: v22 dan oldin saqlangan matritsada «false» tanlov EMAS edi —
+         readThickMix() koʻrinib turgan har katakni yozardi va belgilanmagani
+         false boʻlib saqlanardi. Endi yupqa detal standart holda asosiy pochkaga
+         qoʻshiladi va false — «qoʻshilmasin» degan aniq qaror. Eski false lar
+         qaror boʻlmagani uchun olib tashlanadi, aks holda yangi qoida bu
+         brauzerda hech qachon ishlamasdi. */
+      if (!o._thickMixV) Object.keys(S.thickMix).forEach(function(k){
+        if (S.thickMix[k] === false) delete S.thickMix[k];
+      });
+    }
     return true;
   } catch(e){ return false; }
 }
@@ -134,6 +231,8 @@ function resetConf(){
   S.thickMix = {};
   if (typeof renderCat === "function") renderCat();
   renderThickMix();                                    // shu faylda — tekshiruv shart emas
+  advMark();                                           // loyiha boʻlmasa readConf chaqirilmaydi
+  readConf();                                          // confCheck ham standart qiymatlarni koʻrsin
   if (P) recompute();
 }
 
@@ -154,7 +253,9 @@ function readConf(){
   S.baseCover = numOr($("cBaseCover"),   90,  80,  100);
   S.baseInset = numOr($("cBaseInset"),   40,   0,  500);
   S.maxH      = numOr($("cMaxH"),         0,   0, 5000);
-  S.lidBal    = numOr($("cLidBal"),      40,   0,  100);
+  /* v22: 50 dan katta ulush matematik imkonsiz — 2+ detalli qopqoqda eng
+     kichik detal ulushi 50 % dan oshmaydi, yaʼni qopqoq umuman yasalmasdi */
+  S.lidBal    = numOr($("cLidBal"),      40,   0,   50);
   S.maxPartT  = numOr($("cMaxPartT"),    60,   0, 5000);
   // v14: nostandart oqim
   S.oddKg     = numOr($("cOddKg"),       40,   1,  500);
@@ -187,6 +288,9 @@ function readConf(){
   S.lidN      = Math.max(1, Math.min(4, +$("cLidN").value || 3));
   S.lidTol    = Math.max(0, +$("cLidTol").value || 0);
   S.oneMan    = Math.max(0, +$("cOneMan").value || 25);
+  S.twoMan    = numOr($("cTwoMan"),      50,   0,  500);   // v22: 0 = 3-daraja oʻchiq
+  S.partKgMax = numOr($("cPartKgMax"),   65,   0,  500);   // v22: 0 = tekshiruv oʻchiq
+  if ($("cSepMat")) S.sepMat = String($("cSepMat").value || "");   // v22: boʻsh = hammasi pochkalanadi
   S.tare      = Math.max(0, +$("cTare").value || 0);
   S.labelSize = $("cLabel") ? $("cLabel").value : "a4";
   // v20: qoʻlda chek oʻlchami — faqat labelSize="custom" da ishlatiladi
@@ -209,6 +313,8 @@ function readConf(){
     S[s[0]] = Math.max(s[1], Math.min(s[2], isFinite(v) ? v : s[3]));
   });
   showCellTot();
+  advMark();
+  confCheck();
   $("lgOv").textContent = S.ovh;
 }
 /* Sozlamalarda jami sigʻimni koʻrsatish — 6×10 = 60 yacheykani ofis xodimi
@@ -224,7 +330,7 @@ function showCellTot(){
 /* S dan interfeys maydonlariga — seans tiklangandan keyin kerak */
 function writeConf(){
   var m = { cMaxKg:S.maxKg, cOvh:S.ovh, cMinBase:S.minBase, cMaxLen:S.maxLen, cBaseT:S.minBaseT,
-            cFill:S.minFill, cLidFill:S.lidFill, cLidN:S.lidN, cLidTol:S.lidTol, cOneMan:S.oneMan,
+            cFill:S.minFill, cLidFill:S.lidFill, cLidN:S.lidN, cLidTol:S.lidTol, cOneMan:S.oneMan, cTwoMan:S.twoMan, cPartKgMax:S.partKgMax,
             cTare:S.tare, cMaxLay:S.maxLayers, cTries:S.tries, cPrefix:S.prefix, cLabel:S.labelSize,
             // v14
             cBaseWMax:S.baseWMax, cBaseLMin:S.baseLMin, cBaseCover:S.baseCover,
@@ -247,10 +353,12 @@ function writeConf(){
   if ($("cOvhOn")) $("cOvhOn").checked = !!S.ovhOn;
   if ($("cThick")) $("cThick").checked = !!S.byThick;
   if ($("cAutoLbl")) $("cAutoLbl").checked = !!S.autoLbl;
+  if ($("cSepMat")) $("cSepMat").value = S.sepMat || "";       // v22
   var sp = S.split || { prod:true, mat:false };
   if ($("mgrByRoom")) $("mgrByRoom").checked = !!sp.prod;
   if ($("mgrByMat"))  $("mgrByMat").checked  = !!sp.mat;
   renderThickMix();
+  advMark();
   $("lgOv").textContent = S.ovh;
 }
 
@@ -279,7 +387,10 @@ function thickList(){
     });
   } catch(e){ return out; }
   Object.keys(cnt).forEach(function(k){ out.push({ t:k, n:cnt[k] }); });
-  out.sort(function(a,b){ return b.n - a.n || (+a.t) - (+b.t); });
+  /* v22: teng boʻlsa QALINI asosiy — packer dagi mainThick() bilan bir xil.
+     Ilgari bu yerda yupqasi tanlanardi: 10 ta 16 mm va 10 ta 3 mm detalda ekran
+     «3 mm — ASOSIY» deb koʻrsatar, packer esa 16 mm ni asos qilib terardi. */
+  out.sort(function(a,b){ return b.n - a.n || (+b.t) - (+a.t); });
   return out;
 }
 function renderThickMix(){
@@ -296,7 +407,7 @@ function renderThickMix(){
              '<span style="color:var(--ink3)">· ' + r.n + ' detal</span></div>';
     return '<label class="chk" style="display:inline-flex;margin:0 18px 6px 0">' +
            '<input type="checkbox" data-tmix="' + esc(r.t) + '"' +
-           (S.thickMix[r.t] ? " checked" : "") + '>' +
+           (thickMixOn(String(r.t), +r.t, +main) ? " checked" : "") + '>' +   // v22: amaldagi holat
            '<span><b style="font-family:var(--mono)">' + esc(r.t) + ' mm</b> → ' + esc(main) +
            ' mm pochkasiga · <span style="color:var(--ink3)">' + r.n + ' detal</span></span></label>';
   }).join("");
@@ -518,6 +629,15 @@ $("btnRepack").onclick   = function(){ recompute(); };
 $("btnSave").onclick     = function(){ readConf(); saveConf(); };
 $("btnReset").onclick    = resetConf;
 $("btnCsv").onclick      = csv;
+/* v22: MES buyurtma raqami — loyihaga tegishli (P.mesOrder), sozlama emas:
+   shuning uchun #v-conf da emas va CONF_IDS ga tushmaydi */
+$("btnMesPlan").onclick  = mesPlanSave;
+$("mgrMesOrder").onchange = function(){
+  var err = mesOrderSet(this.value), n = $("mesNote");
+  if (err){ if (n){ n.textContent = err; n.style.borderLeftColor = "var(--alert)"; } return; }
+  mesRender();
+  if (typeof renderStep === "function") renderStep();
+};
 $("btnAddMat").onclick   = function(){ if (typeof addMaterial === "function") addMaterial(); };
 $("btnAddCat").onclick   = function(){
   S.matCat.push({ key:"YANGI", t:SHEET_DEFAULT.t, l:SHEET_DEFAULT.l,
