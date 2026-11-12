@@ -34,7 +34,8 @@ function audCfg(){
     partKgMax: audNum(c.partKgMax, 0),    // v22: bitta detal maks massasi (0 = oʻchiq)
     // v12: pochkalash qoidasi — qaysi oʻq boʻyicha ajratilgani. GURUH tekshiruvi
     // shunga tayanadi. Rejim yoʻq, qoida bitta.
-    rule:      (c.split && typeof c.split === "object") ? c.split : { prod:true, mat:false }
+    rule:      (c.split && typeof c.split === "object") ? c.split :
+               (typeof splitDefault === "function" ? splitDefault() : { prod:false, mat:false })
   };
 }
 function audPno(p, i){                    // pochka yorligʻi: P01, P07...

@@ -896,7 +896,7 @@ function moveDetail(fromIdx, uid, toIdx){
   // tahrirlash uni umuman tekshirmasdi: konveyrda ikki material bitta pochkaga
   // tushardi, individualda ikki modul aralashardi, audit esa buni koʻrmasdi —
   // yaʼni bir bosishda butun rejimning maʼnosi yoʻqolardi.
-  var rule = S.split || { prod:true, mat:false };
+  var rule = S.split || splitDefault();
   if (dst.key && packKey(it, rule) !== dst.key)
     return keyWhy(it, dst.base, rule) || "boshqa guruhga tegishli detal";
   /* v21: qalinlik MATRITSA boʻyicha solishtiriladi. Ilgari bu yerda xom

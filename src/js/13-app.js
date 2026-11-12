@@ -162,6 +162,7 @@ function saveConf(){
   o._clsGroups = S.clsGroups;
   o._unitNames = S.unitNames;   // v12: modul nomlari
   o._split = S.split;           // v12: bitta pochkalash qoidasi (rejim oʻrniga)
+  o._splitV = 22;               // v22: standart buyurtma boʻyicha — eski saqlov bir marta koʻchiriladi
   o._cellOff = S.cellOff;       // yopiq yacheykalar — sexning fizik holati
   o._thickMix = S.thickMix;     // v20: qalinlik matritsasi ham meʼyor edi, saqlanmasdi
   o._thickMixV = 22;            // v22: «false» endi tsexning ANIQ tanlovi (pastda restoreConf)
@@ -188,6 +189,10 @@ function restoreConf(){
        qoida turgan boʻlishi mumkin — ular bitta qoidaga koʻchiriladi. Katakchalar
        shundan keyin toʻldiriladi, aks holda eski rejimning qiymati koʻrinmasdi. */
     S.split = splitFix(o._split, o.mode, o._rules);
+    /* v22: v22 dan oldin saqlangan {modul: ha} — eski STANDART edi, ongli tanlov
+       emas (katak oldindan belgilangan turardi). Yangi standart (buyurtma
+       boʻyicha) bir marta qoʻllanadi; P/M oʻzgartirgan boshqa qiymat saqlanadi. */
+    if (!o._splitV && S.split.prod && !S.split.mat) S.split = splitDefault();
     if ($("mgrByRoom")) $("mgrByRoom").checked = !!S.split.prod;
     if ($("mgrByMat"))  $("mgrByMat").checked  = !!S.split.mat;
     if (o._matCat && o._matCat.length) S.matCat = o._matCat;
@@ -226,7 +231,7 @@ function resetConf(){
   });
   S.matCat = JSON.parse(JSON.stringify(MATCAT_DEFAULT));
   S.sepCls = {}; S.modGroups = []; S.clsGroups = []; S.unitNames = {};
-  S.split = { prod:true, mat:false };                  // v12
+  S.split = splitDefault();                            // v12 · v22: buyurtma bo'yicha
   /* v21: qalinlik matritsasi ham standartga qaytadi. U `_thickMix` boʻlib
      saqlanadi, lekin bu yerda tozalanmasdi — «Standartga qaytarish» dan
      keyin ham 3 mm detallar 16 mm pochkasiga qoʻshilib turaverardi. */
@@ -280,7 +285,7 @@ function readConf(){
   /* v12: KESIM OʻQLARI — bitta umumiy qoida. Rejim tanlovi yoʻq: ikki katak
      bevosita S.split ni belgilaydi. Ikkalasini ham oʻchirish RUXSAT —
      «hammasi bitta pochkada» holati; qalinlik va fizik chegaralar baribir amal qiladi. */
-  if (!S.split || typeof S.split !== "object") S.split = { prod:true, mat:false };
+  if (!S.split || typeof S.split !== "object") S.split = splitDefault();
   var br = $("mgrByRoom"), bm = $("mgrByMat");
   if (br) S.split.prod = br.checked;
   if (bm) S.split.mat  = bm.checked;
@@ -372,7 +377,7 @@ function writeConf(){
   if ($("cThick")) $("cThick").checked = !!S.byThick;
   if ($("cAutoLbl")) $("cAutoLbl").checked = !!S.autoLbl;
   if ($("cSepMat")) $("cSepMat").value = S.sepMat || "";       // v22
-  var sp = S.split || { prod:true, mat:false };
+  var sp = S.split || splitDefault();
   if ($("mgrByRoom")) $("mgrByRoom").checked = !!sp.prod;
   if ($("mgrByMat"))  $("mgrByMat").checked  = !!sp.mat;
   renderThickMix();

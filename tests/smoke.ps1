@@ -421,14 +421,36 @@ $tester = @'
       chk("splitFix: yangi shakl oʻzgarmaydi", d.prod === false && d.mat === false,
           JSON.stringify(d));
       var e2 = splitFix(null, null, null);
-      chk("splitFix: hech narsa boʻlmasa — modul oʻqi", e2.prod === true && e2.mat === false,
+      chk("splitFix: hech narsa boʻlmasa — buyurtma boʻyicha (v22, MES)", e2.prod === false && e2.mat === false,
           JSON.stringify(e2));
+      /* v22: v22 dan oldingi saqlovda {modul: ha} — eski standart, ongli tanlov emas:
+         bir marta yangi standartga oʻtadi. v22 da saqlangani (P/M tanlovi) qoladi. */
+      var svConf = null; try { svConf = localStorage.getItem("upk_conf"); } catch(e){}
+      var svSp = S.split;
+      try {
+        localStorage.setItem("upk_conf", JSON.stringify({ _split:{ prod:true, mat:false } }));
+        restoreConf(); var mOld = S.split;
+        localStorage.setItem("upk_conf", JSON.stringify({ _split:{ prod:true, mat:false }, _splitV:22 }));
+        restoreConf(); var mNew = S.split;
+        chk("eski saqlov (modul: ha) standartga koʻchdi, v22 tanlovi qoldi",
+            !mOld.prod && !mOld.mat && mNew.prod === true && $("mgrByRoom").checked === true,
+            "eski -> " + JSON.stringify(mOld) + " · v22 -> " + JSON.stringify(mNew));
+      } finally {
+        try { if (svConf === null) localStorage.removeItem("upk_conf"); else localStorage.setItem("upk_conf", svConf); } catch(e){}
+        S.split = svSp; $("mgrByRoom").checked = !!svSp.prod; $("mgrByMat").checked = !!svSp.mat;
+      }
+      chk("standart: buyurtma boʻyicha (modul katagi belgilanmagan)",
+          !S.split.prod && !S.split.mat && !$("mgrByRoom").checked, JSON.stringify(S.split));
       chk("rejim qoldiqlari yoʻq", typeof S.mode === "undefined" && typeof S.rules === "undefined",
           "S.mode=" + typeof S.mode + " S.rules=" + typeof S.rules);
     } catch(e){ chk("splitFix", false, e.message); }
 
-    /* v11: MODUL GURUHI — ikki modul bitta pochkaga tushishi kerak */
+    /* v11: MODUL GURUHI — ikki modul bitta pochkaga tushishi kerak.
+       v22: standart — buyurtma boʻyicha (modullar baribir birga), shuning uchun
+       guruh mantigʻi modul ajratish YOQILGAN holda sinaladi. */
+    var svSplitG = S.split;
     try {
+      S.split = { prod:true, mat:false }; packAll();
       var mods = roomStats().map(function(r){ return r.code; });
       var base = PACKS.length;
       S.modGroups = [{ mods:[mods[0], mods[1]] }];
@@ -465,6 +487,7 @@ $tester = @'
       packAll();
       chk("modul guruhi buzildi — eski holat", PACKS.length === base, PACKS.length + " pochka");
     } catch(e){ chk("modul guruhi", false, e.message); }
+    S.split = svSplitG; packAll();
 
     /* v11: KLASS GURUHI — {A,B} birga, qolganidan ajralgan */
     try {
@@ -2123,6 +2146,7 @@ $tester = @'
          sharoitda yuradi va oxirida standart holat qaytadi. */
       var yThin = null;
       buildItems().forEach(function(it){ if (it.T < MAIN_T && (yThin === null || it.T < +yThin)) yThin = String(it.T); });
+      var svSplitY = S.split; S.split = { prod:true, mat:false };   // v22: guruh = modul
       S.thickMix = {}; if (yThin !== null) S.thickMix[yThin] = false; packAll();
       var yA = auditPacks(PACKS, buildItems());
       var yKg = {};
@@ -2149,12 +2173,14 @@ $tester = @'
         if (yKg[p.key || "*"] > S.maxKg && p.kg < S.maxKg * 0.5 && yWarn[lab]) yBig++;
       });
       chk("katta guruhdagi yengil pochka ogohlantiriladi", yBig > 0, yBig + " ta");
-      S.thickMix = {}; packAll();               // v22: standart holat
+      S.thickMix = {}; S.split = svSplitY; packAll();   // v22: standart holat
     } catch(e){ chk("YENGIL guruh mantigʻi", false, e.message); }
 
     /* v13: seansda key/room/tail saqlanadi. Ilgari key saqlanmasdi va shu sabab
        brauzer yangilangach moveDetail dagi GURUH himoyasi jimgina ishlamay qolardi. */
+    var svSplitK = S.split;
     try {
+      S.split = { prod:true, mat:false }; packAll();   // v22: guruh kaliti modulga qaraydi
       var kSnap = JSON.parse(JSON.stringify(makeSnapshot()));
       var kTail = 0; PACKS.forEach(function(p){ if(!p.odd) p.layers.forEach(function(L){ if(L.tail) kTail++; }); });
       var kKey  = PACKS.filter(function(p){ return !p.odd && p.key; }).length;
@@ -2179,8 +2205,8 @@ $tester = @'
       chk("seansdan keyin guruh himoyasi ishlaydi",
           typeof kRes === "string" && kRes.indexOf("qalinlik") < 0 && kRes.length > 5,
           String(kRes));
-      packAll();
     } catch(e){ chk("seans: key/tail", false, e.message); }
+    S.split = svSplitK; packAll();
 
     /* v12: MODUL BELGISI — sozlama emas, faylning xossasi.
        Qoida: kod prefiksi tuzilishdan koʻproq birlik bersa — prefiks, aks holda

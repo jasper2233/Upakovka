@@ -103,6 +103,13 @@ pochka sarlavhasida va chekda chiqadi.
 modul bo'yicha va/yoki material bo'yicha. Ikkalasi ham o'chirilsa hamma detal
 aralash teriladi; qalinlik va fizik chegaralar baribir amal qiladi.
 
+**Standart (v22) — buyurtma bo'yicha:** ikkala katak ham o'chiq. MES g'oyasi
+shu: buyurtma bitta mashinada ketadi, xona tushunchasi logistikaga yetib bormaydi.
+205 ta real faylda modul ajratilmasa pochka ~41 % kam. «Har modul alohida
+pochkalansin» — mijoz so'raganda P/M yoqadi. v22 dan oldin saqlangan
+«modul: ha» eski standart edi, tanlov emas — bir marta yangi standartga o'tadi
+(`_splitV`).
+
 **Xona** — nomlangan modul guruhi. Bitta bayroq bilan ikki xil ishlaydi:
 
 | Bayroq | Nima bo'ladi |
@@ -1168,11 +1175,12 @@ Fayllar `namuna\Project` da kutiladi. **Bu papka `.gitignore` da** — u yerda
 haqiqiy mijoz buyurtmalari turadi va repo ochiq. Skript faqat statistika
 chiqaradi, tarkibni emas.
 
-Oxirgi o'lchov (v22, 205 fayl, 16 132 detal, 62 112 kg):
-**205/205 o'qildi, audit xatosi 0, detal yo'qolmadi** — 4829 pochka
-(shundan 977 tasi bog' — nostandart va mo'rt), o'rtacha 12,9 kg, ochiq tom
-435/2894 (15 %), zaxiradan foydalangan 78 pochka, pochkalanmagan obyekt 38 ta
-(xona devori, pol, soni 0 bo'lgan detal).
+Oxirgi o'lchov (v22, standart — buyurtma bo'yicha; 205 fayl, 16 132 detal, 62 112 kg):
+**205/205 o'qildi, audit xatosi 0, detal yo'qolmadi** — 2854 pochka
+(shundan 452 tasi bog' — nostandart va mo'rt), o'rtacha 21,8 kg, ochiq tom
+312/2159 (14,5 %), zaxiradan foydalangan 132 pochka, pochkalanmagan obyekt 38 ta
+(xona devori, pol, soni 0 bo'lgan detal). «Har modul alohida» yoqilsa — 4829 pochka
+(o'rtacha 12,9 kg).
 
 Skript sahifani **haqiqiy brauzerda** (Edge yoki Chrome, headless) yuklaydi va
 **394 ta** tekshiruvni bajaradi. Node.js kerak emas. Nima tekshiriladi:

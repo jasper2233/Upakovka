@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-<!-- Upakofka tizimi — build 466c263b -->
+<!-- Upakofka tizimi — build 77c4140d -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Upakofka tizimi</title>
@@ -1074,7 +1074,7 @@ select:focus-visible,
       <div class="fields">
         <div class="f">
           <label>Modul kesimi</label>
-          <label class="chk"><input type="checkbox" id="mgrByRoom" checked><span>har modul alohida pochkalansin</span></label>
+          <label class="chk"><input type="checkbox" id="mgrByRoom"><span>har modul alohida pochkalansin</span></label>
           <small>oʻchirilsa — hamma modul detallari aralash teriladi</small>
         </div>
         <div class="f">
@@ -1802,7 +1802,7 @@ var S = {
        split.mat  — material boʻyicha ajratish
      Qalinlik (byThick) va klass (sepCls/clsGroups) — mustaqil oʻqlar,
      ular ham shu bitta qoidaning qismi. */
-  split:{ prod:true, mat:false },
+  split:{ prod:false, mat:false },   // v22: buyurtma bo'yicha (SPLIT_DEFAULT ga qarang)
   ovhOn:true, zex:1, rooms:{},
 
   /* v11: GURUHLAR — bir nechta modulni yoki klassni BITTA pochka guruhiga qoʻshish.
@@ -1938,9 +1938,19 @@ function grpLetter(i){ return String.fromCharCode(65 + (i % 26)); }
    sozlamasi yoʻqolmasin, faqat shakli oʻzgarsin.
      split — yangi shakl (bor boʻlsa oʻshasi olinadi)
      mode / rules — eski shakl */
+/* v22: STANDART — BUYURTMA BOʻYICHA POCHKALASH (modul ajratilmaydi).
+   MES gʻoyasi: «tsex bitta .project ustida ishlaydi, logistika butun buyurtmani
+   bitta mashinada olib ketadi — xona degan tushuncha ularga yetib bormaydi»
+   (MES docs/09, anketa `packaging`). TZ-v2 §3: ajratish IXTIYORIY, P/M
+   belgilaydi. 205 ta real faylda modul ajratilmasa pochka 41 % kam.
+   Modul ajratish P/M ekranida bitta katak bilan yoqiladi. */
+var SPLIT_DEFAULT = { prod:false, mat:false };
+function splitDefault(){ return { prod:SPLIT_DEFAULT.prod, mat:SPLIT_DEFAULT.mat }; }
 function splitFix(split, mode, rules){
   if (split && typeof split === "object")
     return { prod: !!split.prod, mat: !!split.mat };
+  // hech qanday maʼlumot yoʻq — standart (eski rejim nomi boʻlsa — pastda oʻsha maʼno)
+  if (!mode && !rules) return splitDefault();
   var m = (mode === "b2b" || mode === "conv") ? "conv" : "ind";
   var old = null;
   if (rules && typeof rules === "object")
@@ -3759,7 +3769,7 @@ function* oddPackGen(list, rule){
 /* 3.6.9 PACKALL — butun buyurtma: qalinlik/modul/material guruhlash, noodatiylar */
 function* packAllGen(){
   var items = buildItems();
-  var rule = S.split || { prod:true, mat:false };   // v12: bitta umumiy qoida
+  var rule = S.split || splitDefault();              // v12: bitta umumiy qoida
   MAIN_T = mainThick(items);        // v14: qalinlik matritsasining asosi
   var oddPre = [], main = [], fragile = [];
   /* v14: NOSTANDART FILTRI. Detal tag oynasining YUQORI chegarasidan chiqsa
@@ -4126,7 +4136,8 @@ function audCfg(){
     partKgMax: audNum(c.partKgMax, 0),    // v22: bitta detal maks massasi (0 = oʻchiq)
     // v12: pochkalash qoidasi — qaysi oʻq boʻyicha ajratilgani. GURUH tekshiruvi
     // shunga tayanadi. Rejim yoʻq, qoida bitta.
-    rule:      (c.split && typeof c.split === "object") ? c.split : { prod:true, mat:false }
+    rule:      (c.split && typeof c.split === "object") ? c.split :
+               (typeof splitDefault === "function" ? splitDefault() : { prod:false, mat:false })
   };
 }
 function audPno(p, i){                    // pochka yorligʻi: P01, P07...
@@ -6997,7 +7008,7 @@ function moveDetail(fromIdx, uid, toIdx){
   // tahrirlash uni umuman tekshirmasdi: konveyrda ikki material bitta pochkaga
   // tushardi, individualda ikki modul aralashardi, audit esa buni koʻrmasdi —
   // yaʼni bir bosishda butun rejimning maʼnosi yoʻqolardi.
-  var rule = S.split || { prod:true, mat:false };
+  var rule = S.split || splitDefault();
   if (dst.key && packKey(it, rule) !== dst.key)
     return keyWhy(it, dst.base, rule) || "boshqa guruhga tegishli detal";
   /* v21: qalinlik MATRITSA boʻyicha solishtiriladi. Ilgari bu yerda xom
@@ -8821,6 +8832,7 @@ function saveConf(){
   o._clsGroups = S.clsGroups;
   o._unitNames = S.unitNames;   // v12: modul nomlari
   o._split = S.split;           // v12: bitta pochkalash qoidasi (rejim oʻrniga)
+  o._splitV = 22;               // v22: standart buyurtma boʻyicha — eski saqlov bir marta koʻchiriladi
   o._cellOff = S.cellOff;       // yopiq yacheykalar — sexning fizik holati
   o._thickMix = S.thickMix;     // v20: qalinlik matritsasi ham meʼyor edi, saqlanmasdi
   o._thickMixV = 22;            // v22: «false» endi tsexning ANIQ tanlovi (pastda restoreConf)
@@ -8847,6 +8859,10 @@ function restoreConf(){
        qoida turgan boʻlishi mumkin — ular bitta qoidaga koʻchiriladi. Katakchalar
        shundan keyin toʻldiriladi, aks holda eski rejimning qiymati koʻrinmasdi. */
     S.split = splitFix(o._split, o.mode, o._rules);
+    /* v22: v22 dan oldin saqlangan {modul: ha} — eski STANDART edi, ongli tanlov
+       emas (katak oldindan belgilangan turardi). Yangi standart (buyurtma
+       boʻyicha) bir marta qoʻllanadi; P/M oʻzgartirgan boshqa qiymat saqlanadi. */
+    if (!o._splitV && S.split.prod && !S.split.mat) S.split = splitDefault();
     if ($("mgrByRoom")) $("mgrByRoom").checked = !!S.split.prod;
     if ($("mgrByMat"))  $("mgrByMat").checked  = !!S.split.mat;
     if (o._matCat && o._matCat.length) S.matCat = o._matCat;
@@ -8885,7 +8901,7 @@ function resetConf(){
   });
   S.matCat = JSON.parse(JSON.stringify(MATCAT_DEFAULT));
   S.sepCls = {}; S.modGroups = []; S.clsGroups = []; S.unitNames = {};
-  S.split = { prod:true, mat:false };                  // v12
+  S.split = splitDefault();                            // v12 · v22: buyurtma bo'yicha
   /* v21: qalinlik matritsasi ham standartga qaytadi. U `_thickMix` boʻlib
      saqlanadi, lekin bu yerda tozalanmasdi — «Standartga qaytarish» dan
      keyin ham 3 mm detallar 16 mm pochkasiga qoʻshilib turaverardi. */
@@ -8939,7 +8955,7 @@ function readConf(){
   /* v12: KESIM OʻQLARI — bitta umumiy qoida. Rejim tanlovi yoʻq: ikki katak
      bevosita S.split ni belgilaydi. Ikkalasini ham oʻchirish RUXSAT —
      «hammasi bitta pochkada» holati; qalinlik va fizik chegaralar baribir amal qiladi. */
-  if (!S.split || typeof S.split !== "object") S.split = { prod:true, mat:false };
+  if (!S.split || typeof S.split !== "object") S.split = splitDefault();
   var br = $("mgrByRoom"), bm = $("mgrByMat");
   if (br) S.split.prod = br.checked;
   if (bm) S.split.mat  = bm.checked;
@@ -9031,7 +9047,7 @@ function writeConf(){
   if ($("cThick")) $("cThick").checked = !!S.byThick;
   if ($("cAutoLbl")) $("cAutoLbl").checked = !!S.autoLbl;
   if ($("cSepMat")) $("cSepMat").value = S.sepMat || "";       // v22
-  var sp = S.split || { prod:true, mat:false };
+  var sp = S.split || splitDefault();
   if ($("mgrByRoom")) $("mgrByRoom").checked = !!sp.prod;
   if ($("mgrByMat"))  $("mgrByMat").checked  = !!sp.mat;
   renderThickMix();

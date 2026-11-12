@@ -1367,7 +1367,7 @@ function* oddPackGen(list, rule){
 /* 3.6.9 PACKALL — butun buyurtma: qalinlik/modul/material guruhlash, noodatiylar */
 function* packAllGen(){
   var items = buildItems();
-  var rule = S.split || { prod:true, mat:false };   // v12: bitta umumiy qoida
+  var rule = S.split || splitDefault();              // v12: bitta umumiy qoida
   MAIN_T = mainThick(items);        // v14: qalinlik matritsasining asosi
   var oddPre = [], main = [], fragile = [];
   /* v14: NOSTANDART FILTRI. Detal tag oynasining YUQORI chegarasidan chiqsa

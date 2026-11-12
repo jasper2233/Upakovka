@@ -200,7 +200,7 @@ var S = {
        split.mat  — material boʻyicha ajratish
      Qalinlik (byThick) va klass (sepCls/clsGroups) — mustaqil oʻqlar,
      ular ham shu bitta qoidaning qismi. */
-  split:{ prod:true, mat:false },
+  split:{ prod:false, mat:false },   // v22: buyurtma bo'yicha (SPLIT_DEFAULT ga qarang)
   ovhOn:true, zex:1, rooms:{},
 
   /* v11: GURUHLAR — bir nechta modulni yoki klassni BITTA pochka guruhiga qoʻshish.
@@ -336,9 +336,19 @@ function grpLetter(i){ return String.fromCharCode(65 + (i % 26)); }
    sozlamasi yoʻqolmasin, faqat shakli oʻzgarsin.
      split — yangi shakl (bor boʻlsa oʻshasi olinadi)
      mode / rules — eski shakl */
+/* v22: STANDART — BUYURTMA BOʻYICHA POCHKALASH (modul ajratilmaydi).
+   MES gʻoyasi: «tsex bitta .project ustida ishlaydi, logistika butun buyurtmani
+   bitta mashinada olib ketadi — xona degan tushuncha ularga yetib bormaydi»
+   (MES docs/09, anketa `packaging`). TZ-v2 §3: ajratish IXTIYORIY, P/M
+   belgilaydi. 205 ta real faylda modul ajratilmasa pochka 41 % kam.
+   Modul ajratish P/M ekranida bitta katak bilan yoqiladi. */
+var SPLIT_DEFAULT = { prod:false, mat:false };
+function splitDefault(){ return { prod:SPLIT_DEFAULT.prod, mat:SPLIT_DEFAULT.mat }; }
 function splitFix(split, mode, rules){
   if (split && typeof split === "object")
     return { prod: !!split.prod, mat: !!split.mat };
+  // hech qanday maʼlumot yoʻq — standart (eski rejim nomi boʻlsa — pastda oʻsha maʼno)
+  if (!mode && !rules) return splitDefault();
   var m = (mode === "b2b" || mode === "conv") ? "conv" : "ind";
   var old = null;
   if (rules && typeof rules === "object")

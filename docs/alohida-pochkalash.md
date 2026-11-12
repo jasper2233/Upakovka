@@ -128,6 +128,8 @@ Nom loyiha bilan saqlanadi. Busiz chekda `01` turadi va upakovshik nima ekanini 
 
 ### 5.2 Modul kesimini belgilash
 Bitta katakcha: «Har modul alohida pochkalansin». **Bor** (`S.split.prod`).
+v22 dan standart holatda **o'chiq** (buyurtma bo'yicha, MES g'oyasi) — P/M
+mijoz so'raganda yoqadi.
 
 ### 5.3 Modullarni birlashtirish
 Ikki tumbani (yoki tremo + tumba) belgilab «Xona yaratish» bosiladi — ular bitta

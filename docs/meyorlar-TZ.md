@@ -80,6 +80,9 @@ Hujjatda ixtiro qilingan raqam yoki soxta havola yo'q. Standart raqami keltirilg
 ta'sir qiladigan sozlama. U P/M ekranida ikki katakcha bilan beriladi
 (`mgrByRoom` → `split.prod`, `mgrByMat` → `split.mat`) va boshqa me'yorlar
 kabi saqlanadi. Batafsil: [alohida-pochkalash.md](alohida-pochkalash.md).
+**Standart (v22): buyurtma bo'yicha** — `{prod:false, mat:false}`
+(`SPLIT_DEFAULT`); MES g'oyasi va TZ-v2 §3 (ajratish ixtiyoriy). Eski saqlovdagi
+`{prod:true}` `_splitV` yo'q bo'lsa bir marta standartga ko'chadi.
 
 > **Diqqat:** 1, 3, 4-me'yorlarda `readConf()` `+value || N` shaklida o'qiydi — maydonga **0** yozilsa u standart qiymatga qaytadi, cheklov o'chmaydi. Bu ataylab: massa yoki gabarit cheklovini butunlay o'chirish xavfli. Xuddi shu shakl `oneMan`, `minFill`, `lidFill`, `lidN`, `tries` uchun ham ishlatilgan (pastdagi "Integratsiya eslatmalari", 4-band).
 
