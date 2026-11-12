@@ -576,6 +576,44 @@ h3 .hint{color:var(--ink3);text-transform:none;letter-spacing:0}
 .postchip{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
   color:var(--mark);border:1px solid var(--mark);border-radius:var(--r);padding:3px 8px;margin:0 10px;white-space:nowrap;
   align-self:center;flex:0 0 auto}
+/* ---- v22: server orqali postlar ---- */
+.srvbox{margin:4px 0 14px;border:1px solid var(--line);border-left:3px solid var(--ok);border-radius:var(--r);
+  padding:10px 12px;background:var(--panel)}
+.srvhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2)}
+.srvhead b{color:var(--ok)}
+.srvhead .grow{flex:1}
+.srvlist{margin-top:10px;display:flex;flex-direction:column;gap:5px}
+.srvrow{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink2);
+  border:1px solid var(--line);border-radius:var(--r);padding:5px 8px}
+.srvrow span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.srvrow em{font-style:normal;color:var(--mark);font-family:var(--mono);font-size:11px}
+.srvrow i{font-style:normal;color:var(--ok);font-family:var(--mono);font-size:11px}
+.srvrow.cur{border-color:var(--mark)}
+.srvrow .btn{padding:3px 10px;font-size:11.5px}
+.srvempty{margin-top:8px;font-size:12px;color:var(--ink3)}
+.srvbanner{position:fixed;right:14px;bottom:14px;z-index:60;max-width:560px;display:flex;align-items:center;gap:12px;
+  background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--info);border-radius:var(--r);
+  padding:10px 12px;font-size:13px;color:var(--ink);box-shadow:0 6px 24px rgba(0,0,0,.35)}
+.srvbanner.warn{border-left-color:var(--mark)}
+.srvbanner.err{border-left-color:var(--alert)}
+.srvbanner .btn{flex:0 0 auto;padding:5px 12px;font-size:12px}
+
+/* ---- v22: SARALASH POSTI va TV EKRANI — uzoqdan oʻqiladi ---- */
+body.post-sort .sortpad,body.post-tv .sortpad{max-width:1500px}
+body.post-sort .bigcell,body.post-tv .bigcell{font-size:clamp(150px,30vh,420px)}
+body.post-sort .bigcode,body.post-tv .bigcode{font-size:46px}
+body.post-sort .bigpack,body.post-tv .bigpack{font-size:26px}
+body.post-sort .rackready,body.post-tv .rackready{font-size:30px}
+/* TV: shapka, tablar va boshqaruv yoʻq — faqat natija va stelyajlar */
+body.post-tv .top,body.post-tv .tabs{display:none}
+body.post-tv #sortScan,body.post-tv .sortfoot .btn,body.post-tv #sortRackBox .btn,
+body.post-tv #sortRackBox .planhead,body.post-tv #sortRackBox .rackgeo{display:none}
+body.post-tv #sortRackBox{display:block}
+body.post-tv .cbox{width:96px}
+body.post-tv .rackrow .rstat,body.post-tv .rackbar,body.post-tv .sortfoot{font-size:15px}
+body.post-tv .cbox b{font-size:16px}
+body.post-tv .cbox s{font-size:13px}
+
 /* stelyaj QR belgisi */
 .label.racklbl{align-items:center}
 .racklbl .rl-l{font-size:64px;font-weight:700;line-height:.9;letter-spacing:-.04em}

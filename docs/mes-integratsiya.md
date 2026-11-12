@@ -102,6 +102,24 @@ Xuddi shu ID «Pochka ro'yxatini CSV» da `mes_id` ustunida ham bor.
 
 Muhimlik tartibida. Har band — **taklif**, yechim MES jamoasiniki.
 
+### M0. Hozircha: upakofkaning o'z kichik serveri (v22)
+
+Tsexda postlar tarmoqda va saralashga Smart TV qo'yiladi — fayl tashish
+ishlamaydi. Shuning uchun upakofka o'z ixtiyoriy serveri bilan keladi
+(`server/upk-server.py`, Python standart kutubxonasi): tizim faylini beradi va
+rejalar / saralash holatini saqlaydi. API kichik va barqaror:
+
+| So'rov | Ma'nosi |
+|---|---|
+| `GET api/ping` | `{"server":"upk"}` — tizim shu bilan serverni taniydi |
+| `GET api/plans`, `GET/PUT api/plans/{ID}[?sort=1]` | reja (1.2 dagi JSON emas — to'liq seans: `upk-reja`) |
+| `GET api/current` | `{"sort": ID}` — hozir saralanayotgan reja |
+| `GET/PUT api/state/{ID}/sort` | saralash holati, `{base, data}`; eskirgan `base` → 409 |
+
+MES bu vazifani o'z zimmasiga olsa (M3), **xuddi shu API** ni MES ichida bersa
+bo'ldi — upakofka tomonida o'zgarish kerak emas; yoki upakofka serveri MES
+yonida alohida xizmat bo'lib qoladi. Ikkalasi ham MES kodiga tegmaydi.
+
 ### M1. Upakofkani qayerda ochish — eng birinchi qaror
 
 Upakofka — bitta statik HTML (`dist/upakofka-tizimi.html`, ~500 KB, server

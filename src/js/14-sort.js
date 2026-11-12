@@ -36,8 +36,15 @@ var SORT = {
   seen: {},   // v22: skanerlangan MES ID (buyurtmasiz) -> uid — bitta chek ikki marta sanalmasin
   away: {},   // v22: stelyaj harfi -> {ts, auto} — stelyaj qadoqlash boʻlimida
   gone: {},   // v22: pochka no -> stelyaj harfi — stelyaj boʻsh qaytdi, pochka saralashdan ketdi
+  rev: 0,     // v22: serverdagi holat reviziyasi (16-server.js) …
+  revOf: "",  //      … va u qaysi rejaniki — reja almashsa eski rev ishlatilmaydi
   last: null  // oxirgi skaner natijasi — katta yozuv uchun
 };
+/* v22: saralash holati oʻzgardi — seansga va (server boʻlsa) serverga */
+function sortSaved(){
+  if (typeof autosave === "function") autosave();
+  if (typeof srvSortPush === "function") srvSortPush();
+}
 /* v22: SORT.put dagi bu qiymat — detal saralangan VA pochkasi qadoqlangan.
    Ilgari yacheyka boʻshaganda belgilar oʻchirilardi va yigʻib boʻlingan pochka
    yana «saralanmagan» boʻlib qolardi: reja unga yangi yacheyka berar, keyingi
@@ -337,7 +344,7 @@ function rackSend(L, force){
                  inc.map(function(b){ return "P" + pad2(b.no) + " " + b.done + "/" + b.n; }).join(", ") };
   SORT.away[L] = { ts:Date.now(), auto:false };
   sortPlan();
-  if (typeof autosave === "function") autosave();
+  sortSaved();
   return { ok:true, msg:L + " stelyaji qadoqlashga joʻnatildi" +
            (inc.length ? " — " + inc.length + " ta pochka toʻliq emas, qolgan detallari qadoqlashga eltiladi" : "") };
 }
@@ -357,7 +364,7 @@ function rackReturn(L){
   });
   delete SORT.away[L];
   sortPlan();
-  if (typeof autosave === "function") autosave();
+  sortSaved();
   return { ok:true, freed:freed, packs:packs,
            msg:L + " stelyaji qaytdi — " + freed + " ta yacheyka boʻshadi" };
 }
@@ -513,7 +520,7 @@ function sortScan(raw){
     if (mkey) SORT.seen[mkey] = t.it.uid;
     SORT.last = { cell:cellNow, no:t.p.no, code:t.it.code, item:t.it, away:rackOf(cellNow),
                   done:cellDone(t.p.no), n:packItems(t.p).length };
-    if (typeof autosave === "function") autosave();
+    sortSaved();
     return { ok:true, kind:"warn", cell:cellNow, pack:t.p, item:t.it, away:true,
              msg:"«" + label + "» — P" + pad2(t.p.no) + " " + rackOf(cellNow) + " stelyaji bilan QADOQLASHDA: " +
                  "detalni qadoqlash boʻlimiga eltib, " + cellNow + " yacheykaga qoʻying" };
@@ -522,7 +529,7 @@ function sortScan(raw){
     SORT.put[t.it.uid] = SORT_PACKED;
     if (mkey) SORT.seen[mkey] = t.it.uid;
     SORT.last = { cell:null, no:t.p.no, code:t.it.code, item:t.it, gone:SORT.gone[t.p.no] };
-    if (typeof autosave === "function") autosave();
+    sortSaved();
     return { ok:true, kind:"warn", pack:t.p, item:t.it, gone:true,
              msg:"«" + label + "» — P" + pad2(t.p.no) + " qadoqlashga ketgan (" + SORT.gone[t.p.no] +
                  " stelyaji bilan): detalni qadoqlash boʻlimiga eltib bering" };
@@ -553,7 +560,7 @@ function sortScan(raw){
                 done:cellDone(t.p.no), n:n, gname:(t.p.gname || (t.p.base && t.p.base.prod) || "") };
   var ready = rackCheckReady();                         // v22: stelyaj toʻldimi
   if (ready.length) SORT.last.ready = ready;
-  if (typeof autosave === "function") autosave();
+  sortSaved();
   return { ok:true, kind:"ok", cell:cell, pack:t.p, item:t.it, msg:"", ready:ready };
 }
 
@@ -827,13 +834,52 @@ function rackSaved(what){
   RACK_T = setTimeout(function(){ e.style.display = "none"; }, 3000);
 }
 
-/* Saralashni noldan boshlash */
-function sortReset(){
+/* Saralashni noldan boshlash.
+   keepAway — v22: qadoqlashdagi stelyaj JISMONAN yoʻq: boshqa reja ochilganda ham u
+              qaytguncha (QR yoki «Qaytdi») yacheykalari ishlatilmaydi;
+   silent   — serverga yozilmaydi: reja almashganda holat serverdan olinadi. */
+function sortReset(keepAway, silent){
+  var away = keepAway ? SORT.away : {};
   SORT.cell = {}; SORT.pack = {}; SORT.put = {}; SORT.plan = {}; SORT.seen = {}; SORT.last = null;
-  SORT.away = {}; SORT.gone = {};                        // v22
+  SORT.away = away || {}; SORT.gone = {};                // v22
   sortPlan();
   renderSort(); renderPlanBox(); sortFlash("", "");
-  if (typeof autosave === "function") autosave();
+  if (silent){ if (typeof autosave === "function") autosave(); }
+  else sortSaved();
+}
+
+/* Bitta skan — maydondan ham, fokussiz tutilgan skanerdan ham */
+function sortHandle(v){
+  if (typeof postMode === "function" && postMode() === "tv") return null;   // TV faqat koʻrsatadi
+  var r = sortScan(v);
+  renderSort(); renderPlanBox(); renderRackBox();
+  if (r.ok && !r.msg) sortFlash("", "");     // katta yozuvning oʻzi yetarli
+  else sortFlash(r.kind, r.msg);             // v22: kechikkan detal — ok, lekin yoʻl-yoʻriq bilan
+  return r;
+}
+/* v22: SKANER FOKUSSIZ (Smart TV, planshet). Maydonga fokus berilsa TV ekran
+   klaviaturasini ochib, butun ekranni yopadi. Shuning uchun saralash ekranida
+   skaner hujjat darajasida ham tutiladi: fokus matn maydonida boʻlmasa belgilar
+   yigʻiladi (1,5 s tanaffus — yangi skan), Enter — skan. Tugmada turgan fokus
+   skanerning Enter iga «bosilmaydi». */
+var SORT_KEYS = { buf:"", t:0 };
+function sortKeyCapture(e){
+  var v = $("v-sort");
+  if (!v || !v.classList.contains("on")) return;
+  var t = e.target || {}, tag = t.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || t.isContentEditable) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  var now = Date.now();
+  if (now - SORT_KEYS.t > 1500) SORT_KEYS.buf = "";
+  SORT_KEYS.t = now;
+  if (e.key === "Enter"){
+    if (!SORT_KEYS.buf) return;
+    e.preventDefault();
+    var code = SORT_KEYS.buf; SORT_KEYS.buf = "";
+    sortHandle(code);
+    return;
+  }
+  if (e.key && e.key.length === 1){ SORT_KEYS.buf += e.key; e.preventDefault(); }
 }
 
 /* Skaner maydoni — Enter bosilganda ishlaydi (skanerlar oxirida Enter yuboradi) */
@@ -843,12 +889,10 @@ function sortInit(){
     sc.onkeydown = function(e){
       if (e.key !== "Enter") return;
       var v = sc.value; sc.value = "";
-      var r = sortScan(v);
-      renderSort(); renderPlanBox(); renderRackBox();
-      if (r.ok && !r.msg) sortFlash("", "");  // katta yozuvning oʻzi yetarli
-      else sortFlash(r.kind, r.msg);          // v22: kechikkan detal — ok, lekin yoʻl-yoʻriq bilan
+      sortHandle(v);
     };
   }
+  document.addEventListener("keydown", sortKeyCapture, false);
   var rb = $("btnSortReset");
   if (rb) rb.onclick = function(){
     if (!Object.keys(SORT.put).length){ sortFlash("", "saralash boshlanmagan"); return; }
@@ -879,8 +923,11 @@ function sortInit(){
   panel("btnSortRack", "sortRackBox");
 }
 
-/* Saralash boʻlimiga oʻtilganda fokus skaner maydoniga tushsin */
+/* Saralash boʻlimiga oʻtilganda fokus skaner maydoniga tushsin.
+   v22: «ekran klaviaturasi chiqmasin» (Smart TV) — fokus berilmaydi, skaner
+   fokussiz tutiladi (sortKeyCapture). */
 function sortFocus(){
+  if (typeof postNoFocus === "function" && postNoFocus()) return;
   var sc = $("sortScan");
   if (sc) setTimeout(function(){ sc.focus(); }, 40);
 }

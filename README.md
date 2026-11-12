@@ -8,7 +8,8 @@ Raskroy dasturining `.project` faylini yuklaysiz — tizim detallarni pochkalarg
 har detal uchun QR chek chiqaradi va upakovshikka 3D da qadam-baqadam qayerga qo'yishni ko'rsatadi.
 
 **Server kerak emas. Internet kerak emas. O'rnatish kerak emas.**
-`index.html` ni brauzerda ochsangiz bo'ldi.
+`index.html` ni brauzerda ochsangiz bo'ldi. Postlar tarmoqda ishlasa (Smart TV
+bilan) — ixtiyoriy kichik server bor: «Server orqali: tarmoq va Smart TV».
 
 Ichida namuna buyurtma bor — **«Namuna loyiha»** tugmasini bossangiz tizim darrov
 **56 ta pochka** terib beradi (215 pozitsiya, 291 detal). Fayl yuklash shart emas.
@@ -209,6 +210,47 @@ deb yig'gan yacheyka qadoqlash postida boshqa pochkalarga tegishli chiqadi.
 ochiladi, shapkada post nomi turadi. Tanlov shu kompyuterda saqlanadi (buyurtma
 va sozlamalardan alohida).
 
+### Server orqali: tarmoq va Smart TV
+
+Kompyuterlar tarmoqda bo'lsa, tizim **serverdan** ochiladi va postlar reja hamda
+saralash holatini fayl tashimasdan almashadi. Server — bitta Python fayl, hech
+narsa o'rnatish kerak emas (Python 3.7+):
+
+```
+.\build.ps1                                   # dist\upakofka-tizimi.html
+python server\upk-server.py                   # http://SERVER-IP:8080/
+python server\upk-server.py --port 9000 --data D:\upk-data
+```
+
+Har post (kompyuter, planshet, Smart TV) brauzerda `http://SERVER-IP:8080/` ni
+ochadi. Server topilsa P/M → Postlar da **«Server: ulangan»** bloki chiqadi.
+
+| Kim | Nima qiladi |
+|---|---|
+| P/M | «Serverga joylash — saralashga yuborish»: reja serverga, u joriy reja bo'ladi |
+| Saralash posti | joriy rejaga **o'zi o'tadi** — stelyajlarda bu rejaning detali qolmaganda; aks holda «yangi reja kutmoqda» va «Hozir o'tish». Har skan serverga yoziladi |
+| Qadoqlash posti | joriy rejaga o'zi o'tadi — yig'ilayotgan pochka yo'q va reja tugagan (yoki boshlanmagan) bo'lsa |
+| TV ekrani | saralash ekranini serverdan o'qib ko'rsatadi: shapka va tugmalar yo'q, yacheyka kodi katta, stelyajlar holati pastda. O'zi hech narsa yozmaydi |
+
+**Smart TV ni saralashga qo'yishning ikki yo'li:**
+
+1. **Skaner TV ning o'ziga** (USB) ulanadi — TV saralash posti bo'ladi:
+   «Bu kompyuter» = *Saralash posti* va **«ekran klaviaturasi chiqmasin»** belgilanadi.
+   Skaner maydonga fokus berilmasa ham tutiladi, ya'ni TV klaviaturasi ekranni
+   yopmaydi. Har TV skanerni klaviatura sifatida qabul qilmaydi — avval sinab ko'ring.
+2. **Skaner alohida qurilmada** (kompyuter, planshet) — u saralash posti, TV esa
+   *TV ekrani* (faqat ko'rsatish). Ishonchliroq: TV brauzeri nima bo'lishidan qat'i
+   nazar ishlaydi. TV o'rniga unga ulangan arzon mini-PC yoki Android TV box ham bo'ladi.
+
+Saralash holati serverda reviziya bilan turadi: TV brauzeri qayta yuklansa ham
+yo'qolmaydi. Bitta rejani ikki qurilma bir vaqtda saralasa, ikkinchisi «boshqa
+qurilma ham saralayapti» ogohlantirishini oladi (server — haqiqat, oxirgi detal
+qayta skanerlanadi). Server bo'lmasa (fayldan, GitHub Pages) hammasi avvalgidek —
+reja fayli bilan ishlanadi.
+
+> ⚠️ Serverda login yo'q — faqat sexning **ichki** tarmog'i uchun. Internetga ochmang.
+> Sinov: `.\tests\server.ps1` (API + brauzer orqali to'liq aylanish).
+
 ## Saralash posti — skan aniq detalni topadi (v22)
 
 Ishchi paddondagi detalni skanerlaydi, dastur yacheykani aytadi. v22 dan skan
@@ -300,15 +342,20 @@ upakovka/
 │     ├─ 12-upload.js      fayl yuklash, sudrab tashlash, xato tashxisi
 │     ├─ 13-app.js         sozlama, qayta hisob, tablar, ishga tushish
 │     ├─ 14-sort.js        saralash posti: stelyaj/yacheyka, skaner, reja
-│     └─ 15-post.js        postlar: post rejimi, reja raqami va fayli, stelyaj QR
+│     ├─ 15-post.js        postlar: post rejimi, reja raqami va fayli, stelyaj QR
+│     └─ 16-server.js      server orqali postlar: reja, saralash holati, TV ekrani
 ├─ dist/                   build natijasi — bir faylli offline versiya
+├─ server/
+│  └─ upk-server.py        ixtiyoriy server: tarmoqdagi postlar va Smart TV uchun
 ├─ namuna/                 sinov uchun .project fayllar (SEED dan yasaladi)
 ├─ tools/
 │  └─ seed-to-project.ps1  SEED dan namuna .project fayllarni yasaydi
 ├─ tests/
 │  ├─ smoke.ps1            haqiqiy brauzerda 394 tekshiruv
 │  ├─ corpus.ps1           205 ta real .project fayl bo'yicha regressiya
-│  └─ shot.ps1             interfeys skrinshoti
+│  ├─ labels.ps1           har chek bitta stikerga sig'adimi (PDF sahifalari)
+│  ├─ server.ps1           server API + brauzer orqali to'liq aylanish
+│  └─ shot.ps1             interfeys skrinshoti (-Js bilan holat tayyorlanadi)
 └─ docs/
    ├─ README.md            hujjatlar ko'rsatkichi — qaysi savolga qayerda javob bor
    ├─ arxitektura.md       modullar, ma'lumot modeli, global nomlar
@@ -1077,7 +1124,8 @@ ochiq aytadi va furnitura alohida hujjat bo'yicha topshirilishini ko'rsatadi.
 | Me'yorlar, material katalogi | `localStorage` | «Standartga qaytarish» |
 | Loyiha + pochkalar + yig'ish progressi | `IndexedDB` (seans) | «Seansni tozalash» |
 | Saralash: yacheykalar, qadoqlashdagi stelyajlar, skanerlangan cheklar | `IndexedDB` (seans) | «Tozalash» yoki yangi reja |
-| Shu kompyuter qaysi post | `localStorage` (`upk_post`) | P/M → Postlar |
+| Shu kompyuter qaysi post, ekran klaviaturasi | `localStorage` (`upk_post`, `upk_nofocus`) | P/M → Postlar |
+| Server orqali: rejalar, saralash holati, joriy reja | serverda `server/data/` (JSON) | eskisi o'zi o'chadi (oxirgi 300 reja qoladi) |
 | Yuklangan xom `.project` fayllar (oxirgi 20 ta) | `IndexedDB` | ro'yxatdan «O'chirish» |
 
 Brauzer IndexedDB ni qo'llab-quvvatlamasa (private rejim), tizim yiqilmaydi — shunchaki

@@ -34,6 +34,9 @@ tests/lbl-*.pdf
 tests/prev-*.png
 tests/out-*.pdf
 
+# --- UPK server ma'lumoti (rejalar, saralash holati) — ish joyida yashaydi ---
+server/data/
+
 # --- OS va muharrir ---
 Thumbs.db
 desktop.ini

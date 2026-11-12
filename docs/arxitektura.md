@@ -46,7 +46,12 @@ seed.js         namuna loyiha          — sof ma'lumot
 13-app.js       sozlama, ishga tushish — hammasi
 14-sort.js      saralash posti         — 02, 04, 08, 10
 15-post.js      postlar, reja fayli    — 04, 08, 09, 10, 13, 14
+16-server.js    server orqali postlar  — 08, 14, 15 (server bo'lmasa jim)
 ```
+
+`server/upk-server.py` — ixtiyoriy server (Python 3 standart kutubxonasi): tizim
+faylini beradi va `api/` orqali rejalar, joriy reja va saralash holatini saqlaydi
+(README «Server orqali»).
 
 **Yumshoq bog'liqlik** — `typeof X === "function"` bilan tekshiriladi va modul
 bo'lmasa ham ishlayveradi. U faqat ikki joyda o'rinli:
@@ -242,10 +247,12 @@ Yangi modul qo'shayotgan bo'lsangiz, bu nomlar **band**.
 | 13-app | `CONF_IDS` `CONF_VIEW_ONLY` `CONF_DEFAULTS` `MATCAT_DEFAULT` `PROG_TIMER` `SOON` `PENDING` |
 | 14-sort | `RACK_EDIT` `RACK_DRAFT` `RACK_T` `SEND_ARM` `SEND_T` `RACK_QR` |
 | 15-post | `POST_KEY` `POST_MEM` `POSTS` `POST_HIDE` `PLAN_FMT` |
+| 16-server | `SRV` `SRV_TICK_MS` `SRV_TV_MS` |
 
 Funksiya nomlari ham global. Yangi modulda **prefiks** ishlating —
 `12-upload.js` dagi `up*`, `11-diag.js` dagi `diag*`, `14-sort.js` dagi
-`sort*`/`rack*`, `15-post.js` dagi `post*`/`plan*`, `05-audit.js` dagi `aud*` kabi.
+`sort*`/`rack*`, `15-post.js` dagi `post*`/`plan*`, `16-server.js` dagi `srv*`,
+`05-audit.js` dagi `aud*` kabi.
 
 ---
 

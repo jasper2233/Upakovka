@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-<!-- Upakofka tizimi — build 8d490a9a -->
+<!-- Upakofka tizimi — build 4a393859 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Upakofka tizimi</title>
@@ -590,6 +590,44 @@ h3 .hint{color:var(--ink3);text-transform:none;letter-spacing:0}
 .postchip{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
   color:var(--mark);border:1px solid var(--mark);border-radius:var(--r);padding:3px 8px;margin:0 10px;white-space:nowrap;
   align-self:center;flex:0 0 auto}
+/* ---- v22: server orqali postlar ---- */
+.srvbox{margin:4px 0 14px;border:1px solid var(--line);border-left:3px solid var(--ok);border-radius:var(--r);
+  padding:10px 12px;background:var(--panel)}
+.srvhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--ink2)}
+.srvhead b{color:var(--ok)}
+.srvhead .grow{flex:1}
+.srvlist{margin-top:10px;display:flex;flex-direction:column;gap:5px}
+.srvrow{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink2);
+  border:1px solid var(--line);border-radius:var(--r);padding:5px 8px}
+.srvrow span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.srvrow em{font-style:normal;color:var(--mark);font-family:var(--mono);font-size:11px}
+.srvrow i{font-style:normal;color:var(--ok);font-family:var(--mono);font-size:11px}
+.srvrow.cur{border-color:var(--mark)}
+.srvrow .btn{padding:3px 10px;font-size:11.5px}
+.srvempty{margin-top:8px;font-size:12px;color:var(--ink3)}
+.srvbanner{position:fixed;right:14px;bottom:14px;z-index:60;max-width:560px;display:flex;align-items:center;gap:12px;
+  background:var(--panel2);border:1px solid var(--line2);border-left:3px solid var(--info);border-radius:var(--r);
+  padding:10px 12px;font-size:13px;color:var(--ink);box-shadow:0 6px 24px rgba(0,0,0,.35)}
+.srvbanner.warn{border-left-color:var(--mark)}
+.srvbanner.err{border-left-color:var(--alert)}
+.srvbanner .btn{flex:0 0 auto;padding:5px 12px;font-size:12px}
+
+/* ---- v22: SARALASH POSTI va TV EKRANI — uzoqdan oʻqiladi ---- */
+body.post-sort .sortpad,body.post-tv .sortpad{max-width:1500px}
+body.post-sort .bigcell,body.post-tv .bigcell{font-size:clamp(150px,30vh,420px)}
+body.post-sort .bigcode,body.post-tv .bigcode{font-size:46px}
+body.post-sort .bigpack,body.post-tv .bigpack{font-size:26px}
+body.post-sort .rackready,body.post-tv .rackready{font-size:30px}
+/* TV: shapka, tablar va boshqaruv yoʻq — faqat natija va stelyajlar */
+body.post-tv .top,body.post-tv .tabs{display:none}
+body.post-tv #sortScan,body.post-tv .sortfoot .btn,body.post-tv #sortRackBox .btn,
+body.post-tv #sortRackBox .planhead,body.post-tv #sortRackBox .rackgeo{display:none}
+body.post-tv #sortRackBox{display:block}
+body.post-tv .cbox{width:96px}
+body.post-tv .rackrow .rstat,body.post-tv .rackbar,body.post-tv .sortfoot{font-size:15px}
+body.post-tv .cbox b{font-size:16px}
+body.post-tv .cbox s{font-size:13px}
+
 /* stelyaj QR belgisi */
 .label.racklbl{align-items:center}
 .racklbl .rl-l{font-size:64px;font-weight:700;line-height:.9;letter-spacing:-.04em}
@@ -995,6 +1033,9 @@ select:focus-visible,
   <button data-v="conf">Sozlamalar</button>
 </div>
 
+<!-- v22: server orqali postlar — «yangi reja kutmoqda», aloqa yoʻq -->
+<div id="srvBanner" class="srvbanner" style="display:none"></div>
+
 <main>
   <!-- 2.2b SARALASH — paddondan stelyaj yacheykalariga.
        Ekranda faqat skaner va natija: ishchi qoʻlida detal, koʻzi ekranda. -->
@@ -1100,12 +1141,15 @@ select:focus-visible,
       <h3>Postlar <span class="hint">— saralash va qadoqlash alohida</span></h3>
       <div class="fields">
         <div class="f"><label for="mgrPost">Bu kompyuter <span class="q" tabindex="0" data-tip="Saralash posti: ishchilar detallarni stelyajlarga saralaydi; stelyaj toʻlgach butunligicha qadoqlashga olib boriladi.&#10;&#10;Qadoqlash posti: stelyajdagi detal skanerlanadi — pochkasi oʻzi ochiladi, 3D boʻyicha teriladi, tugagach chek chiqadi.&#10;&#10;Post tanlansa boshqa postning ekrani yashiriladi va dastur shu post ekranida ochiladi. Tanlov shu kompyuterda saqlanadi.">?</span></label>
-          <select id="mgrPost"><option value="all">Hamma boʻlim</option><option value="sort">Saralash posti</option><option value="pack">Qadoqlash posti</option></select>
-          <small>tanlov shu kompyuterda saqlanadi</small></div>
+          <select id="mgrPost"><option value="all">Hamma boʻlim</option><option value="sort">Saralash posti</option><option value="pack">Qadoqlash posti</option><option value="tv">TV ekrani (saralash, faqat koʻrsatish)</option></select>
+          <small>tanlov shu kompyuterda saqlanadi</small>
+          <label class="chk" style="margin-top:6px"><input type="checkbox" id="mgrNoFocus"><span>ekran klaviaturasi chiqmasin (Smart TV, planshet)</span></label></div>
         <div class="f"><label>Reja raqami <span class="q" tabindex="0" data-tip="Pochkalar tarkibidan hisoblanadi. Saralash posti va qadoqlash postida BIR XIL boʻlishi shart — aks holda yacheykadagi detallar qadoqlashda boshqa pochkalarga tegishli chiqadi.&#10;&#10;Farq qilsa: qadoqlash postida shu yerdan saqlangan reja faylini oching.">?</span></label><b id="mgrPlanId" class="planid">—</b><small>ikkala post ekranida bir xil boʻlsin</small></div>
         <div class="f"><label>Reja fayli</label><button class="btn" id="btnPlanSave">Reja faylini saqlash</button><small>boshqa postda «Loyiha yuklash» bilan ochiladi</small></div>
       </div>
       <div id="planNote" class="note" style="display:none;margin-top:0"></div>
+      <!-- v22: tizim serverdan ochilganda (server/upk-server.py) — rejalar server orqali -->
+      <div id="srvBox" class="srvbox" style="display:none"></div>
 
       <!-- v22: MebeliX MES bilan bogʻlanish — buyurtma raqami va reja eksporti -->
       <h3>MES <span class="hint">— MebeliX MES dagi buyurtma</span></h3>
@@ -5875,7 +5919,8 @@ function makeSnapshot(){
           put:snapClone(SORT.put||{},{}),
           seen:snapClone(SORT.seen||{},{}),        // v22: skanerlangan MES cheklar
           away:snapClone(SORT.away||{},{}),        // v22: qadoqlashdagi stelyajlar
-          gone:snapClone(SORT.gone||{},{}) }       // v22: stelyaji bilan ketgan pochkalar
+          gone:snapClone(SORT.gone||{},{}),        // v22: stelyaji bilan ketgan pochkalar
+          rev:SORT.rev || 0, revOf:SORT.revOf || "" }   // v22: serverdagi holat reviziyasi
       : null,
     /* P ning sof nusxasi: name, uuid, materials, parts (+ rev kabi qoʻshimcha
        maydonlar ham oʻz-oʻzidan tushadi — P da faqat oddiy maʼlumot turadi) */
@@ -5991,6 +6036,8 @@ function restoreSnapshot(snap){
       SORT.seen = snapClone(snap.sort.seen || {}, {}) || {};   // v22
       SORT.away = snapClone(snap.sort.away || {}, {}) || {};   // v22: stelyaj qadoqlashda
       SORT.gone = snapClone(snap.sort.gone || {}, {}) || {};
+      SORT.rev = +snap.sort.rev || 0;
+      SORT.revOf = typeof snap.sort.revOf === "string" ? snap.sort.revOf : "";
       SORT.last = null;                 // katta yozuv qayta koʻrsatilmaydi
     }
     // 2) loyiha — snapshot obyektiga tegmaslik uchun yana nusxa olinadi
@@ -7049,7 +7096,7 @@ function mesRender(){
 /* umumiy fayl yozib berish */
 function dlText(txt, fname, mime, bom){
   var a = document.createElement("a");
-  var url = URL.createObjectURL(new Blob([(bom ? "﻿" : "") + txt], {type:mime}));
+  var url = URL.createObjectURL(new Blob([(bom ? "\uFEFF" : "") + txt], {type:mime}));
   a.href = url; a.download = fname;
   /* Firefox faqat hujjatga QOʻSHILGAN havolani bosishga ruxsat beradi —
      11-diag.js dagi `diagSave()` da bu allaqachon hisobga olingan edi,
@@ -9755,8 +9802,15 @@ var SORT = {
   seen: {},   // v22: skanerlangan MES ID (buyurtmasiz) -> uid — bitta chek ikki marta sanalmasin
   away: {},   // v22: stelyaj harfi -> {ts, auto} — stelyaj qadoqlash boʻlimida
   gone: {},   // v22: pochka no -> stelyaj harfi — stelyaj boʻsh qaytdi, pochka saralashdan ketdi
+  rev: 0,     // v22: serverdagi holat reviziyasi (16-server.js) …
+  revOf: "",  //      … va u qaysi rejaniki — reja almashsa eski rev ishlatilmaydi
   last: null  // oxirgi skaner natijasi — katta yozuv uchun
 };
+/* v22: saralash holati oʻzgardi — seansga va (server boʻlsa) serverga */
+function sortSaved(){
+  if (typeof autosave === "function") autosave();
+  if (typeof srvSortPush === "function") srvSortPush();
+}
 /* v22: SORT.put dagi bu qiymat — detal saralangan VA pochkasi qadoqlangan.
    Ilgari yacheyka boʻshaganda belgilar oʻchirilardi va yigʻib boʻlingan pochka
    yana «saralanmagan» boʻlib qolardi: reja unga yangi yacheyka berar, keyingi
@@ -10056,7 +10110,7 @@ function rackSend(L, force){
                  inc.map(function(b){ return "P" + pad2(b.no) + " " + b.done + "/" + b.n; }).join(", ") };
   SORT.away[L] = { ts:Date.now(), auto:false };
   sortPlan();
-  if (typeof autosave === "function") autosave();
+  sortSaved();
   return { ok:true, msg:L + " stelyaji qadoqlashga joʻnatildi" +
            (inc.length ? " — " + inc.length + " ta pochka toʻliq emas, qolgan detallari qadoqlashga eltiladi" : "") };
 }
@@ -10076,7 +10130,7 @@ function rackReturn(L){
   });
   delete SORT.away[L];
   sortPlan();
-  if (typeof autosave === "function") autosave();
+  sortSaved();
   return { ok:true, freed:freed, packs:packs,
            msg:L + " stelyaji qaytdi — " + freed + " ta yacheyka boʻshadi" };
 }
@@ -10232,7 +10286,7 @@ function sortScan(raw){
     if (mkey) SORT.seen[mkey] = t.it.uid;
     SORT.last = { cell:cellNow, no:t.p.no, code:t.it.code, item:t.it, away:rackOf(cellNow),
                   done:cellDone(t.p.no), n:packItems(t.p).length };
-    if (typeof autosave === "function") autosave();
+    sortSaved();
     return { ok:true, kind:"warn", cell:cellNow, pack:t.p, item:t.it, away:true,
              msg:"«" + label + "» — P" + pad2(t.p.no) + " " + rackOf(cellNow) + " stelyaji bilan QADOQLASHDA: " +
                  "detalni qadoqlash boʻlimiga eltib, " + cellNow + " yacheykaga qoʻying" };
@@ -10241,7 +10295,7 @@ function sortScan(raw){
     SORT.put[t.it.uid] = SORT_PACKED;
     if (mkey) SORT.seen[mkey] = t.it.uid;
     SORT.last = { cell:null, no:t.p.no, code:t.it.code, item:t.it, gone:SORT.gone[t.p.no] };
-    if (typeof autosave === "function") autosave();
+    sortSaved();
     return { ok:true, kind:"warn", pack:t.p, item:t.it, gone:true,
              msg:"«" + label + "» — P" + pad2(t.p.no) + " qadoqlashga ketgan (" + SORT.gone[t.p.no] +
                  " stelyaji bilan): detalni qadoqlash boʻlimiga eltib bering" };
@@ -10272,7 +10326,7 @@ function sortScan(raw){
                 done:cellDone(t.p.no), n:n, gname:(t.p.gname || (t.p.base && t.p.base.prod) || "") };
   var ready = rackCheckReady();                         // v22: stelyaj toʻldimi
   if (ready.length) SORT.last.ready = ready;
-  if (typeof autosave === "function") autosave();
+  sortSaved();
   return { ok:true, kind:"ok", cell:cell, pack:t.p, item:t.it, msg:"", ready:ready };
 }
 
@@ -10546,13 +10600,52 @@ function rackSaved(what){
   RACK_T = setTimeout(function(){ e.style.display = "none"; }, 3000);
 }
 
-/* Saralashni noldan boshlash */
-function sortReset(){
+/* Saralashni noldan boshlash.
+   keepAway — v22: qadoqlashdagi stelyaj JISMONAN yoʻq: boshqa reja ochilganda ham u
+              qaytguncha (QR yoki «Qaytdi») yacheykalari ishlatilmaydi;
+   silent   — serverga yozilmaydi: reja almashganda holat serverdan olinadi. */
+function sortReset(keepAway, silent){
+  var away = keepAway ? SORT.away : {};
   SORT.cell = {}; SORT.pack = {}; SORT.put = {}; SORT.plan = {}; SORT.seen = {}; SORT.last = null;
-  SORT.away = {}; SORT.gone = {};                        // v22
+  SORT.away = away || {}; SORT.gone = {};                // v22
   sortPlan();
   renderSort(); renderPlanBox(); sortFlash("", "");
-  if (typeof autosave === "function") autosave();
+  if (silent){ if (typeof autosave === "function") autosave(); }
+  else sortSaved();
+}
+
+/* Bitta skan — maydondan ham, fokussiz tutilgan skanerdan ham */
+function sortHandle(v){
+  if (typeof postMode === "function" && postMode() === "tv") return null;   // TV faqat koʻrsatadi
+  var r = sortScan(v);
+  renderSort(); renderPlanBox(); renderRackBox();
+  if (r.ok && !r.msg) sortFlash("", "");     // katta yozuvning oʻzi yetarli
+  else sortFlash(r.kind, r.msg);             // v22: kechikkan detal — ok, lekin yoʻl-yoʻriq bilan
+  return r;
+}
+/* v22: SKANER FOKUSSIZ (Smart TV, planshet). Maydonga fokus berilsa TV ekran
+   klaviaturasini ochib, butun ekranni yopadi. Shuning uchun saralash ekranida
+   skaner hujjat darajasida ham tutiladi: fokus matn maydonida boʻlmasa belgilar
+   yigʻiladi (1,5 s tanaffus — yangi skan), Enter — skan. Tugmada turgan fokus
+   skanerning Enter iga «bosilmaydi». */
+var SORT_KEYS = { buf:"", t:0 };
+function sortKeyCapture(e){
+  var v = $("v-sort");
+  if (!v || !v.classList.contains("on")) return;
+  var t = e.target || {}, tag = t.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || t.isContentEditable) return;
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  var now = Date.now();
+  if (now - SORT_KEYS.t > 1500) SORT_KEYS.buf = "";
+  SORT_KEYS.t = now;
+  if (e.key === "Enter"){
+    if (!SORT_KEYS.buf) return;
+    e.preventDefault();
+    var code = SORT_KEYS.buf; SORT_KEYS.buf = "";
+    sortHandle(code);
+    return;
+  }
+  if (e.key && e.key.length === 1){ SORT_KEYS.buf += e.key; e.preventDefault(); }
 }
 
 /* Skaner maydoni — Enter bosilganda ishlaydi (skanerlar oxirida Enter yuboradi) */
@@ -10562,12 +10655,10 @@ function sortInit(){
     sc.onkeydown = function(e){
       if (e.key !== "Enter") return;
       var v = sc.value; sc.value = "";
-      var r = sortScan(v);
-      renderSort(); renderPlanBox(); renderRackBox();
-      if (r.ok && !r.msg) sortFlash("", "");  // katta yozuvning oʻzi yetarli
-      else sortFlash(r.kind, r.msg);          // v22: kechikkan detal — ok, lekin yoʻl-yoʻriq bilan
+      sortHandle(v);
     };
   }
+  document.addEventListener("keydown", sortKeyCapture, false);
   var rb = $("btnSortReset");
   if (rb) rb.onclick = function(){
     if (!Object.keys(SORT.put).length){ sortFlash("", "saralash boshlanmagan"); return; }
@@ -10598,8 +10689,11 @@ function sortInit(){
   panel("btnSortRack", "sortRackBox");
 }
 
-/* Saralash boʻlimiga oʻtilganda fokus skaner maydoniga tushsin */
+/* Saralash boʻlimiga oʻtilganda fokus skaner maydoniga tushsin.
+   v22: «ekran klaviaturasi chiqmasin» (Smart TV) — fokus berilmaydi, skaner
+   fokussiz tutiladi (sortKeyCapture). */
 function sortFocus(){
+  if (typeof postNoFocus === "function" && postNoFocus()) return;
   var sc = $("sortScan");
   if (sc) setTimeout(function(){ sc.focus(); }, 40);
 }
@@ -10641,8 +10735,9 @@ sortInit();
    tegishli, shuning uchun alohida kalitda (sozlama va seansdan tashqarida). ---- */
 var POST_KEY = "upk_post";
 var POST_MEM = null;                 // localStorage ishlamasa — shu seans uchun
-var POSTS = { all:"Hamma boʻlim", sort:"Saralash posti", pack:"Qadoqlash posti" };
-var POST_HIDE = { sort:{ work:1 }, pack:{ sort:1 } };   // boshqa postning ekrani yashiriladi
+var POSTS = { all:"Hamma boʻlim", sort:"Saralash posti", pack:"Qadoqlash posti", tv:"TV ekrani" };
+var POST_HIDE = { sort:{ work:1 }, pack:{ sort:1 },     // boshqa postning ekrani yashiriladi
+                  tv:{ mgr:1, work:1, parts:1, mats:1, diag:1, conf:1 } };   // v22: TV — faqat saralash ekrani
 
 function postMode(){
   var v = null;
@@ -10650,13 +10745,22 @@ function postMode(){
   if (v == null) v = POST_MEM;
   return POSTS.hasOwnProperty(v) ? v : "all";
 }
-function postHome(){ return postMode() === "sort" ? "sort" : "work"; }
+function postHome(){ var m = postMode(); return (m === "sort" || m === "tv") ? "sort" : "work"; }
+/* v22: «ekran klaviaturasi chiqmasin» — Smart TV / planshet: skan maydoniga fokus
+   berilmaydi (TV klaviaturasi ekranni yopardi), skaner fokussiz tutiladi. */
+function postNoFocus(){
+  var v = null;
+  try { v = localStorage.getItem("upk_nofocus"); } catch(e){}
+  return v === "1" || postMode() === "tv";
+}
 function postHidden(tab){ var h = POST_HIDE[postMode()]; return !!(h && h[tab]); }
 function postSet(m){
   if (!POSTS.hasOwnProperty(m)) m = "all";
   POST_MEM = m;
   try { localStorage.setItem(POST_KEY, m); } catch(e){}
   postApply(m !== "all");
+  if (typeof srvStart === "function" && typeof SRV === "object" && SRV.on) srvStart();   // TV tezroq soʻraydi
+  if (typeof srvBanner === "function") srvBanner();
 }
 /* Tablar, shapkadagi belgi va P/M dagi tanlov. go — postning oʻz ekraniga oʻtish. */
 function postApply(go){
@@ -10667,6 +10771,13 @@ function postApply(go){
   var chip = $("postChip");
   if (chip){ chip.textContent = m === "all" ? "" : POSTS[m]; chip.style.display = m === "all" ? "none" : ""; }
   var sel = $("mgrPost"); if (sel) sel.value = m;
+  var nf = $("mgrNoFocus"); if (nf) nf.checked = postNoFocus();
+  // v22: koʻrinish — TV da shapka va tablar yoʻq, saralash ekrani katta
+  ["all","sort","pack","tv"].forEach(function(k){ document.body.classList.toggle("post-" + k, k === m); });
+  if (m === "tv"){
+    var rb = $("sortRackBox"); if (rb) rb.style.display = "block";
+    var pb = $("sortPlanBox"); if (pb) pb.style.display = "none";
+  }
   var on = document.querySelector(".tabs button.on");
   // allaqachon postning oʻz ekranida boʻlsa — qayta bosilmaydi (ishga tushishda 3D ikki marta chizilmasin)
   if ((go && (!on || on.dataset.v !== postHome())) || (on && postHidden(on.dataset.v))) showTab(postHome());
@@ -10701,7 +10812,8 @@ function planFileObj(){
   snap.cur = 0; snap.sort = null; snap.packSeen = {};
   (snap.packs || []).forEach(function(s){ s.done = 0; delete s.ord; });
   return { format:PLAN_FMT, v:1, app:"UPK v" + APP_VER, planId:planId(), ts:Date.now(),
-           name:P.name || "", packs:PACKS.length, snapshot:snap };
+           name:P.name || "", order:P.mesOrder || "", proj:projTag(),   // v22: serverdagi roʻyxat uchun
+           packs:PACKS.length, snapshot:snap };
 }
 function planFileName(){
   return String(P.mesOrder || P.name || "reja").replace(/[\\\/:*?"<>|]+/g, "_") +
@@ -10720,15 +10832,18 @@ function planFileSave(){
   return o;
 }
 /* Matn reja fayli boʻlib koʻrinadimi (yuklash oqimi shunga qarab ajraladi). */
-function looksLikePlan(txt){ return /^\s*\{/.test(String(txt || "").replace(/^﻿/, "")); }
+function looksLikePlan(txt){ return /^\s*\{/.test(String(txt || "").replace(/^\uFEFF/, "")); }
 
-/* Reja faylini ochish. Qaytadi: {ok, msg, id, same}.
+/* Reja faylini ochish (matn yoki serverdan kelgan obyekt). Qaytadi: {ok, msg, id, same}.
    Pochkalar fayldagidek TIKLANADI (qayta hisoblanmaydi) — bu postdagi
    sozlamalar boshqa boʻlsa ham tarkib aynan oʻtadi. */
 function planFileLoad(txt){
   var o = null;
-  try { o = JSON.parse(String(txt || "").replace(/^﻿/, "")); }
-  catch(e){ return { ok:false, msg:"reja fayli oʻqilmadi — JSON buzilgan" }; }
+  if (txt && typeof txt === "object") o = JSON.parse(JSON.stringify(txt));   // snapshot ga tegmaslik uchun nusxa
+  else {
+    try { o = JSON.parse(String(txt || "").replace(/^\uFEFF/, "")); }
+    catch(e){ return { ok:false, msg:"reja fayli oʻqilmadi — JSON buzilgan" }; }
+  }
   if (!o || o.format !== PLAN_FMT || !o.snapshot || typeof o.snapshot !== "object")
     return { ok:false, msg:"bu fayl upakofka reja fayli emas" + (o && o.format ? " (format: " + o.format + ")" : "") };
   if (+o.v > 1) return { ok:false, msg:"reja fayli yangiroq versiyada yozilgan (v" + o.v + ") — upakofkani yangilang" };
@@ -10743,7 +10858,7 @@ function planFileLoad(txt){
   var now = planId();
   /* Boshqa reja — bu postdagi eski saralash yaroqsiz (xuddi yangi .project
      yuklangandagidek). Oʻsha reja qayta ochilsa — saralash joyida qoladi. */
-  if (now !== before && typeof sortReset === "function") sortReset();
+  if (now !== before && typeof sortReset === "function") sortReset(true, true);   // qadoqlashdagi stelyaj — joyida
   if (typeof writeConf === "function") writeConf();
   planAfterLoad();
   var same = !o.planId || o.planId === now;
@@ -10787,10 +10902,340 @@ function printRackLabels(){
 (function postInit(){
   var sel = $("mgrPost");
   if (sel) sel.onchange = function(){ postSet(sel.value); };
+  var nf = $("mgrNoFocus");
+  if (nf) nf.onchange = function(){
+    try { localStorage.setItem("upk_nofocus", nf.checked ? "1" : "0"); } catch(e){}
+  };
   var b = $("btnPlanSave");
   if (b) b.onclick = function(){ planFileSave(); };
   postApply(postMode() !== "all");
 })();
+
+</script>
+<script>
+/* ===== src/js/16-server.js ===== */
+/* ============================================================
+   3.17 SERVER ORQALI POSTLAR (v22, ixtiyoriy)
+   ============================================================
+   Tizim serverdan ochilsa (server/upk-server.py — http://SERVER:8080/) postlar
+   reja va saralash holatini server orqali almashadi. Sabab (tsex, 2026-11-12):
+   kompyuterlar tarmoqda, saralash boʻlimiga Smart TV qoʻyiladi — TV da fayl
+   ochib boʻlmaydi, uning brauzeri esa istalgan payt qayta yuklanishi mumkin.
+
+     - P/M rejani serverga joylaydi va SARALASHGA YUBORADI (joriy reja);
+     - saralash va qadoqlash posti joriy rejaga OʻZI oʻtadi, lekin faqat ish
+       tugaganda (stelyajlarda detal yoʻq / yigʻilayotgan pochka yoʻq). Aks holda
+       ekranda «yangi reja kutmoqda» va «Hozir oʻtish» tugmasi — yarim ish
+       jimgina almashib ketmasin;
+     - saralash holati serverda ham turadi (rev bilan; ikkinchi yozuvchi 409 oladi);
+     - «TV ekrani» posti saralash ekranini serverdan oʻqib koʻrsatadi — skaner
+       boshqa qurilmada boʻlsa ham ishchilar katta ekranda koʻradi.
+
+   Server boʻlmasa (file://, GitHub Pages) modul jim turadi — reja fayli bilan ishlanadi.
+   Tarmoq soʻrovlari XMLHttpRequest bilan: eski Smart TV brauzerlarida ham bor.
+   ============================================================ */
+var SRV = {
+  on:false, base:"api/",
+  mock:null,            // testlar uchun: function(method, path, body) -> {ok,status,json}
+  cur:null, curName:"", // serverdagi joriy (saralanayotgan) reja
+  pushT:null, pushing:false, again:false,
+  timer:null, opening:false, seenRev:-1,
+  manual:false,         // testlar: fon taymeri yoʻq, qadamlar qoʻlda chaqiriladi
+  err:"", conflict:false, plans:[]
+};
+var SRV_TICK_MS = 3000, SRV_TV_MS = 1500;
+
+/* Qurilma belgisi — server holatni kim yozganini koʻrsatadi */
+function srvDev(){
+  var d = null;
+  try { d = localStorage.getItem("upk_dev"); } catch(e){}
+  if (!d){
+    d = "d" + Math.random().toString(36).slice(2, 10);
+    try { localStorage.setItem("upk_dev", d); } catch(e){}
+  }
+  return d;
+}
+
+function srvReq(method, path, body){
+  if (SRV.mock){
+    return Promise.resolve().then(function(){ return SRV.mock(method, path, body); })
+      .then(function(r){ return r || { ok:false, status:0, json:null }; },
+            function(){ return { ok:false, status:0, json:null }; });
+  }
+  return new Promise(function(resolve){
+    var x;
+    try { x = new XMLHttpRequest(); x.open(method, SRV.base + path, true); }
+    catch(e){ resolve({ ok:false, status:0, json:null }); return; }
+    x.timeout = 8000;
+    if (body != null) x.setRequestHeader("Content-Type", "application/json;charset=utf-8");
+    x.onload = function(){
+      var j = null;
+      try { j = JSON.parse(x.responseText); } catch(e){}
+      resolve({ ok:x.status >= 200 && x.status < 300, status:x.status, json:j });
+    };
+    x.onerror = x.ontimeout = x.onabort = function(){ resolve({ ok:false, status:0, json:null }); };
+    try { x.send(body != null ? JSON.stringify(body) : null); }
+    catch(e){ resolve({ ok:false, status:0, json:null }); }
+  });
+}
+
+/* Server bormi. http(s) dan ochilmagan boʻlsa (fayldan) — soʻrov ham yuborilmaydi. */
+function srvDetect(){
+  if (!SRV.mock && !/^https?:$/.test(location.protocol)) return Promise.resolve(false);
+  return srvReq("GET", "ping").then(function(r){
+    SRV.on = !!(r.ok && r.json && r.json.server === "upk");
+    srvUi();
+    if (SRV.on) srvStart();
+    return SRV.on;
+  });
+}
+function srvStart(){
+  if (SRV.timer){ clearInterval(SRV.timer); SRV.timer = null; }
+  if (SRV.manual) return;
+  SRV.timer = setInterval(srvTick, postMode() === "tv" ? SRV_TV_MS : SRV_TICK_MS);
+  // saralash posti: serverdagi holat yangiroq boʻlsa — oʻsha (masalan TV brauzeri qayta yuklangan)
+  if (postMode() === "sort" && P && PACKS.length) srvSortPull(planId(), false);
+  srvTick();
+}
+
+/* ---- saralash holati: eksport / import ---- */
+function sortLastLite(L){
+  if (!L) return null;
+  var o = {};
+  ["cell","no","code","done","n","ready","away","gone","rack","freed","gname"].forEach(function(k){
+    if (L[k] !== undefined) o[k] = L[k];
+  });
+  if (L.item) o.uid = L.item.uid;
+  return o;
+}
+function sortLastFull(o){
+  if (!o || typeof o !== "object") return null;
+  var L = {}, k;
+  for (k in o) if (o.hasOwnProperty(k)) L[k] = o[k];
+  if (o.uid){
+    var it = packItems(packByNo(o.no)).filter(function(x){ return x.uid === o.uid; })[0];
+    if (!it) return null;
+    L.item = it;
+  } else if (!o.rack) return null;
+  return L;
+}
+function sortExport(){
+  return { cell:SORT.cell, pack:SORT.pack, put:SORT.put, seen:SORT.seen,
+           away:SORT.away, gone:SORT.gone, last:sortLastLite(SORT.last) };
+}
+function sortImport(d){
+  function obj(v){ return (v && typeof v === "object") ? JSON.parse(JSON.stringify(v)) : {}; }
+  SORT.cell = obj(d.cell); SORT.pack = obj(d.pack); SORT.put = obj(d.put); SORT.seen = obj(d.seen);
+  SORT.away = obj(d.away); SORT.gone = obj(d.gone);
+  SORT.last = sortLastFull(d.last);
+  sortPlan();
+}
+function srvSortRender(){
+  if (typeof renderSort === "function"){ renderSort(); renderPlanBox(); renderRackBox(); }
+  if (typeof renderPacks === "function" && PACKS.length) renderPacks();
+}
+
+/* Saralash posti har oʻzgarishdan keyin (14-sort.js sortSaved) — 0,4 s jamlab yuboriladi */
+function srvSortPush(){
+  if (!SRV.on || postMode() !== "sort" || !P || !PACKS.length) return;
+  if (SRV.pushT) clearTimeout(SRV.pushT);
+  SRV.pushT = setTimeout(srvSortPushNow, 400);
+}
+function srvSortPushNow(){
+  if (SRV.pushT){ clearTimeout(SRV.pushT); SRV.pushT = null; }   // kutib turgan yuborish — shu bilan
+  if (SRV.pushing){ SRV.again = true; return Promise.resolve(false); }
+  var id = planId();
+  if (!id) return Promise.resolve(false);
+  SRV.pushing = true;
+  // rev faqat SHU rejaniki boʻlsa asos boʻladi — boshqa rejadan qolgan rev yolgʻon ziddiyat berardi
+  var base = (SORT.revOf === id) ? (SORT.rev || 0) : 0;
+  return srvReq("PUT", "state/" + id + "/sort", { base:base, dev:srvDev(), data:sortExport() })
+    .then(function(r){
+      SRV.pushing = false;
+      var p = Promise.resolve(r.ok);
+      if (r.ok && r.json){
+        SORT.rev = +r.json.rev || 0; SORT.revOf = id; SRV.err = ""; SRV.conflict = false;
+        if (typeof autosave === "function") autosave();
+      } else if (r.status === 409){
+        /* boshqa qurilma ham shu rejani saralayapti — server haqiqat; ishchi
+           oxirgi skanni takrorlaydi (bitta chek ikki marta sanalmaydi — SORT.seen) */
+        SRV.conflict = true;
+        p = srvSortPull(id, true).then(function(){ return false; });
+      } else {
+        SRV.err = "server bilan aloqa yoʻq — saralash shu qurilmada saqlanmoqda";
+      }
+      srvBanner();
+      return p.then(function(v){
+        if (SRV.again){ SRV.again = false; return srvSortPushNow(); }
+        return v;
+      });
+    });
+}
+/* Serverdagi holatni olish. force — rev dan qatʼi nazar (reja ochilganda, ziddiyatda). */
+function srvSortPull(id, force){
+  if (!id) return Promise.resolve(false);
+  return srvReq("GET", "state/" + id + "/sort").then(function(r){
+    if (!r.ok || !r.json || !r.json.data || typeof r.json.data !== "object") return false;
+    if (id !== planId()) return false;                   // shu orada reja almashgan
+    var rev = +r.json.rev || 0;
+    if (!force && SORT.revOf === id && rev <= (SORT.rev || 0)) return false;
+    sortImport(r.json.data);
+    SORT.rev = rev; SORT.revOf = id;
+    srvSortRender();
+    if (typeof autosave === "function") autosave();
+    return true;
+  });
+}
+
+/* ---- joriy rejaga ergashish ---- */
+/* Post hozir boʻshmi — yangi rejaga jimgina oʻtsa boʻladimi. */
+function srvIdle(){
+  var m = postMode();
+  if (!P || !PACKS.length) return true;
+  if (m === "sort") return !Object.keys(SORT.cell).length;     // stelyajlarda bu rejaning detali yoʻq
+  if (m === "pack"){
+    var started = 0, open = 0, done = 0;
+    PACKS.forEach(function(p){
+      var d = p.done || 0;
+      if (d > 0) started++;
+      if (d > 0 && d < p.seq.length) open++;
+      if (d >= p.seq.length) done++;
+    });
+    return open === 0 && (started === 0 || done === PACKS.length);
+  }
+  return true;
+}
+function srvTick(){
+  if (!SRV.on) return Promise.resolve(false);
+  var m = postMode();
+  if (m === "all") return Promise.resolve(false);              // P/M kompyuteri oʻzi boshqaradi
+  return srvReq("GET", "current").then(function(r){
+    if (!r.ok || !r.json){ SRV.err = "server bilan aloqa yoʻq"; srvBanner(); return false; }
+    if (SRV.err === "server bilan aloqa yoʻq") SRV.err = "";
+    SRV.cur = r.json.sort || null; SRV.curName = r.json.name || "";
+    var mine = planId();
+    if (SRV.cur && SRV.cur !== mine && (m === "tv" || srvIdle())){
+      srvBanner();
+      return srvOpenPlan(SRV.cur, true);
+    }
+    srvBanner();
+    if (m === "tv" && SRV.cur && SRV.cur === mine) return srvTvPull();
+    // saralash posti: serverda yangiroq holat (masalan shu TV brauzeri qayta yuklangan) — oʻsha
+    if (m === "sort" && mine && !SRV.pushT && !SRV.pushing) return srvSortPull(mine, false);
+    return false;
+  });
+}
+/* TV: holat oʻzgargan boʻlsa — ekran yangilanadi (TV hech qachon yozmaydi) */
+function srvTvPull(){
+  var id = planId();
+  return srvReq("GET", "state/" + id + "/sort").then(function(r){
+    if (!r.ok || !r.json || id !== planId()) return false;
+    var rev = +r.json.rev || 0;
+    if (rev === SRV.seenRev) return false;
+    SRV.seenRev = rev;
+    if (r.json.data && typeof r.json.data === "object") sortImport(r.json.data);
+    else sortImport({});
+    SORT.rev = rev; SORT.revOf = id;
+    srvSortRender();
+    return true;
+  });
+}
+/* Serverdagi rejani ochish. auto — ergashish (xabar boshqacha). */
+function srvOpenPlan(id, auto){
+  if (SRV.opening) return Promise.resolve(false);
+  SRV.opening = true;
+  return srvReq("GET", "plans/" + id).then(function(r){
+    SRV.opening = false;
+    if (!r.ok || !r.json){ flash("err", "reja serverdan olinmadi (" + id + ")"); return false; }
+    var res = planFileLoad(r.json);
+    if (!res.ok){ flash("err", res.msg); return false; }
+    SRV.seenRev = -1;
+    flash(res.same ? "ok" : "err", (auto ? "serverdagi joriy reja ochildi — " : "") + res.msg);
+    if (typeof showTab === "function" && typeof postHome === "function" && postMode() !== "all") showTab(postHome());
+    srvBanner();
+    var m = postMode();
+    if (m === "tv") return srvTvPull().then(function(){ return true; });
+    if (m === "sort") return srvSortPull(res.id, true).then(function(){ return true; });
+    return true;
+  }, function(){ SRV.opening = false; return false; });
+}
+
+/* ---- P/M: joylash va roʻyxat ---- */
+function srvPublish(){
+  var o = planFileObj();
+  if (!o){ flash("err", "reja yoʻq — avval loyihani yuklang"); return Promise.resolve(false); }
+  return srvReq("PUT", "plans/" + o.planId + "?sort=1", o).then(function(r){
+    if (r.ok){
+      flash("ok", "reja serverga joylandi va saralashga yuborildi — reja " + o.planId);
+      SRV.cur = o.planId; SRV.curName = o.name;
+      return srvPlans().then(function(){ return true; });
+    }
+    flash("err", "serverga joylanmadi: " + ((r.json && r.json.error) || (r.status ? "HTTP " + r.status : "aloqa yoʻq")));
+    return false;
+  });
+}
+function srvPlans(){
+  return Promise.all([srvReq("GET", "plans"), srvReq("GET", "current")]).then(function(rs){
+    SRV.plans = (rs[0].ok && rs[0].json && rs[0].json.plans) || [];
+    if (rs[1].ok && rs[1].json){ SRV.cur = rs[1].json.sort || null; SRV.curName = rs[1].json.name || ""; }
+    srvUi();
+    return SRV.plans;
+  });
+}
+function srvTime(ts){
+  if (!ts) return "";
+  var d = new Date(ts), p2 = function(n){ return (n < 10 ? "0" : "") + n; };
+  return p2(d.getDate()) + "." + p2(d.getMonth() + 1) + " " + p2(d.getHours()) + ":" + p2(d.getMinutes());
+}
+function srvUi(){
+  var box = $("srvBox"); if (!box) return;
+  if (!SRV.on){ box.style.display = "none"; box.innerHTML = ""; return; }
+  box.style.display = "block";
+  var mine = planId();
+  var rows = SRV.plans.slice(0, 8).map(function(m){
+    var cur = m.id === SRV.cur;
+    return '<div class="srvrow' + (cur ? " cur" : "") + '">' +
+      '<b class="planid">' + esc(m.id) + '</b>' +
+      '<span>' + esc(m.name || "—") + (m.order ? ' · ' + esc(m.order) : '') +
+        (m.packs != null ? ' · ' + m.packs + ' pochka' : '') + ' · ' + srvTime(m.ts) + '</span>' +
+      (cur ? '<em>saralanmoqda</em>' : '') +
+      (m.id === mine ? '<i>ochiq</i>' : '<button type="button" class="btn gh" data-srvopen="' + esc(m.id) + '">Ochish</button>') +
+      '</div>';
+  }).join("");
+  box.innerHTML =
+    '<div class="srvhead"><b>Server: ulangan</b> — reja va saralash holati postlar orasida server orqali almashadi.' +
+    '<span class="grow"></span><button type="button" class="btn pri" id="btnSrvPub">Serverga joylash — saralashga yuborish</button></div>' +
+    (rows ? '<div class="srvlist">' + rows + '</div>' : '<div class="srvempty">Serverda hali reja yoʻq.</div>');
+  var pb = $("btnSrvPub");
+  if (pb) pb.onclick = function(){ srvPublish(); };
+  [].slice.call(box.querySelectorAll("[data-srvopen]")).forEach(function(b){
+    b.onclick = function(){ srvOpenPlan(b.dataset.srvopen, false); };
+  });
+}
+
+/* Postdagi ogohlantirish: yangi reja kutmoqda / aloqa yoʻq / ziddiyat */
+function srvBanner(){
+  var el = $("srvBanner"); if (!el) return;
+  var m = postMode(), msg = "", kind = "", btn = false;
+  if (SRV.on && m !== "all"){
+    if (SRV.err) { msg = SRV.err; kind = "err"; }
+    else if (SRV.conflict) { msg = "Boshqa qurilma ham shu rejani saralayapti — holat serverdan olindi. Oxirgi detalni qayta skanerlang."; kind = "err"; }
+    else if (m !== "tv" && SRV.cur && P && SRV.cur !== planId()){
+      msg = "Serverda yangi reja: " + (SRV.curName || "—") + " (reja " + SRV.cur + "). " +
+            (m === "sort" ? "Stelyajlar boʻshagach oʻzi oʻtadi." : "Ochiq pochka tugagach oʻzi oʻtadi.");
+      kind = "warn"; btn = true;
+    }
+  }
+  if (!msg){ el.style.display = "none"; el.innerHTML = ""; return; }
+  el.className = "srvbanner " + kind;
+  el.style.display = "flex";
+  el.innerHTML = '<span>' + esc(msg) + '</span>' + (btn ? '<button type="button" class="btn" id="btnSrvGo">Hozir oʻtish</button>' : '');
+  var gb = $("btnSrvGo");
+  if (gb) gb.onclick = function(){ if (SRV.cur) srvOpenPlan(SRV.cur, false); };
+}
+
+/* ishga tushish — sahifa yuklangach (13-app.js seansni tiklashga ulgursin) */
+setTimeout(function(){ srvDetect(); }, 300);
 
 </script>
 </body>

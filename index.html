@@ -44,6 +44,9 @@
   <button data-v="conf">Sozlamalar</button>
 </div>
 
+<!-- v22: server orqali postlar — «yangi reja kutmoqda», aloqa yoʻq -->
+<div id="srvBanner" class="srvbanner" style="display:none"></div>
+
 <main>
   <!-- 2.2b SARALASH — paddondan stelyaj yacheykalariga.
        Ekranda faqat skaner va natija: ishchi qoʻlida detal, koʻzi ekranda. -->
@@ -149,12 +152,15 @@
       <h3>Postlar <span class="hint">— saralash va qadoqlash alohida</span></h3>
       <div class="fields">
         <div class="f"><label for="mgrPost">Bu kompyuter <span class="q" tabindex="0" data-tip="Saralash posti: ishchilar detallarni stelyajlarga saralaydi; stelyaj toʻlgach butunligicha qadoqlashga olib boriladi.&#10;&#10;Qadoqlash posti: stelyajdagi detal skanerlanadi — pochkasi oʻzi ochiladi, 3D boʻyicha teriladi, tugagach chek chiqadi.&#10;&#10;Post tanlansa boshqa postning ekrani yashiriladi va dastur shu post ekranida ochiladi. Tanlov shu kompyuterda saqlanadi.">?</span></label>
-          <select id="mgrPost"><option value="all">Hamma boʻlim</option><option value="sort">Saralash posti</option><option value="pack">Qadoqlash posti</option></select>
-          <small>tanlov shu kompyuterda saqlanadi</small></div>
+          <select id="mgrPost"><option value="all">Hamma boʻlim</option><option value="sort">Saralash posti</option><option value="pack">Qadoqlash posti</option><option value="tv">TV ekrani (saralash, faqat koʻrsatish)</option></select>
+          <small>tanlov shu kompyuterda saqlanadi</small>
+          <label class="chk" style="margin-top:6px"><input type="checkbox" id="mgrNoFocus"><span>ekran klaviaturasi chiqmasin (Smart TV, planshet)</span></label></div>
         <div class="f"><label>Reja raqami <span class="q" tabindex="0" data-tip="Pochkalar tarkibidan hisoblanadi. Saralash posti va qadoqlash postida BIR XIL boʻlishi shart — aks holda yacheykadagi detallar qadoqlashda boshqa pochkalarga tegishli chiqadi.&#10;&#10;Farq qilsa: qadoqlash postida shu yerdan saqlangan reja faylini oching.">?</span></label><b id="mgrPlanId" class="planid">—</b><small>ikkala post ekranida bir xil boʻlsin</small></div>
         <div class="f"><label>Reja fayli</label><button class="btn" id="btnPlanSave">Reja faylini saqlash</button><small>boshqa postda «Loyiha yuklash» bilan ochiladi</small></div>
       </div>
       <div id="planNote" class="note" style="display:none;margin-top:0"></div>
+      <!-- v22: tizim serverdan ochilganda (server/upk-server.py) — rejalar server orqali -->
+      <div id="srvBox" class="srvbox" style="display:none"></div>
 
       <!-- v22: MebeliX MES bilan bogʻlanish — buyurtma raqami va reja eksporti -->
       <h3>MES <span class="hint">— MebeliX MES dagi buyurtma</span></h3>
@@ -519,5 +525,6 @@
 <script src="src/js/13-app.js"></script>
 <script src="src/js/14-sort.js"></script>
 <script src="src/js/15-post.js"></script>
+<script src="src/js/16-server.js"></script>
 </body>
 </html>

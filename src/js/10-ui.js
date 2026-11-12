@@ -885,7 +885,7 @@ function mesRender(){
 /* umumiy fayl yozib berish */
 function dlText(txt, fname, mime, bom){
   var a = document.createElement("a");
-  var url = URL.createObjectURL(new Blob([(bom ? "﻿" : "") + txt], {type:mime}));
+  var url = URL.createObjectURL(new Blob([(bom ? "\uFEFF" : "") + txt], {type:mime}));
   a.href = url; a.download = fname;
   /* Firefox faqat hujjatga QOʻSHILGAN havolani bosishga ruxsat beradi —
      11-diag.js dagi `diagSave()` da bu allaqachon hisobga olingan edi,

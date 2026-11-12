@@ -26,8 +26,9 @@
    tegishli, shuning uchun alohida kalitda (sozlama va seansdan tashqarida). ---- */
 var POST_KEY = "upk_post";
 var POST_MEM = null;                 // localStorage ishlamasa — shu seans uchun
-var POSTS = { all:"Hamma boʻlim", sort:"Saralash posti", pack:"Qadoqlash posti" };
-var POST_HIDE = { sort:{ work:1 }, pack:{ sort:1 } };   // boshqa postning ekrani yashiriladi
+var POSTS = { all:"Hamma boʻlim", sort:"Saralash posti", pack:"Qadoqlash posti", tv:"TV ekrani" };
+var POST_HIDE = { sort:{ work:1 }, pack:{ sort:1 },     // boshqa postning ekrani yashiriladi
+                  tv:{ mgr:1, work:1, parts:1, mats:1, diag:1, conf:1 } };   // v22: TV — faqat saralash ekrani
 
 function postMode(){
   var v = null;
@@ -35,13 +36,22 @@ function postMode(){
   if (v == null) v = POST_MEM;
   return POSTS.hasOwnProperty(v) ? v : "all";
 }
-function postHome(){ return postMode() === "sort" ? "sort" : "work"; }
+function postHome(){ var m = postMode(); return (m === "sort" || m === "tv") ? "sort" : "work"; }
+/* v22: «ekran klaviaturasi chiqmasin» — Smart TV / planshet: skan maydoniga fokus
+   berilmaydi (TV klaviaturasi ekranni yopardi), skaner fokussiz tutiladi. */
+function postNoFocus(){
+  var v = null;
+  try { v = localStorage.getItem("upk_nofocus"); } catch(e){}
+  return v === "1" || postMode() === "tv";
+}
 function postHidden(tab){ var h = POST_HIDE[postMode()]; return !!(h && h[tab]); }
 function postSet(m){
   if (!POSTS.hasOwnProperty(m)) m = "all";
   POST_MEM = m;
   try { localStorage.setItem(POST_KEY, m); } catch(e){}
   postApply(m !== "all");
+  if (typeof srvStart === "function" && typeof SRV === "object" && SRV.on) srvStart();   // TV tezroq soʻraydi
+  if (typeof srvBanner === "function") srvBanner();
 }
 /* Tablar, shapkadagi belgi va P/M dagi tanlov. go — postning oʻz ekraniga oʻtish. */
 function postApply(go){
@@ -52,6 +62,13 @@ function postApply(go){
   var chip = $("postChip");
   if (chip){ chip.textContent = m === "all" ? "" : POSTS[m]; chip.style.display = m === "all" ? "none" : ""; }
   var sel = $("mgrPost"); if (sel) sel.value = m;
+  var nf = $("mgrNoFocus"); if (nf) nf.checked = postNoFocus();
+  // v22: koʻrinish — TV da shapka va tablar yoʻq, saralash ekrani katta
+  ["all","sort","pack","tv"].forEach(function(k){ document.body.classList.toggle("post-" + k, k === m); });
+  if (m === "tv"){
+    var rb = $("sortRackBox"); if (rb) rb.style.display = "block";
+    var pb = $("sortPlanBox"); if (pb) pb.style.display = "none";
+  }
   var on = document.querySelector(".tabs button.on");
   // allaqachon postning oʻz ekranida boʻlsa — qayta bosilmaydi (ishga tushishda 3D ikki marta chizilmasin)
   if ((go && (!on || on.dataset.v !== postHome())) || (on && postHidden(on.dataset.v))) showTab(postHome());
@@ -86,7 +103,8 @@ function planFileObj(){
   snap.cur = 0; snap.sort = null; snap.packSeen = {};
   (snap.packs || []).forEach(function(s){ s.done = 0; delete s.ord; });
   return { format:PLAN_FMT, v:1, app:"UPK v" + APP_VER, planId:planId(), ts:Date.now(),
-           name:P.name || "", packs:PACKS.length, snapshot:snap };
+           name:P.name || "", order:P.mesOrder || "", proj:projTag(),   // v22: serverdagi roʻyxat uchun
+           packs:PACKS.length, snapshot:snap };
 }
 function planFileName(){
   return String(P.mesOrder || P.name || "reja").replace(/[\\\/:*?"<>|]+/g, "_") +
@@ -105,15 +123,18 @@ function planFileSave(){
   return o;
 }
 /* Matn reja fayli boʻlib koʻrinadimi (yuklash oqimi shunga qarab ajraladi). */
-function looksLikePlan(txt){ return /^\s*\{/.test(String(txt || "").replace(/^﻿/, "")); }
+function looksLikePlan(txt){ return /^\s*\{/.test(String(txt || "").replace(/^\uFEFF/, "")); }
 
-/* Reja faylini ochish. Qaytadi: {ok, msg, id, same}.
+/* Reja faylini ochish (matn yoki serverdan kelgan obyekt). Qaytadi: {ok, msg, id, same}.
    Pochkalar fayldagidek TIKLANADI (qayta hisoblanmaydi) — bu postdagi
    sozlamalar boshqa boʻlsa ham tarkib aynan oʻtadi. */
 function planFileLoad(txt){
   var o = null;
-  try { o = JSON.parse(String(txt || "").replace(/^﻿/, "")); }
-  catch(e){ return { ok:false, msg:"reja fayli oʻqilmadi — JSON buzilgan" }; }
+  if (txt && typeof txt === "object") o = JSON.parse(JSON.stringify(txt));   // snapshot ga tegmaslik uchun nusxa
+  else {
+    try { o = JSON.parse(String(txt || "").replace(/^\uFEFF/, "")); }
+    catch(e){ return { ok:false, msg:"reja fayli oʻqilmadi — JSON buzilgan" }; }
+  }
   if (!o || o.format !== PLAN_FMT || !o.snapshot || typeof o.snapshot !== "object")
     return { ok:false, msg:"bu fayl upakofka reja fayli emas" + (o && o.format ? " (format: " + o.format + ")" : "") };
   if (+o.v > 1) return { ok:false, msg:"reja fayli yangiroq versiyada yozilgan (v" + o.v + ") — upakofkani yangilang" };
@@ -128,7 +149,7 @@ function planFileLoad(txt){
   var now = planId();
   /* Boshqa reja — bu postdagi eski saralash yaroqsiz (xuddi yangi .project
      yuklangandagidek). Oʻsha reja qayta ochilsa — saralash joyida qoladi. */
-  if (now !== before && typeof sortReset === "function") sortReset();
+  if (now !== before && typeof sortReset === "function") sortReset(true, true);   // qadoqlashdagi stelyaj — joyida
   if (typeof writeConf === "function") writeConf();
   planAfterLoad();
   var same = !o.planId || o.planId === now;
@@ -172,6 +193,10 @@ function printRackLabels(){
 (function postInit(){
   var sel = $("mgrPost");
   if (sel) sel.onchange = function(){ postSet(sel.value); };
+  var nf = $("mgrNoFocus");
+  if (nf) nf.onchange = function(){
+    try { localStorage.setItem("upk_nofocus", nf.checked ? "1" : "0"); } catch(e){}
+  };
   var b = $("btnPlanSave");
   if (b) b.onclick = function(){ planFileSave(); };
   postApply(postMode() !== "all");

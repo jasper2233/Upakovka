@@ -3206,11 +3206,165 @@ $tester = @'
           setStep(sK);
         } catch(e){ chk("qadoqlash posti (v22)", false, e.message); }
 
-        chk("test oxirida yangi JS xatosi yo'q", window.__ERRORS.length === 0,
-            window.__ERRORS.slice(0,4).join(" ; "));
-        done();
+        stageSrv(function(){
+          chk("test oxirida yangi JS xatosi yo'q", window.__ERRORS.length === 0,
+              window.__ERRORS.slice(0,4).join(" ; "));
+          done();
+        });
       });
     });
+  }
+
+  /* ---------- v22: SERVER ORQALI POSTLAR (soxta server bilan) ----------
+     server/upk-server.py bilan bir xil API — xotirada. Haqiqiy server va brauzer
+     orqali toʻliq aylanish tests/server.ps1 da. */
+  function stageSrv(cb){
+    var MS = { plans:{}, meta:{}, state:{}, current:null };
+    function J(o){ return JSON.parse(JSON.stringify(o)); }
+    function R(st, js){ return { ok:st >= 200 && st < 300, status:st, json:js }; }
+    SRV.mock = function(method, path, body){
+      var m;
+      if (path === "ping") return R(200, { ok:true, server:"upk", v:1 });
+      if (path === "plans") return R(200, { ok:true, plans:Object.keys(MS.meta).map(function(k){ return MS.meta[k]; }) });
+      if (path === "current") return R(200, { ok:true, sort:MS.current, name:MS.current && MS.meta[MS.current] ? MS.meta[MS.current].name : "" });
+      if ((m = /^plans\/([0-9A-F]{6})(\?sort=1)?$/.exec(path))){
+        if (method === "PUT"){
+          if (!body || body.format !== "upk-reja" || body.planId !== m[1]) return R(400, { ok:false, error:"reja emas" });
+          MS.plans[m[1]] = J(body); MS.meta[m[1]] = { id:m[1], name:body.name, packs:body.packs, ts:Date.now() };
+          if (m[2]) MS.current = m[1];
+          return R(200, { ok:true });
+        }
+        return MS.plans[m[1]] ? R(200, J(MS.plans[m[1]])) : R(404, { ok:false });
+      }
+      if ((m = /^state\/([0-9A-F]{6})\/sort$/.exec(path))){
+        var cur = MS.state[m[1]] || { rev:0, data:null };
+        if (method === "GET") return R(200, J(cur));
+        if (body.base !== cur.rev) return R(409, { ok:false, conflict:true, rev:cur.rev });
+        MS.state[m[1]] = { rev:cur.rev + 1, data:J(body.data) };
+        if (MS.plans[m[1]]) MS.current = m[1];
+        return R(200, { ok:true, rev:cur.rev + 1 });
+      }
+      return R(404, { ok:false });
+    };
+    SRV.manual = true;
+    var id0 = "", ctx = {};
+    function fin(){
+      if (SRV.timer){ clearInterval(SRV.timer); SRV.timer = null; }
+      if (SRV.pushT){ clearTimeout(SRV.pushT); SRV.pushT = null; }
+      SRV.mock = null; SRV.on = false; SRV.manual = false; SRV.cur = null; SRV.conflict = false; SRV.err = "";
+      postSet("all"); srvUi(); srvBanner();
+      try { localStorage.removeItem("upk_post"); localStorage.removeItem("upk_nofocus"); } catch(e){}
+      S.split = splitDefault(); packAll(); selectPack(0); sortReset();
+      cb();
+    }
+    function bad(e){ chk("server (soxta) bosqichi", false, e && e.message ? e.message : String(e)); fin(); }
+    function plannedPart(skip){
+      sortPlan();
+      var nos = Object.keys(SORT.plan).map(Number);
+      for (var i = 0; i < nos.length; i++){
+        var p = packByNo(nos[i]);
+        if (!p || p.odd) continue;
+        for (var j = 0; j < p.seq.length; j++) if (!SORT.put[p.seq[j].it.uid] && (!skip || p.seq[j].it.uid !== skip)) return { p:p, st:p.seq[j] };
+      }
+      return null;
+    }
+    try {
+      S.split = splitDefault(); packAll(); selectPack(0); sortReset();
+      srvDetect().then(function(on){
+        chk("server: topildi, P/M da server bloki chiqdi", on === true && el("srvBox").style.display === "block",
+            el("srvBox").textContent.slice(0, 60));
+        id0 = planId();
+        return srvPublish();
+      }).then(function(ok){
+        chk("server: reja joylandi va saralashga yuborildi", ok === true && MS.current === id0 && !!MS.plans[id0], id0);
+        chk("server: roʻyxatda koʻrinadi", el("srvBox").textContent.indexOf(id0) >= 0 && /saralanmoqda/.test(el("srvBox").textContent),
+            el("srvBox").textContent.slice(0, 90));
+        // «boshqa kompyuter»: saralash posti, oʻzida boshqa reja, stelyajlar boʻsh
+        postSet("sort");
+        S.split = { prod:true, mat:false }; packAll();
+        S.split = splitDefault();
+        ctx.other = planId();
+        sortReset(false, true);
+        return srvTick();
+      }).then(function(){
+        chk("server: boʻsh saralash posti joriy rejaga oʻzi oʻtdi", planId() === id0 && ctx.other !== id0,
+            ctx.other + " -> " + planId());
+        // fokussiz skaner (Smart TV): belgilar hujjatga, Enter — skan
+        showTab("sort");
+        if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+        var a = plannedPart();
+        ctx.a = a;
+        var code = qrText(a.p, a.st);
+        for (var i = 0; i < code.length; i++)
+          document.body.dispatchEvent(new KeyboardEvent("keydown", { key:code.charAt(i), bubbles:true, cancelable:true }));
+        document.body.dispatchEvent(new KeyboardEvent("keydown", { key:"Enter", bubbles:true, cancelable:true }));
+        chk("saralash: skaner fokussiz ham ishlaydi (TV klaviaturasi ochilmaydi)",
+            !!SORT.put[a.st.it.uid] && SORT.last && SORT.last.item === a.st.it, String(SORT.put[a.st.it.uid]));
+        return srvSortPushNow();
+      }).then(function(){
+        var ms = MS.state[id0];
+        chk("server: saralash holati serverga yozildi", !!ms && ms.rev >= 1 && ms.data.put[ctx.a.st.it.uid] === SORT.put[ctx.a.st.it.uid],
+            ms ? "rev " + ms.rev : "yoʻq");
+        // TV brauzeri qayta yuklandi — mahalliy holat yoʻq, serverdagisi qaytadi
+        ctx.rev = SORT.rev;
+        SORT.cell = {}; SORT.pack = {}; SORT.put = {}; SORT.rev = 0; SORT.revOf = "";
+        return srvSortPull(id0, false);
+      }).then(function(applied){
+        chk("server: yoʻqolgan mahalliy holat serverdan qaytdi",
+            applied === true && !!SORT.put[ctx.a.st.it.uid] && SORT.rev === ctx.rev, "rev " + SORT.rev);
+        // boshqa qurilma ham yozdi — keyingi yozuv ziddiyat, server haqiqat
+        MS.state[id0] = { rev:MS.state[id0].rev + 5, data:J(MS.state[id0].data) };
+        var b = plannedPart(ctx.a.st.it.uid);
+        ctx.b = b;
+        sortScan(qrText(b.p, b.st));
+        return srvSortPushNow();
+      }).then(function(){
+        chk("server: ikkinchi yozuvchi — ziddiyat aniqlandi, holat serverdan olindi",
+            SRV.conflict === true && SORT.rev === MS.state[id0].rev && !SORT.put[ctx.b.st.it.uid] &&
+            /Boshqa qurilma/.test(el("srvBanner").textContent), el("srvBanner").textContent.slice(0, 70));
+        SRV.conflict = false;
+        // stelyajda detal bor — yangi reja kelsa jimgina oʻtilmaydi
+        MS.meta["ABCDEF"] = { id:"ABCDEF", name:"Keyingi buyurtma", ts:Date.now() };
+        MS.current = "ABCDEF";
+        return srvTick();
+      }).then(function(){
+        chk("server: stelyajda detal bor — yangi rejaga jimgina oʻtilmaydi",
+            planId() === id0 && /Keyingi buyurtma/.test(el("srvBanner").textContent) && !!el("btnSrvGo"),
+            el("srvBanner").textContent.slice(0, 80));
+        // TV ekrani: holatni serverdan oʻqiydi, oʻzi hech narsa yozmaydi
+        MS.current = id0;
+        postSet("tv");
+        ctx.putN = Object.keys(MS.state[id0].data.put).length; ctx.revS = MS.state[id0].rev;
+        SORT.put = {}; SORT.cell = {}; SORT.pack = {}; SRV.seenRev = -1;
+        ctx.tvScan = sortHandle(qrText(ctx.b.p, ctx.b.st));
+        return srvTick();
+      }).then(function(){
+        chk("server: TV holatni serverdan koʻrsatadi, skan qabul qilmaydi, oʻzi yozmaydi",
+            Object.keys(SORT.put).length === ctx.putN && MS.state[id0].rev === ctx.revS && ctx.tvScan === null &&
+            getComputedStyle(document.querySelector(".tabs")).display === "none" && el("v-sort").classList.contains("on"),
+            Object.keys(SORT.put).length + " detal · rev " + MS.state[id0].rev);
+        // qadoqlash posti: ochiq pochka boʻlsa yangi rejaga oʻtmaydi, boʻshaganda — oʻtadi
+        postSet("pack");
+        S.split = { prod:true, mat:false }; packAll();
+        var o2 = planFileObj(); ctx.id2 = o2.planId;
+        MS.plans[o2.planId] = J(o2); MS.meta[o2.planId] = { id:o2.planId, name:"Ikkinchi buyurtma", ts:Date.now() };
+        S.split = splitDefault();
+        return srvOpenPlan(id0, false);
+      }).then(function(){
+        PACKS[0].done = 1;                               // pochka yigʻilmoqda
+        MS.current = ctx.id2;
+        return srvTick();
+      }).then(function(){
+        chk("qadoqlash posti: yigʻilayotgan pochka bor — yangi rejaga oʻtmaydi", planId() === id0 && !!el("btnSrvGo"),
+            planId() + " · " + el("srvBanner").textContent.slice(0, 50));
+        PACKS[0].done = 0;
+        return srvTick();
+      }).then(function(){
+        chk("qadoqlash posti: ish yoʻq — joriy rejaga oʻzi oʻtdi", planId() === ctx.id2 && el("srvBanner").style.display === "none",
+            id0 + " -> " + planId());
+        fin();
+      }).catch(bad);
+    } catch(e){ bad(e); }
   }
 
   until(function(){ return typeof PACKS !== "undefined" && PACKS && PACKS.length > 0; },

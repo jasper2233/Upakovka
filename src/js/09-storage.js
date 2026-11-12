@@ -405,7 +405,8 @@ function makeSnapshot(){
           put:snapClone(SORT.put||{},{}),
           seen:snapClone(SORT.seen||{},{}),        // v22: skanerlangan MES cheklar
           away:snapClone(SORT.away||{},{}),        // v22: qadoqlashdagi stelyajlar
-          gone:snapClone(SORT.gone||{},{}) }       // v22: stelyaji bilan ketgan pochkalar
+          gone:snapClone(SORT.gone||{},{}),        // v22: stelyaji bilan ketgan pochkalar
+          rev:SORT.rev || 0, revOf:SORT.revOf || "" }   // v22: serverdagi holat reviziyasi
       : null,
     /* P ning sof nusxasi: name, uuid, materials, parts (+ rev kabi qoʻshimcha
        maydonlar ham oʻz-oʻzidan tushadi — P da faqat oddiy maʼlumot turadi) */
@@ -521,6 +522,8 @@ function restoreSnapshot(snap){
       SORT.seen = snapClone(snap.sort.seen || {}, {}) || {};   // v22
       SORT.away = snapClone(snap.sort.away || {}, {}) || {};   // v22: stelyaj qadoqlashda
       SORT.gone = snapClone(snap.sort.gone || {}, {}) || {};
+      SORT.rev = +snap.sort.rev || 0;
+      SORT.revOf = typeof snap.sort.revOf === "string" ? snap.sort.revOf : "";
       SORT.last = null;                 // katta yozuv qayta koʻrsatilmaydi
     }
     // 2) loyiha — snapshot obyektiga tegmaslik uchun yana nusxa olinadi
