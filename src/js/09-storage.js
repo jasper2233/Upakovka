@@ -301,7 +301,7 @@ var Store = (function(){
 
 /* ============================================================
    3.11.7 SNAPSHOT — pochkalarning kompakt tasviri
-   Faqat uid va koordinata. Koordinatalar butun songa yaxlitlanadi.
+   Faqat uid va koordinata. v22: koordinatalar 0,001 mm aniqlikda (C13).
    ============================================================ */
 /* Seans bilan birga saqlanadigan sozlamalar.
 
@@ -320,6 +320,7 @@ var SNAP_CONF = ["maxKg","ovh","minBase","maxLen","minBaseT","tries","prefix","b
                  "minFill","lidFill","lidN","lidTol","oneMan","twoMan","maxLayers","ovhOn",
                  "maxPartT","sepMat"];   // v22: sepMat ham buildItems ni oʻzgartiradi
 
+function snapNum(v){ return Math.round((+v || 0) * 1000) / 1000; }
 function snapPacks(packs){
   return (packs || []).map(function(p){
     /* rev — terish reviziyasi (04-packer v10). QR ichida chiqadi, shuning uchun
@@ -353,7 +354,7 @@ function snapPacks(packs){
       return o;
     }
     o.allowOvh = !!p.allowOvh;
-    o.off      = Math.round(p.off || 0);
+    o.off      = snapNum(p.off || 0);
     o.baseUid  = p.base ? p.base.uid : null;
     o.layers   = (p.layers || []).map(function(L){
       return {
@@ -365,7 +366,10 @@ function snapPacks(packs){
         tom:     !!L.tom,         // v15: TOM shartidan oʻtganmi (audit shunga qaraydi)
         flipped: !!L.flipped,
         its: (L.items || []).map(function(q){
-          return { u:q.it.uid, x:Math.round(q.x), y:Math.round(q.y),
+          /* v22 (C13): butun songa yaxlitlanmaydi. Kasr oʻlchamli detalda (559,5 mm)
+             aks ettirilgan qavat yarim millimetrli koordinata beradi — yaxlitlansa
+             tiklangach qoʻshnilar 0,5 mm ustma-ust tushib, audit USTMA_UST berardi. */
+          return { u:q.it.uid, x:snapNum(q.x), y:snapNum(q.y),
                    a:Math.round(q.a), b:Math.round(q.b), r:q.rot ? 1 : 0 };
         })
       };
@@ -630,7 +634,7 @@ function restoreSnapshot(snap){
           /* a,b snapshotdagi yaxlitlangan sondan emas, itemning oʻzidan olinadi
              (rot boʻyicha). Sabab: kasr oʻlchamli detalda (559,5 mm) yaxlitlash
              1 mm ustma-ustlik yasashi va 05-audit ni yolgʻon ishga tushirishi mumkin.
-             x,y esa packerda allaqachon butun songa keltirilgan — aynan tushadi. */
+             v22 (C13): x,y ham aniq saqlanadi — aks ettirilgan qavatda ular kasr. */
           qa = q.r ? it.W : it.L;
           qb = q.r ? it.L : it.W;
           lit.push({ it:it, x:+q.x, y:+q.y, a:qa, b:qb, rot:q.r ? 1 : 0 });

@@ -930,6 +930,72 @@ function packLoad(p, b){
   PACK_FIELDS.forEach(function(k){ p[k] = b[k]; });
 }
 
+/* v22 (B8): QUYRUQLI / ZAXIRALI POCHKANI TAHRIRLASH.
+   Bunday pochka oddiy qoidalar bilan qayta terilolmaydi: quyruq qavati
+   `minFill` dan ozod, zaxirali pochka asosiy limitdan ogʻir. Shuning uchun
+   qayta terish boʻlmasa ikki yoʻl bor:
+     - olib tashlash — detal JOYIDA olinadi, qolganlar qimirlamaydi; ustidagi
+       qavat tayanchi va tom toʻshagi tekshiriladi;
+     - qoʻshish — detal ustiga qavat qilib qoʻyiladi (singdirishdagi quyruq
+       qoidalari: paddon qamrovi, boʻshliq, tayanch, balandlik, toʻshak).
+   Ikkalasi ham asl qavat obyektlariga TEGMAYDI (yangi massiv) — packSave /
+   packLoad atomikligi saqlanadi. */
+function packHasTail(p){ return !!(p.overKg || (p.layers || []).some(function(L){ return L.tail; })); }
+function layerWithout(L, uid, base){
+  var items = L.items.filter(function(q){ return q.it.uid !== uid; });
+  var NL = {}, k;
+  for (k in L) if (L.hasOwnProperty(k)) NL[k] = L[k];
+  NL.items = items;
+  NL.kg = items.reduce(function(s, q){ return s + q.it.kg; }, 0);
+  var area = base.L * base.W, cov = items.reduce(function(s, q){ return s + q.a * q.b; }, 0);
+  NL.fill = area ? cov / area : 0;
+  NL.bb = bboxOf(items);
+  NL.h = items.reduce(function(m, q){ return Math.max(m, q.it.T); }, 0);
+  return NL;
+}
+function packRemoveInPlace(p, uid){
+  var li = -1;
+  (p.layers || []).forEach(function(L, i){ L.items.forEach(function(q){ if (q.it.uid === uid) li = i; }); });
+  if (li < 0) return "detal topilmadi";
+  var NL = layerWithout(p.layers[li], uid, p.base);
+  var lay = p.layers.slice();
+  if (NL.items.length) lay[li] = NL; else lay.splice(li, 1);
+  // oʻzgargan joyning ustidagi qavat endi nimaga tayanadi
+  var aboveI = NL.items.length ? li + 1 : li;
+  var above = lay[aboveI], below = aboveI > 0 ? lay[aboveI - 1] : null;
+  if (above && !stackSuppOK(above, below ? below.items : null, p.base))
+    return (aboveI + 1) + "-qavat tayanchsiz qoladi (detal uning ostida edi)";
+  var bedWas = p.layers.length < 2 || bedOK(p.layers[p.layers.length - 2]);
+  var bedNow = lay.length < 2 || bedOK(lay[lay.length - 2]);
+  if (bedWas && !bedNow) return "tom ostidagi qavat siyraklashadi — tom detallari qirraga tayanib qoladi";
+  p.layers = lay;
+  markTom(p.layers, p.base, p.off);
+  packDerive(p);
+  if (p.overKg && p.kg <= packKgBase(p) + 1e-9) p.overKg = false;
+  p.done = 0;
+  return null;
+}
+function packAddAsTail(p, it, lim){
+  if (tailRoom(p) < 1) return "qavat soni chegarasida";
+  var sv = p.oddSrc ? oddLimitsOn() : null, Ls = null, why = null;
+  try {
+    Ls = tailFit({ odd:true, items:[it] }, p, 1, lim);
+    if (!Ls) why = "ustiga qavat boʻlib joylashmadi (qamrov, boʻshliq, balandlik yoki qalinlik)";
+    else if (!tailStackOK(p, Ls)) why = "ustiga qoʻyilsa tayanch yoki tom toʻshagi buziladi";
+  } finally { if (sv) oddLimitsOff(sv); }
+  if (why) return why;
+  var ins = tailInsertAt(p, Ls);
+  if (ins < 0) return "tom toʻshagi buziladi";
+  var lay = p.layers.slice();
+  Array.prototype.splice.apply(lay, [ins, 0].concat(Ls));
+  p.layers = lay;
+  markTom(p.layers, p.base, p.off);
+  packDerive(p);
+  if (p.kg > packKgBase(p) + 1e-9) p.overKg = true;
+  p.done = 0;
+  return null;
+}
+
 /* ATOMIK qayta terish (v13). Ilgari `layoutPack()` sigʻdirolmagan detallar
    `np.left` ga tushib pochkadan chiqib ketardi, chaqiruvchi esa uni eʼtiborsiz
    qoldirardi — yaʼni qoʻlda koʻchirishda detal buyurtmadan JIMGINA yoʻqolishi
@@ -973,16 +1039,28 @@ function moveDetail(fromIdx, uid, toIdx){
   if (!it) return "detal topilmadi";
 
   if (toIdx === "new"){
-    // v14: tag oynasi — toʻrt chegara birdan
-    if (it.W < S.minBase || it.W > (S.baseWMax||1e9) ||
-        it.L < (S.baseLMin||0) || it.L > S.maxLen || it.T < (S.minBaseT||0))
+    /* v14: tag oynasi — toʻrt chegara birdan. v22: nostandart pochkadan
+       (oddSrc) olingan detal NOSTANDART oyna bilan oʻlchanadi va yangi pochka
+       ham nostandart boʻladi — ilgari standart oyna bilan rad etilardi yoki
+       standart pochka boʻlib audit ogohlantirishlarini olardi. */
+    var oddN = !!src.oddSrc;
+    var maxLN = oddN ? Math.max(S.maxLen, +S.oddLMax || 0) : S.maxLen;
+    var maxWN = oddN ? Math.max(S.baseWMax || 1e9, +S.oddWMax || 0) : (S.baseWMax || 1e9);
+    if (it.W < S.minBase || it.W > maxWN ||
+        it.L < (S.baseLMin||0) || it.L > maxLN || it.T < (S.minBaseT||0))
       return "bu detal yangi pochkaga tag boʻlolmaydi ("+it.L+"×"+it.W+"×"+it.T+" mm)";
     // v13: manba pochka detalsiz qayta terilmasa — koʻchirish umuman boshlanmaydi
     var nLeft = refreshPack(src, packMids(src).filter(function(x){ return x.uid!==uid; }));
-    if (nLeft.length)
-      return "P"+pad2(src.no)+" bu detalsiz qayta terilmadi — "+nLeft.length+" detal joysiz qolardi";
-    var np = layoutPack(it, [], S.ovhOn, 0, 0);
+    if (nLeft.length){
+      // v22 (B8): quyruqli/zaxirali pochka — detal joyida olib tashlanadi
+      var whyN = packRemoveInPlace(src, uid);
+      if (whyN) return "P"+pad2(src.no)+" dan olib boʻlmadi: "+whyN;
+    }
+    var svN = oddN ? oddLimitsOn() : null, np;
+    try { np = layoutPack(it, [], S.ovhOn, 0, 0); }
+    finally { if (svN) oddLimitsOff(svN); }
     np.no = PACKS.length+1; np.rev = P.rev || 1; np.done = 0;
+    np.oddSrc = oddN; np.nst = !!src.nst;
     packDerive(np);
     // v12: yangi pochka manba pochkaning GURUHINI meros oladi. Ilgari gname
     // yozilmasdi va packGrpName() base.prod ga tushib ketardi — konveyrda
@@ -1017,14 +1095,27 @@ function moveDetail(fromIdx, uid, toIdx){
   if (dst.kg + it.kg > cap + 1e-9) return "sigʻmaydi: "+(dst.kg+it.kg).toFixed(1)+" kg > "+cap+" kg";
   // v13: ikkala pochka ham atomik yangilanadi. Nishonga qoʻshib boʻlmasa — u
   // tegilmagan qoladi; manba qayta terilmasa — nishon ham eski holatiga qaytadi.
-  var dstBak = packSave(dst);
+  var dstBak = packSave(dst), srcBak = packSave(src);
   var left = refreshPack(dst, packMids(dst).concat([it]));
-  if (left.length)
-    return "geometrik sigʻmadi: detal "+dst.base.L+"×"+dst.base.W+" tag ustiga tushmaydi";
+  if (left.length){
+    /* v22 (B8): qayta terish boʻlmadi — detal ustiga QAVAT qilib qoʻyib koʻriladi
+       (singdirishdagi quyruq qoidalari bilan). Quyruqli yoki zaxirali pochka
+       oddiy qoidalar bilan qayta terilmaydi va ilgari xabar «geometrik sigʻmadi»
+       deb notoʻgʻri sababni aytardi. */
+    var whyD = packAddAsTail(dst, it, cap);
+    if (whyD){
+      packLoad(dst, dstBak);
+      return "P"+pad2(dst.no)+" ga sigʻmadi"+(packHasTail(dst) ? " (quyruq/zaxira bilan terilgan pochka)" : "")+
+             ": qayta terishda ham, ustiga qavat qilib ham joylashmadi — "+whyD;
+    }
+  }
   var srcLeft = refreshPack(src, packMids(src).filter(function(x){ return x.uid!==uid; }));
   if (srcLeft.length){
-    packLoad(dst, dstBak);
-    return "P"+pad2(src.no)+" bu detalsiz qayta terilmadi — "+srcLeft.length+" detal joysiz qolardi";
+    var whyS = packRemoveInPlace(src, uid);       // v22 (B8)
+    if (whyS){
+      packLoad(dst, dstBak); packLoad(src, srcBak);
+      return "P"+pad2(src.no)+" dan olib boʻlmadi: "+whyS;
+    }
   }
   markMoved(it, src);
   return null;

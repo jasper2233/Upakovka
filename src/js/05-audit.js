@@ -80,6 +80,29 @@ function auditPacks(packs, items){
   var fillSum = 0, fillN = 0, maxLayerUsed = 0;
 
   function err(code, pack, msg){ errP.push({ code:code, pack:pack, msg:msg }); }
+  /* v22: YIGʻISH KETMA-KETLIGI TARKIBI — faqat soni emas. Soni toʻgʻri, lekin
+     bitta detal ikki marta, boshqasi umuman yoʻq boʻlsa ishchi yetishmagan
+     detalni hech qachon qoʻymaydi (qavat ichida erkin tartibdagi almashtirish
+     yoki qoʻlda tahrir xatosi). */
+  function audSeqSame(p, its, lab){
+    if (!p.seq || p.seq.length !== its.length) return;
+    var need = audMap(), extra = null;
+    its.forEach(function(x){ if (x) need[x.uid] = (need[x.uid] || 0) + 1; });
+    p.seq.forEach(function(st){
+      var u = st && st.it ? st.it.uid : null;
+      if (u && need[u]) need[u]--; else if (!extra) extra = st && st.it ? st.it : { uid:"?" };
+    });
+    if (extra) err("SEQ", lab, "yigʻish ketma-ketligida begona yoki takror detal: " + audCode(extra));
+  }
+  /* v22: MASSA HISOBI — pochka massasi detallari yigʻindisiga teng boʻlishi shart.
+     Aks holda MASSA tekshiruvi eskirgan raqamga qarab «toza» deb qoʻyardi. */
+  function audKgSum(p, its, lab, kg){
+    var sum = 0;
+    its.forEach(function(x){ if (x) sum += audNum(x.kg, 0); });
+    if (Math.abs(sum - kg) > 0.01)
+      err("MASSA_HISOB", lab, "pochka massasi " + kg.toFixed(2) + " kg, detallari yigʻindisi " +
+          sum.toFixed(2) + " kg — hisob eskirgan");
+  }
   function wrn(code, pack, msg){ warn.push({ code:code, pack:pack, msg:msg }); }
   function mark(it, lab){                   // detalni "joylashgan" deb belgilaymiz
     if (!it) return;
@@ -120,7 +143,10 @@ function auditPacks(packs, items){
     if (p.odd){
       oddPacks++;
       var its = p.items || [], heavy = null;
-      var oCap = cfg.oddKg || cfg.maxKg;          // v22: tsex soni aynan (packer: oddKgCap)
+      /* v22 (C1): limit OQIMGA qarab (packer: packKgBase). Nostandart bogʻ —
+         nostandart limit; standart qoldiq bogʻi va moʻrt pochka — standart limit.
+         Ilgari hamma bogʻ nostandart limit bilan oʻlchanardi. */
+      var oCap = p.nst ? (cfg.oddKg || cfg.maxKg) : cfg.maxKg;
       its.forEach(function(it){
         mark(it, lab);
         // v22: «ogʻir detal» — bogʻ limitidan ogʻiri (ilgari maxKg bilan oʻlchanardi)
@@ -168,6 +194,19 @@ function auditPacks(packs, items){
       var sqO = p.seq ? p.seq.length : 0;
       if (sqO !== its.length)
         err("SEQ", lab, "yigʻish ketma-ketligi " + sqO + " ta, detal " + its.length + " ta");
+      /* v22: BOGʻDA HAM GURUH VA QALINLIK. Oddiy pochkada bu invariantlar bor edi,
+         bogʻda — yoʻq: modul yoki material aralashgan bogʻ «toza» chiqardi. */
+      var b0 = its[0];
+      for (var bi = 1; bi < its.length; bi++){
+        var gwB = grpWhy(its[bi], b0);
+        if (gwB){ err("GURUH", lab, audCode(its[bi]) + " " + gwB); break; }
+      }
+      if (cfg.byThick && its.length > 1){
+        var tB = its.filter(function(x){ return x && Math.abs(audNum(x.T, 0) - audNum(b0 && b0.T, 0)) > 0.001; })[0];
+        if (tB) err("QALINLIK", lab, "bogʻda ikki xil qalinlik: " + audNum(b0.T, 0) + " mm va " + audNum(tB.T, 0) + " mm");
+      }
+      audSeqSame(p, its, lab);
+      audKgSum(p, its, lab, kg);
       return;
     }
 
@@ -186,7 +225,8 @@ function auditPacks(packs, items){
        qoʻlda koʻchirish konveyrda materialni, individualda modulni aralashtirib
        yuborar, audit esa yashil turaverardi. Qalinlik bu yerda tekshirilmaydi —
        uni QALINLIK kodi ushlaydi, ikki marta xabar bermaymiz. */
-    function grpWhy(it){
+    function grpWhy(it, ref){
+      var base = ref || p.base;              // v22: bogʻda solishtirish birinchi detal bilan
       if (!base || !it) return null;
       if (cfg.rule.prod){
         var mg = (typeof modGroupOf === "function") ? modGroupOf : function(){ return null; };
@@ -314,6 +354,8 @@ function auditPacks(packs, items){
     if (sqN !== 1 + nLay)
       err("SEQ", lab, "yigʻish ketma-ketligi " + sqN + " ta, kutilgan " + (1 + nLay) +
           " ta (tag + " + nLay + " qavat detali)");
+    else audSeqSame(p, allIts, lab);
+    audKgSum(p, allIts, lab, kg);
 
     /* TOʻSHAK — v20: tom ostidagi qavat.
 
@@ -423,6 +465,16 @@ function auditPacks(packs, items){
       wrn("YENGIL", lab, kg.toFixed(1) + " kg — limitning yarmidan kam (" + kgCap + " kg)");
 
     if (layers.length + 1 > maxLayerUsed) maxLayerUsed = layers.length + 1;
+  });
+
+  /* v22: POCHKA RAQAMI — chek, QR, saralash yacheykasi va reja shunga tayanadi.
+     Ikki pochka bir raqamda boʻlsa skaner birini ikkinchisi deb oladi. */
+  var noSeen = audMap();
+  list.forEach(function(p, pi){
+    if (!p) return;
+    var n = String(p.no != null ? p.no : (pi + 1));
+    if (noSeen[n]) errG.push({ code:"RAQAM", pack:audPno(p, pi), msg:"pochka raqami takrorlangan — " + noSeen[n] + " bilan bir xil" });
+    else noSeen[n] = audPno(p, pi);
   });
 
   /* ---------- YOQOLGAN / TAKROR / BEGONA (uid boʻyicha) ---------- */

@@ -904,13 +904,21 @@ function stackSuppOK(above, below, base){
 
 /* Nishon massa chegarasiga sigʻadimi — ikki bosqichli tanlovda ishlatiladi. */
 function p_fits(p, w, lim){ return p.kg + w.kg <= lim + 1e-9; }
+/* v22 (C6): singdirish bosqichining massa chegarasi. 0-bosqich — ZAXIRASIZ:
+   pochkaning ASOSIY limiti. Ilgari bu yerda `packKgCap` turardi va u zaxirani
+   allaqachon ishlatgan (overKg) pochka uchun 35 emas, 45 edi: 40 kg li pochka
+   «zaxirasiz» bosqichda yana ogʻirlashar va 20 kg li pochka bilan teng
+   tanlanardi — «zaxira — oxirgi chora» qoidasi buzilardi. */
+function absorbLim(pc, stage){ return stage === 0 ? packKgBase(pc) : packKgAbs(pc); }
 
 function absorbTails(packs, sameKey){
   for (var round = 0; round < 4 && packs.length > 1; round++){
     var did = false;
     // eng yengildan boshlaymiz — kichigi kattaga singishi osonroq
     // v22: moʻrt pochka hech qayerga singdirilmaydi (va unga hech narsa qoʻshilmaydi — u bogʻ)
-    var light = packs.filter(function(p){ return !packFragile(p) && p.kg < packKgCap(p) * 0.5; })
+    /* v22 (C7): «yengil» — pochkaning OʻZ asosiy limitiga nisbatan. Nostandart
+       bogʻ ilgari standart limit bilan oʻlchanardi (17,5 kg oʻrniga 20). */
+    var light = packs.filter(function(p){ return !packFragile(p) && p.kg < packKgBase(p) * 0.5; })
                      .sort(function(a,b){ return a.kg - b.kg || uidCmp(packUid(a), packUid(b)); });
     for (var wi = 0; wi < light.length; wi++){
       var w = light[wi];
@@ -940,8 +948,8 @@ function absorbTails(packs, sameKey){
         for (var ci = 0; ci < pool.length; ci++){
           var pc = pool[ci];
           // 0-bosqich: zaxirasiz · 1-bosqich: zaxira bilan
-          var lim = stage === 0 ? packKgCap(pc) : packKgAbs(pc);
-          if (stage === 1 && p_fits(pc, w, packKgCap(pc))) continue;   // 0-bosqichda sinalgan
+          var lim = absorbLim(pc, stage);
+          if (stage === 1 && p_fits(pc, w, absorbLim(pc, 0))) continue;   // 0-bosqichda sinalgan
           if (!p_fits(pc, w, lim)) continue;
           var Lc2 = tailFit(w, pc, Math.min(TAIL_LAYERS, tailRoom(pc)), lim);
           if (!Lc2) continue;
@@ -961,7 +969,7 @@ function absorbTails(packs, sameKey){
                faqat zichlik boʻyicha ketadi. 1-bosqichda esa BIRINCHI mezon —
                eng kam oshgan nishon: 33 kg li pochkani 41 ga koʻtargandan koʻra
                20 kg li pochkani 28 ga koʻtargan yaxshiroq. */
-            over: Math.max(0, (pc.kg + w.kg) - packKgCap(pc)),
+            over: Math.max(0, (pc.kg + w.kg) - packKgBase(pc)),
             score: fillSum / Lc2.length
           };
           if (!best ||
@@ -1028,7 +1036,10 @@ function absorbTails(packs, sameKey){
                                      eski zich qavat ustida qoladi */
 function tailInsertAt(p, Ls){
   var lay = p.layers || [];
-  if (!lay.length) return 0;
+  /* v22 (C5): qatlamsiz pochkada quyruq oʻzi butun taxlam boʻladi. Ikki qavatli
+     boʻlsa pastkisi TOMNING TOʻSHAGI — tekshirilmasa audit TOM_TAGI xatosini
+     berardi (boshqa hamma holatda bu shart shu yerda tekshiriladi). */
+  if (!lay.length) return (Ls.length < 2 || bedOK(Ls[Ls.length - 2])) ? 0 : -1;
   var lastT = Ls[Ls.length-1];
   if (bedOK(lastT)) return lay.length - 1;           // tom ostiga
   if (lay.length >= 2 && bedOK(lay[lay.length-2])) return lay.length - 2;
@@ -1242,10 +1253,15 @@ function oddLimitsOff(sv){
 /* BOGʻ — tor detallarni oʻlchami yaqinlari bilan ustma-ust yigʻish.
    Roʻyxat oʻlcham boʻyicha saralangani uchun yaqin detallar yonma-yon turadi;
    shu sabab faqat OXIRGI bogʻ bilan solishtiriladi — natija qatʼiy va tez. */
-function oddBundles(list){
+function oddBundles(list, nst){
   var out = [];
   var tol = (S.oddTol != null ? +S.oddTol : 300);
-  var kgCap = (+S.oddKg || S.maxKg);
+  /* v22 (C1): MASSA CHEGARASI OQIMGA QARAB. Nostandart bogʻ — tsexning
+     nostandart limiti; standart guruh QOLDIGʻI (tor, tag boʻlolmagan detal)
+     esa STANDART detal — standart limit. Ilgari ikkalasi ham nostandart
+     limit (40) bilan bogʻlanardi va audit buni koʻrmasdi: 38 kg li standart
+     bogʻ «toza» chiqardi. */
+  var kgCap = nst ? oddKgCap() : (+S.maxKg || 0);
   /* v20: BALANDLIK CHEGARASI BOGʻGA HAM.
      Bogʻ — detallarning ustma-ust taxlami, demak balandligi qalinliklar
      yigʻindisi. Ilgari bu yerda faqat massa, oʻlcham yaqinligi va gabarit
@@ -1334,6 +1350,10 @@ function* oddPackGen(list, rule){
        roʻyxatda «Umumiy» ostiga tushib, xona pochkalarini ikkiga boʻlib
        yuborardi (ishchi bitta xonani ikki joydan qidirardi). */
     var gl = groupLabel(g, rule), gr = groupRoom(g);
+    /* v22: oqim belgisi guruh boshida — ilgari u faqat `if (wide.length)` ichida
+       oʻrnatilardi va `var` boʻlgani uchun keyingi guruhga OLDINGISINING
+       qiymati bilan oʻtib ketardi. */
+    var nstG = !!g[0].nst;
     if (wide.length){
       /* packGroupGen — greedyPackGen ustiga konsolidatsiya (3.6.7) va quyruq
          (3.6.7.1) qoʻshadi. Nostandart oqimga ular ayniqsa kerak: u yerda
@@ -1342,7 +1362,6 @@ function* oddPackGen(list, rule){
          Standart guruh qoldigʻi (ST/) bu yerga tushsa ham standart detal
          boʻlib qoladi — 35 kg bilan teriladi va «NS» belgisini olmaydi.
          Ilgari u ham 40 kg bilan terilardi va audit jim qolardi. */
-      var nstG = !!g[0].nst;
       var sv = nstG ? oddLimitsOn() : null, res;
       try { res = yield* packGroupGen(wide, mulberry(ODD_SEED)); }
       finally { if (sv) oddLimitsOff(sv); }
@@ -1355,7 +1374,7 @@ function* oddPackGen(list, rule){
       }
       narrow = narrow.concat(res.odd);
     }
-    oddBundles(narrow).forEach(function(b){
+    oddBundles(narrow, nstG).forEach(function(b){
       b.key = pkey; b.gname = gl; b.room = gr;
       b.nst = !!(b.items[0] && b.items[0].nst);   // v18
       out.push(b);
@@ -1648,6 +1667,8 @@ function pad2(n){ return (n<10?"0":"")+n; }
 function oddKgCap(){ return +S.oddKg || +S.maxKg || 0; }
 /* Pochkaning ASOSIY massa chegarasi — zaxirasiz. */
 function packKgBase(p){
+  // v22 (C1/C7): bogʻ — oqimiga qarab: nostandart bogʻ nostandart limitida, standart qoldiq — standartda
+  if (p && p.odd) return p.nst ? oddKgCap() : (+S.maxKg || 0);
   return (p && p.oddSrc) ? oddKgCap() : (+S.maxKg || 0);
 }
 /* JORIY chegara: zaxiradan foydalangan pochkada u kengaygan. Audit, chek va

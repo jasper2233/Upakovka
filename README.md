@@ -389,14 +389,17 @@ To'liq hisobot: **Diagnostika** bo'limi.
 | `TAKROR` | bitta detal ikki joyda |
 | `USTMA_UST` | bir qavatda ikki detal ustma-ust |
 | `CHEGARA` | detal konvertdan chiqib ketgan |
-| `MASSA` | pochka massa limitidan og'ir |
+| `MASSA` | pochka massa limitidan og'ir. Bog' — oqimiga qarab: nostandart bog' nostandart limitida, standart qoldiq bog'i (tor detallar) — **standart** limitda (v22) |
+| `MASSA_HISOB` | pochka massasi detallari yig'indisiga teng emas — hisob eskirgan (v22) |
 | `QAVAT` | qavat soni limitdan ko'p |
-| `QALINLIK` | bitta qavatda ikki xil qalinlik (pochkada bir necha qalinlik — matritsa bilan ruxsat etilgan) |
-| `GURUH` | pochkada modul / material / klass chegarasi buzilgan (odatda qo'lda ko'chirishdan) |
-| `SEQ` | yig'ish ketma-ketligi detal soniga mos emas |
+| `QALINLIK` | bitta qavatda (v22: bog'da) ikki xil qalinlik (pochkada bir necha qalinlik — matritsa bilan ruxsat etilgan) |
+| `GURUH` | pochkada (v22: bog'da ham) modul / material / klass chegarasi buzilgan (odatda qo'lda ko'chirishdan) |
+| `SEQ` | yig'ish ketma-ketligi detal soniga yoki **tarkibiga** mos emas — v22: soni to'g'ri, lekin bitta detal ikki marta, boshqasi yo'q bo'lsa ham |
+| `RAQAM` | ikki pochka bir raqamda — chek, QR va saralash yacheykasi chalkashadi (v22) |
 | `BALANDLIK` | pochka yoki bog' `Pochka maks. balandligi` dan baland |
 | `TOM_TAGI` | tom ostidagi qavat («to'shak») siyrak — tom detallari qirraga tayanib dumalaydi |
 | `TUZILMA` | pochkada tag detal yo'q yoki qavatda bo'sh o'rin qolgan |
+| `MORT` | ko'zgu/oyna detali boshqa detal bilan bitta pochkada (v22) |
 
 **Ogohlantirishlar** (e'tibor talab qiladi, lekin xato emas):
 
@@ -632,6 +635,12 @@ turmaydi. Uzun-tor detallar bog'iga oddiy polka tushib qolmaydi.
 > aralashtirib yuborardi. Endi har pochkada oqim belgisi (`nst`) turadi va
 > singdirish undan o'tolmaydi.
 
+**Massa chegarasi ham oqimga qarab (v22).** Standart qoldiq — standart detal:
+uning to'liq pochkasi ham, **tor detallari bog'i** ham standart limitda
+(35 kg) yopiladi. Ilgari bog' har doim nostandart limit (40 kg) bilan
+yig'ilardi va audit 38 kg li standart bog'ni «toza» deb o'tkazardi. Endi
+audit ham bog'ni oqimiga qarab o'lchaydi.
+
 ### Standart detal min. o'lchami
 
 Ikki qo'shimcha chegara — **`Standart detal min. eni`** va **`min bo'yi`**
@@ -712,6 +721,18 @@ o'sha pochkani stopkaning **tepasiga** qo'yishi kerak.
 ---
 
 ## Quyruq — guruh oxiridagi qoldiq
+
+> **v22 — zaxira haqiqatan oxirgi chora.** Singdirish ikki bosqichli: avval
+> zaxirasiz, keyin zaxira bilan. Ilgari «zaxirasiz» bosqich zaxirani allaqachon
+> ishlatgan pochkaga uning kengaygan limitini (45 kg) berardi: 40 kg li pochka
+> yana og'irlashar va 20 kg li pochka bilan teng tanlanardi. Endi 0-bosqich
+> faqat asosiy limit bilan ishlaydi, zaxira bosqichida esa eng kam oshadigan
+> pochka tanlanadi (205 faylda: pochka soni o'zgarmadi, zaxiradan foydalangan
+> pochka 132 → 135 — zaxira bitta pochkaga uyilmay, taqsimlandi).
+>
+> Qatlamsiz pochkaga ikki qavatli quyruq tushsa, pastki qavati tomning
+> to'shagi bo'ladi — endi u ham tekshiriladi (ilgari audit `TOM_TAGI` berishi
+> mumkin edi).
 
 Har qavat tag yuzasining kamida **85 %** ini qoplashi shart (`minFill`). Bu qoida
 bitta narsani himoya qiladi: *ustidagi qavat egilmasin*. Lekin u guruhning oxirgi
@@ -1131,6 +1152,22 @@ ochiq aytadi va furnitura alohida hujjat bo'yicha topshirilishini ko'rsatadi.
 Brauzer IndexedDB ni qo'llab-quvvatlamasa (private rejim), tizim yiqilmaydi — shunchaki
 saqlamaydi va buni menejerda aytadi.
 
+### Qo'lda tahrir: quyruqli va zaxirali pochka (v22)
+
+Quyruqli yoki zaxirali pochka oddiy qoidalar bilan **qayta terilolmaydi**:
+quyruq `minFill` dan ozod, zaxirali pochka asosiy limitdan og'ir. Ilgari P/M
+bunday pochkaga yoki undan detal ko'chirsa, tahrir «geometrik sig'madi» deb rad
+etilardi — sabab noto'g'ri edi. Endi qayta terish bo'lmasa:
+
+- **olib tashlash** — detal joyida olinadi, qolganlar qimirlamaydi; ustidagi
+  qavat tayanchi va tom to'shagi tekshiriladi (buzilsa — aniq sabab bilan rad);
+- **qo'shish** — detal ustiga qavat qilib qo'yiladi, singdirishdagi quyruq
+  qoidalari bilan;
+- **«yangi pochka»** — nostandart pochkadan olingan detal nostandart oyna bilan
+  o'lchanadi va yangi pochka ham nostandart bo'ladi.
+
+Har tahrir atomik: rad etilsa ikkala pochka ham avvalgi holatida qoladi.
+
 ### Seans, sozlamalar va qayta pochkalash (v22)
 
 | Holat | Endi nima bo'ladi |
@@ -1299,7 +1336,7 @@ chiqaradi, tarkibni emas.
 Oxirgi o'lchov (v22, standart — buyurtma bo'yicha; 205 fayl, 16 132 detal, 62 112 kg):
 **205/205 o'qildi, audit xatosi 0, detal yo'qolmadi** — 2854 pochka
 (shundan 452 tasi bog' — nostandart va mo'rt), o'rtacha 21,8 kg, ochiq tom
-312/2159 (14,5 %), zaxiradan foydalangan 132 pochka, pochkalanmagan obyekt 38 ta
+312/2159 (14,5 %), zaxiradan foydalangan 135 pochka, pochkalanmagan obyekt 38 ta
 (xona devori, pol, soni 0 bo'lgan detal). «Har modul alohida» yoqilsa — 4829 pochka
 (o'rtacha 12,9 kg).
 
