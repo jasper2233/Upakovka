@@ -13,7 +13,7 @@ var UP_SCANMAX = 4 * 1024 * 1024;  // matn skaneri shuncha belgidan koʻpini ko�
    `accept` atributiga ham qoʻyiladi (`initUpload`) — ilgari u index.html da
    alohida yozilgan edi va ikkalasi bir-biridan uzilib qolishi mumkin edi.
    Kengaytma mos kelmasa fayl baribir oʻqiladi, faqat ogohlantirish chiqadi. */
-var UP_EXT   = [".project", ".xml", ".txt"];
+var UP_EXT   = [".project", ".xml", ".txt", ".json"];   // v22: .upk.json — postlar uchun reja fayli
 var UP_BOUND = false;              // oyna hodisalari bir marta bogʻlanadi
 var UP_DRAG  = 0;                  // dragenter/dragleave hisoblagichi
 var UP_ZONE  = false;              // overlay hozir koʻrinib turibdimi
@@ -247,7 +247,7 @@ function readFile(f, enc){
     for (i = 0; i < UP_EXT.length; i++){
       if (low.length >= UP_EXT[i].length && low.slice(-UP_EXT[i].length) === UP_EXT[i]) okExt = true;
     }
-    if (!okExt) upDiagWarn("KENGAYTMA", "«" + nm + "» — kutilgani .project, .xml yoki .txt edi. Fayl baribir oʻqib koʻriladi.");
+    if (!okExt) upDiagWarn("KENGAYTMA", "«" + nm + "» — kutilgani .project, .xml, .txt yoki reja fayli (.upk.json) edi. Fayl baribir oʻqib koʻriladi.");
     if (!f.size){
       showLoadError(new Error("Fayl boʻsh — hajmi 0 bayt. Toʻliq koʻchirilmagan yoki nusxa olishda uzilib qolgan boʻlishi mumkin."), "", nm);
       return;
@@ -275,6 +275,15 @@ function readFile(f, enc){
 }
 
 function loadXmlText(xmlText, fname){
+  /* v22: REJA FAYLI (boshqa postda saqlangan) — XML emas, tayyor pochkalar.
+     Oyna ochilmaydi: pochkalar fayldagidek tiklanadi (15-post.js). */
+  if (typeof looksLikePlan === "function" && looksLikePlan(xmlText)){
+    var pr = planFileLoad(xmlText);
+    if (!pr.ok){ showLoadError(new Error(pr.msg), "", fname); return null; }
+    showTab(typeof postHome === "function" ? postHome() : "work");
+    flash(pr.same ? "ok" : "err", pr.msg);
+    return P;
+  }
   upDiagClear();
   var d = upDiag(), st = upStore(), data = null, err = null;
   d.fileName = fname || "";

@@ -216,7 +216,7 @@ function selectPack(i){
   CUR = i; STEP = 0; WRAP = false;
   var p = PACKS[i];
   if (!p){
-    // v10: ilgari bu yerda sarlavha tozalanmasdi — hamma hona oʻchirilганda
+    // v10: ilgari bu yerda sarlavha tozalanmasdi — hamma hona oʻchirilganda
     // ekranda avvalgi pochkaning nomi va gabariti qolib ketardi.
     CUR = -1;
     $("stageTitle").textContent = PACKS.length ? "Pochka tanlanmagan" : "Pochka yoʻq";
@@ -291,7 +291,14 @@ function togglePackOvh(p, on){
 /* 3.9.2 keyingi detal karti + skaner tekshiruvi */
 function renderStep(){
   var p = PACKS[CUR];
-  if (!p){ $("nextBox").innerHTML = '<div style="color:var(--ink3)">Pochka tanlang</div>'; $("lblwrap").innerHTML=""; draw3D(); draw2D(); return; }
+  if (!p){
+    // v22: qadoqlash postida pochka detal skanidan ochiladi — maydon shu yerda ham kerak
+    $("nextBox").innerHTML = '<div style="color:var(--ink3)">'+
+      (PACKS.length ? 'Pochka tanlang yoki stelyajdagi detalni skanerlang — pochkasi oʻzi ochiladi' : 'Pochka yoʻq')+'</div>'+
+      (PACKS.length ? SCAN_BOX : '');
+    bindScan(false);
+    $("lblwrap").innerHTML=""; draw3D(); draw2D(); return;
+  }
   var fin = STEP >= p.seq.length;
   var step = p.seq[Math.min(STEP, p.seq.length-1)];
   $("stepNo").textContent = Math.min(STEP+1,p.seq.length)+"/"+p.seq.length;
@@ -307,6 +314,9 @@ function renderStep(){
       // Endi uch joyda ham bitta manba — packBrutto().
       (liftTier(packBrutto(p)) > 1
         ? '<div class="heavy">⚠ '+packBrutto(p).toFixed(0)+' KG — '+liftText(packBrutto(p))+'</div>' : '')+
+      // v22: keyingi pochka — stelyajdagi detalni skanerlash bilan ochiladi
+      SCAN_BOX.replace('placeholder="QR skanerlang yoki kod yozing"',
+                       'placeholder="keyingi pochka: detalni skanerlang — oʻzi ochiladi"')+
       '<div class="btnrow" style="margin-top:14px"><button class="btn" id="bBack">← Orqaga</button>'+
       (CUR+1 < PACKS.length
         ? '<button class="btn pri" id="bNextPack">Keyingi pochka →</button>'
@@ -315,6 +325,7 @@ function renderStep(){
     $("bBack").onclick = function(){ setStep(STEP-1); WRAP=false; renderStep(); renderPacks(); };
     // v10: oxirgi pochkada tugma jim turardi — endi oʻchirilgan holatda va nomi boshqa
     $("bNextPack").onclick = function(){ if (CUR+1<PACKS.length) selectPack(CUR+1); };
+    bindScan(false);
   } else {
     var it = step.it;
     var role = step.role==="tag" ? "eng tag — yaxlit detal"
@@ -345,29 +356,36 @@ function renderStep(){
         '<div class="cell"><u>Kant</u><b>'+edgeText(it.edges)+'</b></div>'+
       '</div>'+
       '<div class="where"><u>Qayerga</u><b>'+where+'</b></div>'+
-      '<div class="scan"><input id="scan" placeholder="QR skanerlang yoki kod yozing" autocomplete="off"></div>'+
-      '<div class="msg" id="msg"></div>'+
+      SCAN_BOX+
       '<div class="btnrow"><button class="btn" id="bBack">← Orqaga</button>'+
       '<button class="btn pri" id="bOk">Qoʻyildi ✓</button></div>';
     $("bOk").onclick = advance;
     $("bBack").onclick = function(){ setStep(STEP-1); WRAP=false; renderStep(); renderPacks(); };
-    var sc = $("scan");
     /* v22: boʻsh maydonda Enter — qoʻlda «Qoʻyildi» (skaner hech qachon boʻsh satr
        yubormaydi). Fokus endi doim shu yerda turadi, shuning uchun qoʻlda
        tasdiqlash ham shu maydondan ishlashi kerak. */
-    sc.onkeydown = function(e){
-      if (e.key !== "Enter") return;
-      e.preventDefault();
-      var val = sc.value.trim(); sc.value = "";
-      if (val) checkScan(val); else if (PACKS[CUR]) advance();
-    };
-    setTimeout(function(){ sc.focus(); }, 30);
-    if (PEND){ var m=$("msg"); m.className="msg "+PEND.k; m.textContent=PEND.t; PEND=null; }
+    bindScan(true);
     $("lblwrap").innerHTML = labelHTML(p, step, "qrLive");
     drawQR($("qrLive"), qrText(p, step));
   }
   var bw2=$("btnWrap"); if(bw2) bw2.textContent = WRAP ? "Qogʻozni ochish" : "Qogʻozga oʻrash";
   draw3D(); draw2D();
+}
+/* v22: skaner maydoni — qadam kartasida, tayyor pochkada va pochka tanlanmaganda
+   ham bir xil. Tayyor pochkada maydon boʻlmasa qadoqlovchi keyingi pochkani skan
+   bilan ocholmasdi (klaviatura ushlagichi ham harflarni hech qayerga bermasdi). */
+var SCAN_BOX = '<div class="scan"><input id="scan" placeholder="QR skanerlang yoki kod yozing" autocomplete="off"></div>'+
+               '<div class="msg" id="msg"></div>';
+function bindScan(emptyAdvance){
+  var sc = $("scan"); if (!sc) return;
+  sc.onkeydown = function(e){
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    var val = sc.value.trim(); sc.value = "";
+    if (val) checkScan(val); else if (emptyAdvance && PACKS[CUR]) advance();
+  };
+  setTimeout(function(){ sc.focus(); }, 30);
+  if (PEND){ var m = $("msg"); if (m){ m.className = "msg " + PEND.k; m.textContent = PEND.t; } PEND = null; }
 }
 function advance(){ var p=PACKS[CUR]; if (!p) return;
   flashClear();                       // eski xabar yangi qadamga oʻtmasin
@@ -407,11 +425,10 @@ function flashClear(){
    QR format: PREFIKS.UUID.Rn|Pnn|Qn|KOD|LxWxT
    v10: reviziya (Rn) tekshiriladi — buyurtma qayta pochkalangandan keyin eski chek
    skanerlansa operator buni darhol biladi, aks holda notoʻgʻri pochka yigʻiladi. */
-function checkScan(v){
-  var p = PACKS[CUR]; if (!p || !v) return;
-  v = String(v).trim();
-  if (STEP >= p.seq.length){ flash("ok","pochka allaqachon tayyor"); return; }
-  var step = p.seq[STEP], f = v.split("|");
+function checkScan(v, again){
+  v = String(v == null ? "" : v).trim();
+  if (!v) return;
+  var f = v.split("|");
 
   /* v22: OʻZ CHEKIMIZ — «PREFIKS.LOYIHA.Rn|Pnn|Qn|KOD|LxWxT». Reviziya va loyiha
      FAQAT shu formatda tekshiriladi. Ilgari: (1) loyiha belgisi solishtirilmasdi —
@@ -440,7 +457,42 @@ function checkScan(v){
     return s.it.code === v || mesMatch(v, s.it);
   }
 
-  if (hitIn(p, step)){ advance(); flash("ok","toʻgʻri — qoʻyildi ✓"); return; }
+  /* v22: BITTA CHEK — BITTA DETAL. MES chekida nusxa raqami bor (…_3), demak
+     oʻsha chekning ikkinchi skani — oʻsha jismoniy detal. Ilgari u bir xil
+     detalli keyingi oʻringa (yoki skan bilan ochiladigan boshqa pochkaga)
+     qoʻyilib ketardi: jismonan yoʻq detal «qoʻyildi» boʻlardi. Oʻz chekimiz va
+     oddiy kod nusxani ajratmaydi — ular uchun bu tekshiruv yoʻq. */
+  var mk = own ? "" : mesStrip(v);
+  if (mk && PACK_SEEN[mk]){
+    var wp = uidPlaced(PACK_SEEN[mk]);
+    if (wp){ flash("err","bu chek allaqachon skanerlangan — P"+pad2(wp.p.no)+" ga qoʻyilgan ("+(wp.i+1)+"-qadam)"); return; }
+  }
+  function seenMark(s){ if (mk && s.it.code !== v && mesMatch(v, s.it)) PACK_SEEN[mk] = s.it.uid; }
+
+  /* v22: QADOQLASH POSTI — POCHKA DETAL SKANIDAN OCHILADI. Stelyaj qadoqlash
+     boʻlimiga keladi; qadoqlovchi yacheykadan detal olib skanerlaydi. Hozir hech
+     qaysi pochka yigʻilmayotgan boʻlsa (tanlanmagan, tugagan yoki hali
+     boshlanmagan) — shu detal kutilayotgan pochka oʻzi ochiladi va skan unda
+     hisoblanadi. Yigʻilayotgan pochka hech qachon jimgina almashtirilmaydi. */
+  var p = PACKS[CUR];
+  if (!again && (!p || STEP === 0 || STEP >= p.seq.length)){
+    var o = scanOpenPack(hitIn);
+    if (o.err){ flash("err", o.err); return; }
+    if (o.idx >= 0 && o.idx !== CUR){
+      var q0 = PACKS[o.idx];
+      var cellQ = (typeof SORT === "object" && SORT && SORT.pack) ? SORT.pack[q0.no] : null;
+      selectPack(o.idx);
+      checkScan(v, true);
+      var head = "P" + pad2(q0.no) + " ochildi" + (cellQ ? " (" + cellQ + " yacheyka)" : "");
+      flash(PEND ? PEND.k : "ok", head + (PEND && PEND.t ? " · " + PEND.t : ""));
+      return;
+    }
+  }
+  if (!p){ elsewhere(); return; }
+  if (STEP >= p.seq.length){ elsewhere(true); return; }
+  var step = p.seq[STEP];
+
+  if (hitIn(p, step)){ seenMark(step); advance(); flash("ok","toʻgʻri — qoʻyildi ✓"); return; }
 
   /* v22: QAVAT ICHIDA ERKIN TARTIB (MES gʻoyasi: qaror qadoqlovchida). Shu
      qavatdagi hali qoʻyilmagan detal skanerlansa — qabul qilinadi va yigʻish
@@ -452,6 +504,7 @@ function checkScan(v){
     if (p.seq[i].layer === step.layer){
       var sw = p.seq.splice(i, 1)[0];
       p.seq.splice(STEP, 0, sw);
+      seenMark(sw);
       advance(); flash("ok","toʻgʻri — qoʻyildi ✓ (shu qavat, boshqa tartibda)");
       return;
     }
@@ -466,24 +519,66 @@ function checkScan(v){
     if (hitIn(p, p.seq[d])){ flash("err","bu detal allaqachon qoʻyilgan ("+(d+1)+"-qadam) — ikkinchi nusxa yoʻq"); return; }
   }
 
+  elsewhere();
+
   // boshqa pochkada bormi? — operatorga aniq yoʻl koʻrsatamiz
-  for (var k = 0; k < PACKS.length; k++){
-    if (k === CUR) continue;
-    var q = PACKS[k];
-    for (var j = 0; j < q.seq.length; j++){
-      if (hitIn(q, q.seq[j])){
-        flash("err","bu detal P"+pad2(q.no)+" pochkasiga tegishli ("+(j+1)+"-qadam)");
-        return;
+  function elsewhere(curDone){
+    for (var k = 0; k < PACKS.length; k++){
+      if (k === CUR) continue;
+      var q = PACKS[k];
+      for (var j = 0; j < q.seq.length; j++){
+        if (hitIn(q, q.seq[j])){
+          var qFin = (q.done || 0) >= q.seq.length;
+          flash("err","bu detal P"+pad2(q.no)+" pochkasiga tegishli ("+(j+1)+"-qadam)"+
+                (qFin ? " — P"+pad2(q.no)+" allaqachon tayyor" : ""));
+          return;
+        }
       }
     }
+    // v22: MES cheki, lekin boshqa buyurtmaniki — umumiy «topilmadi» dan aniqroq
+    var vo = mesOrderOf(v);
+    if (vo && P && P.mesOrder && vo !== P.mesOrder){
+      flash("err","bu detal boshqa buyurtmadan ("+vo+"), joriy buyurtma "+P.mesOrder);
+      return;
+    }
+    if (curDone){ flash("ok","pochka allaqachon tayyor"); return; }
+    flash("err","bu detal bu buyurtmada topilmadi");
   }
-  // v22: MES cheki, lekin boshqa buyurtmaniki — umumiy «topilmadi» dan aniqroq
-  var vo = mesOrderOf(v);
-  if (vo && P && P.mesOrder && vo !== P.mesOrder){
-    flash("err","bu detal boshqa buyurtmadan ("+vo+"), joriy buyurtma "+P.mesOrder);
-    return;
+}
+
+/* v22: qadoqlash postida skanerlangan MES cheklar: buyurtmasiz MES ID -> uid.
+   Seans bilan saqlanadi (09-storage), qayta pochkalashda tozalanadi (13-app). */
+var PACK_SEEN = {};
+/* uid hozir qoʻyilganmi — qaysi pochkaning qaysi qadamida. «Orqaga» bilan
+   qaytarilgan detal qoʻyilmagan hisoblanadi, shuning uchun eski yozuv xalaqit bermaydi. */
+function uidPlaced(uid){
+  for (var k = 0; k < PACKS.length; k++){
+    var q = PACKS[k], dn = Math.min((k === CUR) ? STEP : (q.done || 0), q.seq.length);
+    for (var i = 0; i < dn; i++) if (q.seq[i].it.uid === uid) return { p:q, i:i };
   }
-  flash("err","bu detal bu buyurtmada topilmadi");
+  return null;
+}
+
+/* v22: skanerlangan detal qaysi YIGʻILMAGAN pochkada kutilmoqda.
+   Qaytadi: {idx} — bitta pochka (joriy pochka oʻzi boʻlsa — u), {idx:-1} — hech
+   qayerda, {err} — bir xil detal bir necha pochkada (MES cheki nusxani pochkaga
+   bogʻlamaydi) — shunda pochka taxmin qilinmaydi. */
+function scanOpenPack(hitIn){
+  var cands = [];
+  for (var k = 0; k < PACKS.length; k++){
+    var q = PACKS[k], from = (k === CUR) ? STEP : Math.max(0, Math.min(q.done || 0, q.seq.length));
+    for (var j = from; j < q.seq.length; j++) if (hitIn(q, q.seq[j])){ cands.push(k); break; }
+  }
+  if (!cands.length) return { idx:-1 };
+  if (cands.indexOf(CUR) >= 0) return { idx:CUR };
+  if (cands.length === 1) return { idx:cands[0] };
+  // boshlangan pochka bittasi boʻlsa — qadoqlovchi oʻshani davom ettiryapti
+  var started = cands.filter(function(k){ return (PACKS[k].done || 0) > 0; });
+  if (started.length === 1) return { idx:started[0] };
+  return { err:"bu detal " + cands.length + " ta pochkada bor (" +
+    cands.slice(0, 4).map(function(k){ return "P" + pad2(PACKS[k].no); }).join(", ") +
+    (cands.length > 4 ? " …" : "") + ") — shu yacheykadagi eng katta detalni (tagini) skanerlang " +
+    "yoki pochkani roʻyxatdan tanlang" };
 }
 
 /* 3.9.3 shapka statistikasi + audit belgisi */
@@ -492,7 +587,11 @@ function stats(){
   var items = buildItems();
   $("pname").textContent = P.name;
   $("puuid").textContent = "UPK v" + APP_VER + " · id " + (P.uuid||"—") + " · R" + (P.rev||1) +
+                           // v22: reja raqami — saralash va qadoqlash postida bir xil boʻlishi shart
+                           ((typeof planId === "function" && planId()) ? " · reja " + planId() : "") +
                            " · " + P.materials.length + " material";
+  var mpi = $("mgrPlanId");
+  if (mpi) mpi.textContent = (typeof planId === "function" && planId()) ? planId() : "—";
   $("sParts").innerHTML = items.length+'<i>dona</i>';
   $("sKg").innerHTML = items.reduce(function(s,i){ return s+i.kg; },0).toFixed(0)+'<i>kg</i>';
   // v10c: shapkada JAMI pochka soni turadi. Ilgari bu yerda faqat oddiy pochkalar

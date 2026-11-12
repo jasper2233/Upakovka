@@ -146,7 +146,7 @@ aynan bir marta uchrashi.
 | Bo'lim | Nima qilinadi |
 |---|---|
 | **Proekt menejer** | Fayl yuklash, oxirgi fayllar, pochka kesimlari, **modullarga nom berish**, **xonalar**, klasslar tanlovi, **pochkalarni qo'lda tuzatish** |
-| **Saralash** | Paddondan stelyaj yacheykalariga. Ishchi detalni skanerlaydi — dastur qaysi yacheykaga qo'yishni aytadi. Bitta yacheyka = bitta pochka. **Stelyajlar** paneli — ishchi qaysi yacheyka band ekanini kiritadi; **Reja** — qaysi pochka qayerga tushishi |
+| **Saralash** | Paddondan stelyaj yacheykalariga. Ishchi detalni skanerlaydi — dastur qaysi yacheykaga qo'yishni aytadi. Bitta yacheyka = bitta pochka. Stelyaj to'lsa — «TAYYOR, qadoqlashga olib boring». **Stelyajlar** paneli — yopiq yacheykalar, stelyaj holati, «Qaytdi», QR belgilar; **Reja** — qaysi pochka qayerga tushishi |
 | **Qadoqlash** | Asosiy ish ekrani: pochkalar ro'yxati (xona → modul bo'yicha tizilgan), 3D yig'ish, keyingi detal, QR chek, skaner. **Tahrirlash yo'q** — u faqat P/M da |
 | **Detallar** | Butun buyurtma jadvali — kod, o'lcham, massa, material, kant, holat |
 | **Materiallar** | Yaxlit list bazasi: o'lcham va massa. List kilosi ↔ kg/m² ikki tomonlama bog'liq |
@@ -154,6 +154,60 @@ aynan bir marta uchrashi.
 | **Sozlamalar** | Me'yorlar uch blokda (standart / nostandart / ikkalasiga), qalinlik matritsasi, saralash posti, material katalogi, chek va buyurtma hujjati, saqlash |
 
 ---
+
+## Alohida postlar: saralash → stelyaj → qadoqlash (v22)
+
+Tsexda saralash va qadoqlash — **alohida joy**, odatda alohida kompyuter:
+
+```
+ SARALASH POSTI                       QADOQLASH POSTI
+ detal skanerlanadi → yacheyka        stelyajdan detal skanerlanadi
+ stelyaj to'ldi → «A TAYYOR»   ──▶    → pochkasi o'zi ochiladi, 3D bo'yicha teriladi
+                                      → pochka tugadi → chek chiqadi, yopishtiriladi
+ bo'sh stelyaj QR i skanerlanadi ◀──  bo'sh stelyaj qaytadi
+ → yacheykalari bo'shaydi
+```
+
+**Saralash posti.** Stelyaj butunligicha ko'chadi, shuning uchun yacheyka endi
+pochka qadoqlanganda emas (bu boshqa kompyuterda bo'ladi), **stelyaj qaytganda**
+bo'shaydi:
+
+| Holat | Qachon | Nima bo'ladi |
+|---|---|---|
+| to'lmoqda | stelyajda to'liq bo'lmagan pochka bor yoki bo'sh yacheykasiga pochka rejalangan | detallar shu yerga |
+| **TAYYOR** | hamma pochkasi to'la va unga boshqa pochka rejalanmagan | ekranda «A STELYAJI TAYYOR — qadoqlashga olib boring»; yacheykalari rejaga kirmaydi |
+| qadoqlashda | tayyor bo'lgach (yoki qo'lda «Jo'natish») | kechikkan detal — «qadoqlash bo'limiga eltib, A3 ga qo'ying» |
+| qaytdi | stelyaj QR belgisi skanerlanadi yoki «Qaytdi» | yacheykalar bo'sh; pochkalari saralashdan ketgan, ularning kechikkan detali qadoqlashga eltiladi |
+
+To'liq bo'lmagan stelyajni (masalan bitta detal brakka ketgan) qo'lda jo'natish
+mumkin — «Jo'natish» ikki marta bosiladi. Stelyaj belgilari (QR) — Stelyajlar →
+«Belgilar», chek printerida har stelyajga bittadan.
+
+**Qadoqlash posti.** Hech qaysi pochka yig'ilmayotgan bo'lsa (tanlanmagan,
+tugagan yoki boshlanmagan) skanerlangan detalning pochkasi **o'zi ochiladi** va
+skan unda hisoblanadi. Yig'ilayotgan pochka hech qachon jimgina almashtirilmaydi.
+Bir xil detal bir necha pochkada bo'lsa (MES cheki nusxani pochkaga bog'lamaydi) —
+pochka taxmin qilinmaydi: «shu yacheykadagi eng katta detalni skanerlang».
+Bitta MES chek ikki marta skanerlansa — «allaqachon skanerlangan» (ilgari bir
+xil detalli ikkinchi o'ringa qo'yilib ketardi). Pochka tugagach chek avtomatik
+chiqadi (Sozlamalar → Avtomatik chek: «pochka tugaganda oʻzi chiqsin», standart yoqiq).
+
+**Reja ikki kompyuterda bir xil bo'lishi shart.** Aks holda saralash posti P07
+deb yig'gan yacheyka qadoqlash postida boshqa pochkalarga tegishli chiqadi.
+
+- **Reja raqami** (`7CAF3A`) — pochkalar tarkibi va terish reviziyasidan
+  hisoblanadi; shapkada, P/M da va saralash ekranida turadi. Ikkala postda bir
+  xil bo'lishi kerak.
+- **Reja fayli** — P/M → Postlar → «Reja faylini saqlash» (`*_reja-7CAF3A.upk.json`).
+  Qadoqlash postida «Loyiha yuklash» bilan ochiladi: pochkalar qayta
+  hisoblanmaydi, fayldagidek tiklanadi — qo'lda tuzatilgan pochkalar ham,
+  sozlamalar ham aynan o'tadi. Progress o'tmaydi. Boshqa reja ochilsa eski
+  saralash tozalanadi, o'sha reja qayta ochilsa — joyida qoladi.
+
+**Post rejimi** — P/M → Postlar → «Bu kompyuter»: *Saralash posti* yoki
+*Qadoqlash posti*. Boshqa postning ekrani yashiriladi, dastur shu post ekranida
+ochiladi, shapkada post nomi turadi. Tanlov shu kompyuterda saqlanadi (buyurtma
+va sozlamalardan alohida).
 
 ## Saralash posti — skan aniq detalni topadi (v22)
 
@@ -245,7 +299,8 @@ upakovka/
 │     ├─ 11-diag.js        diagnostika bo'limi
 │     ├─ 12-upload.js      fayl yuklash, sudrab tashlash, xato tashxisi
 │     ├─ 13-app.js         sozlama, qayta hisob, tablar, ishga tushish
-│     └─ 14-sort.js        saralash posti: stelyaj/yacheyka, skaner, reja
+│     ├─ 14-sort.js        saralash posti: stelyaj/yacheyka, skaner, reja
+│     └─ 15-post.js        postlar: post rejimi, reja raqami va fayli, stelyaj QR
 ├─ dist/                   build natijasi — bir faylli offline versiya
 ├─ namuna/                 sinov uchun .project fayllar (SEED dan yasaladi)
 ├─ tools/
@@ -1021,6 +1076,8 @@ ochiq aytadi va furnitura alohida hujjat bo'yicha topshirilishini ko'rsatadi.
 |---|---|---|
 | Me'yorlar, material katalogi | `localStorage` | «Standartga qaytarish» |
 | Loyiha + pochkalar + yig'ish progressi | `IndexedDB` (seans) | «Seansni tozalash» |
+| Saralash: yacheykalar, qadoqlashdagi stelyajlar, skanerlangan cheklar | `IndexedDB` (seans) | «Tozalash» yoki yangi reja |
+| Shu kompyuter qaysi post | `localStorage` (`upk_post`) | P/M → Postlar |
 | Yuklangan xom `.project` fayllar (oxirgi 20 ta) | `IndexedDB` | ro'yxatdan «O'chirish» |
 
 Brauzer IndexedDB ni qo'llab-quvvatlamasa (private rejim), tizim yiqilmaydi — shunchaki

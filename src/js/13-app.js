@@ -491,6 +491,7 @@ function recompute(){
        endi notoʻgʻri («P07 → B3» degan yozuv boshqa detallarga tegishli boʻlib
        qoladi). Shu sabab saralash nolga tushadi. */
     if (typeof sortReset === "function") sortReset();
+    if (typeof PACK_SEEN === "object") PACK_SEEN = {};   // v22: yangi pochkalar — eski skanlar yaroqsiz
     if (typeof showCellTot === "function") showCellTot();
     // v14: qalinlik matritsasi LOYIHADAN chiqadi — yangi fayl yuklangach yangilanadi
     if (typeof renderThickMix === "function") renderThickMix();
@@ -585,7 +586,7 @@ $("mOk").onclick = function(){
   $("modal").style.display = "none";
   var data = PENDING; PENDING = null;
   boot(data);
-  document.querySelector('.tabs button[data-v="work"]').click();
+  showTab("work");                     // v22: post rejimida — postning oʻz ekrani
 };
 $("mCancel").onclick = function(){ $("modal").style.display = "none"; PENDING = null; };
 
@@ -603,6 +604,8 @@ document.querySelectorAll(".tabs button").forEach(function(b){
   };
 });
 function showTab(name){
+  // v22: post rejimida boshqa postning ekrani yashirin — oʻrniga postning oʻzi
+  if (typeof postHidden === "function" && postHidden(name)) name = postHome();
   var b = document.querySelector('.tabs button[data-v="'+name+'"]');
   if (b) b.click();
 }

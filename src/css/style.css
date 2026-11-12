@@ -554,6 +554,38 @@ h3 .hint{color:var(--ink3);text-transform:none;letter-spacing:0}
 .planrow2.live{border-color:var(--mark);background:var(--panel2)}
 .planrow2.live b{color:var(--mark)}
 
+/* ---- v22: STELYAJ KOʻCHMA — qadoqlashga ketadi va qaytadi ---- */
+.msg.warn{color:var(--mark)}
+.bigcell.away{color:var(--ink3);font-size:clamp(90px,15vw,190px)}
+.awayword{color:var(--mark);letter-spacing:.06em}
+.rackready{
+  margin:16px 0 0;padding:12px 14px;border:2px solid var(--ok);border-radius:var(--r);
+  font-family:var(--mono);font-size:20px;font-weight:600;color:var(--ok);text-align:center;letter-spacing:.02em;
+}
+.awaytag{color:var(--mark)}
+.planid{font-family:var(--mono);letter-spacing:.08em;color:var(--ink2)}
+.rackrow .rstat{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px;
+  font-family:var(--mono);font-size:11px;color:var(--ink3);flex:0 0 auto}
+.rackrow .rstat em{font-style:normal}
+.rackrow .rstat em.away{color:var(--mark);font-weight:600}
+.rackrow .rstat .btn{padding:4px 10px;font-size:11.5px}
+.rackrow.away .cbox{opacity:.5}
+.cbox.busy.full{border-color:var(--ok)}
+.cbox.busy.full s{color:var(--ok)}
+/* shapkadagi post belgisi — qaysi kompyuterda turganimiz uzoqdan koʻrinsin */
+.postchip{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--mark);border:1px solid var(--mark);border-radius:var(--r);padding:3px 8px;margin:0 10px;white-space:nowrap;
+  align-self:center;flex:0 0 auto}
+/* stelyaj QR belgisi */
+.label.racklbl{align-items:center}
+.racklbl .rl-l{font-size:64px;font-weight:700;line-height:.9;letter-spacing:-.04em}
+.racklbl .rl-t{font-size:10px;font-weight:600;letter-spacing:.12em;margin-top:4px}
+.racklbl .rl-t small{display:block;font-size:7.5px;font-weight:400;letter-spacing:0;color:#444;margin-top:2px;font-family:var(--sans)}
+@media print{
+  #sheet.sz-lbl .racklbl .rl-l{font-size:22mm}
+  #sheet.sz-lbl.tiny .racklbl .rl-l{font-size:14mm}
+}
+
 /* Yacheyka belgisi qadoqlash ekranida — pochka detallari qayerda turgani */
 .celltag{
   display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:600;

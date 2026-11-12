@@ -19,6 +19,7 @@
 <!-- 2.1 shapka -->
 <div class="top">
   <div class="brand"><b id="pname">—</b><small id="puuid">loyiha yuklanmoqda</small></div>
+  <span id="postChip" class="postchip" style="display:none"></span>
   <div class="stat"><u>Detal</u><b id="sParts">0<i>dona</i></b></div>
   <div class="stat"><u>Massa</u><b id="sKg">0<i>kg</i></b></div>
   <div class="stat"><u>Pochka</u><b id="sPacks">0</b></div>
@@ -28,7 +29,7 @@
   <div class="topact">
     <span id="saveState" class="savedot" title="avtomatik saqlash"></span>
     <button class="btn pri" id="btnLoad">Loyiha yuklash</button>
-    <input type="file" id="file" accept=".project,.xml,.txt" hidden>
+    <input type="file" id="file" accept=".project,.xml,.txt,.json" hidden>
   </div>
 </div>
 
@@ -54,6 +55,7 @@
       <div class="sortfoot">
         <span id="sortHint"></span>
         <span id="sortCells"></span>
+        <span id="sortPlanId" class="planid" title="reja raqami — qadoqlash postida ham shu boʻlishi kerak"></span>
         <span id="sortSaved" class="saved"></span>
         <span class="grow"></span>
         <button class="btn gh" id="btnSortRack">Stelyajlar</button>
@@ -129,7 +131,7 @@
       <div class="drophint" id="dropHint">
         <div>
           <b>.project faylni shu yerga sudrab tashlang</b>
-          <small>yoki tanlang · <kbd>Ctrl</kbd>+<kbd>O</kbd> · qoʻllab-quvvatlanadi: .project, .xml, .txt</small>
+          <small>yoki tanlang · <kbd>Ctrl</kbd>+<kbd>O</kbd> · qoʻllab-quvvatlanadi: .project, .xml, .txt va reja fayli .upk.json</small>
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn pri" id="btnLoad2">Fayl tanlash</button>
@@ -142,6 +144,17 @@
 
       <h3>Buyurtma</h3>
       <div id="mgrInfo" class="note" style="border-left-color:var(--mark)"></div>
+
+      <!-- v22: saralash posti va qadoqlash posti — alohida kompyuterlar -->
+      <h3>Postlar <span class="hint">— saralash va qadoqlash alohida</span></h3>
+      <div class="fields">
+        <div class="f"><label for="mgrPost">Bu kompyuter <span class="q" tabindex="0" data-tip="Saralash posti: ishchilar detallarni stelyajlarga saralaydi; stelyaj toʻlgach butunligicha qadoqlashga olib boriladi.&#10;&#10;Qadoqlash posti: stelyajdagi detal skanerlanadi — pochkasi oʻzi ochiladi, 3D boʻyicha teriladi, tugagach chek chiqadi.&#10;&#10;Post tanlansa boshqa postning ekrani yashiriladi va dastur shu post ekranida ochiladi. Tanlov shu kompyuterda saqlanadi.">?</span></label>
+          <select id="mgrPost"><option value="all">Hamma boʻlim</option><option value="sort">Saralash posti</option><option value="pack">Qadoqlash posti</option></select>
+          <small>tanlov shu kompyuterda saqlanadi</small></div>
+        <div class="f"><label>Reja raqami <span class="q" tabindex="0" data-tip="Pochkalar tarkibidan hisoblanadi. Saralash posti va qadoqlash postida BIR XIL boʻlishi shart — aks holda yacheykadagi detallar qadoqlashda boshqa pochkalarga tegishli chiqadi.&#10;&#10;Farq qilsa: qadoqlash postida shu yerdan saqlangan reja faylini oching.">?</span></label><b id="mgrPlanId" class="planid">—</b><small>ikkala post ekranida bir xil boʻlsin</small></div>
+        <div class="f"><label>Reja fayli</label><button class="btn" id="btnPlanSave">Reja faylini saqlash</button><small>boshqa postda «Loyiha yuklash» bilan ochiladi</small></div>
+      </div>
+      <div id="planNote" class="note" style="display:none;margin-top:0"></div>
 
       <!-- v22: MebeliX MES bilan bogʻlanish — buyurtma raqami va reja eksporti -->
       <h3>MES <span class="hint">— MebeliX MES dagi buyurtma</span></h3>
@@ -505,5 +518,6 @@
 <script src="src/js/12-upload.js"></script>
 <script src="src/js/13-app.js"></script>
 <script src="src/js/14-sort.js"></script>
+<script src="src/js/15-post.js"></script>
 </body>
 </html>

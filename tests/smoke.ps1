@@ -21,7 +21,7 @@ param(
   [switch]$Keep,
   [switch]$Http,
   [int]$Port = 8731,
-  [int]$TimeoutSec = 120
+  [int]$TimeoutSec = 240
 )
 
 $ErrorActionPreference = "Stop"
@@ -2257,7 +2257,7 @@ $tester = @'
        Bu tekshiruv aynan shu holatni ushlaydi: tuzilishga tayansak beshalasi
        bitta pochkaga aralashib ketadi. */
     if (K5MOD) {
-      var spBak = { P:P, PACKS:PACKS, CUR:CUR, STEP:STEP,
+      var spBak = { P:P, PACKS:PACKS, CUR:CUR, STEP:STEP, split:S.split,
                     rooms:S.rooms, sepCls:S.sepCls, mg:S.modGroups, cg:S.clsGroups };
       try {
         var sp = parseProject(K5MOD);
@@ -2305,7 +2305,7 @@ $tester = @'
         chk("5modul: auditda xato yoʻq", auditPacks(PACKS, buildItems()).errors.length === 0,
             PACKS.length + " pochka");
       } catch(e){ chk("komplekt-5modul", false, e.message); }
-      S.split = { prod:true, mat:false };
+      S.split = spBak.split;               // v22: standart endi buyurtma boʻyicha — eskisi qaytadi
       P = spBak.P; PACKS = spBak.PACKS; CUR = spBak.CUR; STEP = spBak.STEP;
       S.rooms = spBak.rooms; S.sepCls = spBak.sepCls;
       S.modGroups = spBak.mg; S.clsGroups = spBak.cg;
@@ -2314,8 +2314,11 @@ $tester = @'
 
     /* v12: MODUL NOMI — P/M bergan nom roʻyxatda, chekda va tahrirlashda chiqadi.
        Fayl faqat «01»/«990101» beradi; nomsiz chekda kod turadi va upakovshik
-       nima ekanini bilmaydi. */
+       nima ekanini bilmaydi.
+       v22: standart — buyurtma boʻyicha; modul sarlavhasi modul ajratilganda sinaladi. */
+    var svSplitN = S.split;
     try {
+      S.split = { prod:true, mat:false };
       var nMods = roomStats().map(function(r){ return r.code; });
       var nBak = JSON.parse(JSON.stringify(S.unitNames || {}));
       S.unitNames = {}; S.unitNames[nMods[0]] = "Karavot";
@@ -2336,13 +2339,17 @@ $tester = @'
       chk("unitLabel: nom bor boʻlsa u, boʻlmasa zaxira",
           unitLabel(nMods[0], "zaxira") === "Karavot" && unitLabel(nMods[1], "zaxira") === "zaxira",
           unitLabel(nMods[0], "zaxira") + " / " + unitLabel(nMods[1], "zaxira"));
-      S.unitNames = nBak; packAll();
+      S.unitNames = nBak;
     } catch(e){ chk("modul nomi", false, e.message); }
+    S.split = svSplitN; packAll();
 
     /* v12: XONA — nomlangan modul guruhi + «birga pochkalansin» bayrogʻi.
        join:true  — butun xona bitta pochkalash kaliti (v11 xatti-harakati)
-       join:false — har modul oʻz pochkasida, xona nomi faqat BELGI */
+       join:false — har modul oʻz pochkasida, xona nomi faqat BELGI
+       v22: «alohida» maʼnosi modul ajratilganda — shuning uchun blok shu holatda. */
+    var svSplitX = S.split;
     try {
+      S.split = { prod:true, mat:false }; packAll();
       var xMods = roomStats().map(function(r){ return r.code; });
       var xBase = PACKS.length;
 
@@ -2393,8 +2400,9 @@ $tester = @'
       });
       chk("xona pochkalari ketma-ket turadi", !broken, broken ? "tarqoq" : "bir joyda");
 
-      S.modGroups = []; packAll();
+      S.modGroups = [];
     } catch(e){ chk("xona", false, e.message); }
+    S.modGroups = []; S.split = svSplitX; packAll();
 
     /* v12: TAHRIRLASH QADOQLASH EKRANIDAN OLIB TASHLANDI (TZ-v2 §1) */
     try {
@@ -2691,6 +2699,210 @@ $tester = @'
       sortReset(); S.rackN = sR2; S.cellN = sC2; S.cellOff = sOff2; writeConf(); readConf();
     } catch(e){ chk("saralash (v22)", false, e.message); }
 
+    /* ================= v22: ALOHIDA POSTLAR =================
+       Tsex jarayoni: saralash posti -> stelyaj toʻlgach BUTUNLIGICHA qadoqlashga ->
+       qadoqlash posti (detal skanidan pochka ochiladi, tugagach chek) -> boʻsh
+       stelyaj qaytadi. Postlar alohida kompyuterda: reja fayli va reja raqami. */
+    try {
+      var aR = S.rackN, aC = S.cellN, aOff = S.cellOff;
+      packAll();
+      S.rackN = 2; S.cellN = 3; S.cellOff = {}; sortReset();
+      var pal = [];
+      PACKS.forEach(function(p){ p.seq.forEach(function(st){ pal.push(qrText(p, st)); }); });
+      var sdA = 17, rrA = function(){ sdA = (sdA*9301+49297) % 233280; return sdA/233280; };
+      pal.sort(function(){ return rrA() - 0.5; });
+      var waves = 0, readyN = 0, badAway = 0, dupCell = 0, leftP = pal.slice();
+      while (leftP.length && waves < 80){
+        var nextP = [];
+        leftP.forEach(function(c){
+          var r = sortScan(c);
+          if (!r.ok){ nextP.push(c); return; }
+          if (r.ready) readyN += r.ready.length;
+          var Lr = r.cell ? rackOf(r.cell) : "";
+          if (Lr && rackAway(Lr) && !r.away && (r.ready || []).indexOf(Lr) < 0) badAway++;
+        });
+        var seenNo = {};
+        Object.keys(SORT.cell).forEach(function(c){
+          var no = SORT.cell[c];
+          if (seenNo[no] || SORT.pack[no] !== c) dupCell++;
+          seenNo[no] = 1;
+        });
+        Object.keys(SORT.away).forEach(function(L){ rackReturn(L); });   // qadoqlandi, boʻsh qaytdi
+        waves++;
+        if (nextP.length === leftP.length) break;                        // oldinga siljimadi
+        leftP = nextP;
+      }
+      var stA = sortStats();
+      chk("postlar: 6 yacheyka bilan butun buyurtma toʻlqinlarda saralandi",
+          !leftP.length && stA.done === stA.tot,
+          stA.done + "/" + stA.tot + " detal · " + waves + " toʻlqin · paddonda " + leftP.length);
+      chk("postlar: stelyaj toʻlgach oʻzi «tayyor», qaytgach yana ishladi",
+          readyN >= Math.ceil(PACKS.length / S.cellN) && Object.keys(SORT.gone).length === PACKS.length,
+          readyN + " marta tayyor · " + Object.keys(SORT.gone).length + "/" + PACKS.length + " pochka qadoqlashga ketdi");
+      chk("postlar: qadoqlashdagi stelyajga detal berilmadi, yacheyka ikki pochkaga berilmadi",
+          badAway === 0 && dupCell === 0, "notoʻgʻri " + badAway + " · takror " + dupCell);
+
+      // toʻliq boʻlmagan stelyaj — qoʻlda, tasdiq bilan joʻnatiladi
+      sortReset(); sortPlan();
+      // rejadagi (yacheyka atalgan) pochka — aks holda u keyingi toʻlqinni kutadi
+      var tq = null;
+      Object.keys(SORT.plan).forEach(function(no){ var p = packByNo(+no); if (!tq && p && !p.odd && p.seq.length >= 3) tq = p; });
+      sortScan(qrText(tq, tq.seq[0]));
+      var cq = SORT.pack[tq.no], Lq = rackOf(cq);
+      var s1 = rackSend(Lq, false);
+      chk("postlar: toʻliq boʻlmagan stelyaj tasdiqsiz joʻnatilmaydi", !s1.ok && s1.need && !rackAway(Lq), s1.msg);
+      var s2 = rackSend(Lq, true);
+      chk("postlar: tasdiq bilan joʻnatildi", s2.ok && rackAway(Lq), s2.msg);
+      var frq = sortFreeCell(tq.no);
+      chk("postlar: qadoqlashdagi stelyaj yacheykasi pochka tugaganda boʻshamaydi",
+          frq === false && SORT.pack[tq.no] === cq, String(frq) + " · " + SORT.pack[tq.no]);
+      sortPlan();
+      var inAw = Object.keys(SORT.plan).filter(function(no){ return rackOf(SORT.plan[no]) === Lq; }).length;
+      chk("postlar: qadoqlashdagi stelyaj rejaga kirmaydi", inAw === 0, inAw + " ta reja");
+      var k1 = sortScan(qrText(tq, tq.seq[1]));
+      chk("postlar: kechikkan detal — qadoqlashga, oʻsha yacheykaga",
+          k1.ok && k1.away && k1.kind === "warn" && k1.cell === cq && /QADOQLASHDA/.test(k1.msg), String(k1.msg).slice(0, 90));
+      var snA = JSON.parse(JSON.stringify(makeSnapshot()));
+      chk("postlar: seansda qadoqlashdagi stelyaj saqlanadi",
+          !!(snA.sort && snA.sort.away && snA.sort.away[Lq]) && !!snA.sort.gone, JSON.stringify(snA.sort && snA.sort.away));
+      var bk = sortScan(rackQRText(Lq));
+      chk("postlar: stelyaj QR i — qaytdi, yacheyka boʻshadi",
+          bk.ok && !rackAway(Lq) && !SORT.pack[tq.no] && SORT.gone[tq.no] === Lq,
+          (SORT.last && SORT.last.freed) + " ta boʻshadi");
+      var k2 = sortScan(qrText(tq, tq.seq[2]));
+      chk("postlar: qaytgan stelyaj pochkasining detali — qadoqlashga", k2.ok && k2.gone && /qadoqlashga ketgan/.test(k2.msg),
+          String(k2.msg).slice(0, 90));
+      chk("postlar: ketgan pochka yangi yacheyka olmaydi", !SORT.pack[tq.no] && packLeft(tq) === 0, SORT.pack[tq.no] || "yoʻq");
+      var k3 = sortScan(rackQRText(Lq));
+      chk("postlar: saralashdagi stelyaj QR i — faqat holat", !k3.ok && /saralashda/.test(k3.msg), k3.msg);
+      var k4 = sortScan("UPK|STELYAJ|ZZ");
+      chk("postlar: notanish stelyaj — xato", !k4.ok && k4.kind === "err", k4.msg);
+      var rlH = rackLabelsHTML();
+      chk("postlar: har stelyajga QR belgi", (rlH.match(/<canvas/g) || []).length === rackCount() && rlH.indexOf(">B<") > 0,
+          rackCount() + " ta belgi");
+      sortReset(); S.rackN = aR; S.cellN = aC; S.cellOff = aOff;
+    } catch(e){ chk("postlar: saralash", false, e.message); }
+
+    /* QADOQLASH POSTI: stelyajdan olingan detal skanerlansa pochkasi oʻzi ochiladi */
+    try {
+      packAll();
+      var ix = [];
+      PACKS.forEach(function(p, i){ if (!p.odd && p.seq.length >= 2) ix.push(i); });
+      var i0 = ix[0], i1 = ix[2], i2 = ix[4];
+      selectPack(i0);
+      PACKS[i0].seq.slice().forEach(function(st){ checkScan(qrText(PACKS[i0], st)); });
+      chk("qadoqlash posti: pochka tugadi", (PACKS[i0].done || 0) === PACKS[i0].seq.length,
+          (PACKS[i0].done || 0) + "/" + PACKS[i0].seq.length);
+      var tg = PACKS[i1];
+      checkScan(qrText(tg, tg.seq[0]));
+      chk("qadoqlash posti: tayyor pochkadan keyin skan — detal pochkasi ochildi va qoʻyildi",
+          CUR === i1 && STEP === 1 && /ochildi/.test(el("msg").textContent),
+          "P" + pad2(PACKS[CUR].no) + " · qadam " + STEP + " · " + el("msg").textContent.slice(0, 60));
+      var oth = PACKS[i2];
+      checkScan(qrText(oth, oth.seq[0]));
+      chk("qadoqlash posti: yigʻilayotgan pochka jimgina almashtirilmaydi",
+          CUR === i1 && STEP === 1 && /tegishli/.test(el("msg").textContent), el("msg").textContent.slice(0, 70));
+      selectPack(-1);
+      checkScan(qrText(oth, oth.seq[0]));
+      chk("qadoqlash posti: pochka tanlanmagan — skan pochkani ochadi", CUR === i2 && STEP === 1,
+          "CUR=" + CUR + " · qadam " + STEP);
+
+      // MES cheki: bir xil detal nusxalari ikki pochkada
+      packAll(); selectPack(-1);
+      var byKey = {}, pair = null;
+      PACKS.forEach(function(p, i){
+        p.seq.forEach(function(st){
+          if (!st.it.mesKey || !(st.it.of > 1)) return;
+          (byKey[st.it.mesKey] = byKey[st.it.mesKey] || []).push({ i:i, st:st });
+        });
+      });
+      Object.keys(byKey).forEach(function(k){
+        if (pair) return;
+        var l = byKey[k], pi = {};
+        l.forEach(function(x){ pi[x.i] = 1; });
+        if (Object.keys(pi).length >= 2) pair = l;
+      });
+      chk("namunada nusxasi ikki pochkada boʻlgan detal bor", !!pair, pair ? pair[0].st.it.mesKey + " · " + pair.length + " nusxa" : "yoʻq");
+      if (pair){
+        var a1 = pair[0], qa = PACKS[a1.i];
+        selectPack(a1.i);
+        qa.seq.slice().forEach(function(st){
+          checkScan(st.it.uid === a1.st.it.uid ? a1.st.it.mes : qrText(qa, st));
+        });
+        chk("MES cheki bilan pochka tugadi", (qa.done || 0) === qa.seq.length, (qa.done || 0) + "/" + qa.seq.length);
+        checkScan(a1.st.it.mes);
+        chk("qadoqlash posti: oʻsha MES chek qayta skanerlansa — rad, boshqa pochka ochilmaydi",
+            CUR === a1.i && /allaqachon skanerlangan/.test(el("msg").textContent), el("msg").textContent.slice(0, 70));
+        var a2 = pair.filter(function(x){ return x.i !== a1.i; })[0];
+        var openW = {};
+        pair.forEach(function(x){ if (x.i !== a1.i) openW[x.i] = 1; });
+        var nOpen = Object.keys(openW).length;
+        checkScan(a2.st.it.mes);
+        if (nOpen === 1)
+          chk("qadoqlash posti: boshqa nusxa — oʻz pochkasi ochildi", CUR === a2.i, "CUR=" + CUR + " kutilgan " + a2.i);
+        else
+          chk("qadoqlash posti: nusxa bir necha pochkada — taxmin qilinmaydi",
+              CUR === a1.i && /pochkada bor/.test(el("msg").textContent), el("msg").textContent.slice(0, 80));
+        var snS = JSON.parse(JSON.stringify(makeSnapshot()));
+        chk("qadoqlash posti: skanerlangan MES cheklar seansda saqlanadi",
+            !!snS.packSeen && snS.packSeen[a1.st.it.mes] === a1.st.it.uid, JSON.stringify(snS.packSeen).slice(0, 60));
+      }
+      packAll(); selectPack(0);
+    } catch(e){ chk("qadoqlash posti", false, e.message); }
+
+    /* REJA RAQAMI va REJA FAYLI — ikki kompyuterda reja aynan bir xil */
+    try {
+      packAll(); selectPack(0); stats(); renderSort();
+      var id0 = planId();
+      chk("reja raqami: 6 belgi, takror hisobda oʻzgarmaydi", /^[0-9A-F]{6}$/.test(id0) && planId() === id0, id0);
+      chk("reja raqami ekranda: shapka, P/M, saralash", el("puuid").textContent.indexOf(id0) >= 0 &&
+          el("mgrPlanId").textContent === id0 && el("sortPlanId").textContent.indexOf(id0) >= 0, el("puuid").textContent);
+      var po = planFileObj();
+      chk("reja fayli: progresssiz, raqami bilan",
+          po.format === "upk-reja" && po.planId === id0 && po.snapshot.sort === null &&
+          po.snapshot.packs.every(function(x){ return !x.done && !x.ord; }), po.planId + " · " + po.packs + " pochka");
+      // «boshqa kompyuter» — sozlamasi boshqa, demak rejasi ham boshqa
+      var svSpP = S.split;
+      S.split = { prod:true, mat:false }; packAll();
+      var idOther = planId();
+      chk("reja raqami: boshqa sozlama — boshqa reja, boshqa raqam", idOther !== id0 && PACKS.length !== po.packs,
+          id0 + " (" + po.packs + ") vs " + idOther + " (" + PACKS.length + ")");
+      SORT.put["x#0"] = "A1";
+      var lr = loadXmlText(JSON.stringify(po), "namuna_reja-" + id0 + ".upk.json");
+      chk("reja fayli: yuklash oqimidan ochildi — reja aynan", !!lr && planId() === id0 && PACKS.length === po.packs,
+          planId() + " · " + PACKS.length + " pochka");
+      chk("reja fayli: sozlamasi ham keldi, eski saralash tozalandi", !S.split.prod && !SORT.put["x#0"],
+          JSON.stringify(S.split));
+      SORT.put["y#0"] = "A1";
+      var rr2 = planFileLoad(JSON.stringify(po));
+      chk("reja fayli: oʻsha reja qayta ochilsa saralash joyida qoladi", rr2.ok && rr2.same && SORT.put["y#0"] === "A1", rr2.msg);
+      delete SORT.put["y#0"];
+      var bad1 = planFileLoad("{}"), bad2 = planFileLoad("buzuq");
+      var badPart = JSON.parse(JSON.stringify(po)), bi = -1;
+      badPart.snapshot.packs.forEach(function(x, i){ if (bi < 0 && !x.odd) bi = i; });
+      badPart.snapshot.packs[bi].baseUid = "YOQ#0";
+      var bad3 = planFileLoad(JSON.stringify(badPart));
+      chk("reja fayli: notoʻgʻri/buzilgan fayl rad etiladi, reja tegilmaydi",
+          !bad1.ok && !bad2.ok && !bad3.ok && planId() === id0, bad3.msg);
+      S.split = svSpP; packAll(); selectPack(0);
+    } catch(e){ chk("reja fayli", false, e.message); }
+
+    /* POST REJIMI — har kompyuter oʻz postini koʻradi */
+    try {
+      var tabV = function(v){ return document.querySelector('.tabs button[data-v="' + v + '"]').style.display !== "none"; };
+      postSet("sort");
+      chk("post: saralash postida qadoqlash ekrani yashirin", !tabV("work") && tabV("sort") &&
+          el("v-sort").classList.contains("on") && el("postChip").style.display !== "none", el("postChip").textContent);
+      showTab("work");
+      chk("post: yashirin ekranga oʻtilmaydi — postning oʻzi", el("v-sort").classList.contains("on") &&
+          !el("v-work").classList.contains("on"), "");
+      postSet("pack");
+      chk("post: qadoqlash postida saralash yashirin", !tabV("sort") && tabV("work") && el("v-work").classList.contains("on"), "");
+      postSet("all");
+      chk("post: hamma boʻlim — hammasi koʻrinadi", tabV("sort") && tabV("work") && el("postChip").style.display === "none", "");
+    } catch(e){ chk("post rejimi", false, e.message); }
+    try { localStorage.removeItem("upk_post"); } catch(e){}
+
     /* ================= v22: MebeliX MES DETAL ID SI =================
        Qadoqlash postida MES chiqargan chek skanerlanadi:
        {buyurtma}_{mahsulot}_{detal}[-N][_n]. Qoidalar MES parseridan koʻchirilgan —
@@ -2730,22 +2942,27 @@ $tester = @'
       checkScan("B-2026-047_" + wantIt.mes);
       chk("MES: qadoqlashda MES cheki qabul qilindi", STEP === s0 + 1,
           wantIt.mes + " -> STEP " + s0 + "→" + STEP);
-      setStep(s0);
-      // bir xil detalning nusxalari almashinadi — begona detal boshqa KALITLI boʻlsin
-      var alien = packItems(PACKS[1]).filter(function(it){ return it.mesKey !== wantIt.mesKey; })[0];
+      /* v22: pochka YIGʻILMOQDA (1-qadam qoʻyildi) — begona detal rad etiladi.
+         Boshlanmagan pochkada esa begona detal oʻz pochkasini ochadi (qadoqlash
+         posti — «postlar» blokida sinaladi). Begona detal joriy pochkada umuman
+         boʻlmasin: nusxalar almashinadi. */
+      var s1 = STEP, inP0 = {};
+      packItems(PACKS[0]).forEach(function(it){ inP0[it.mesKey] = 1; });
+      var alien = packItems(PACKS[1]).filter(function(it){ return !inP0[it.mesKey]; })[0];
       checkScan("B-2026-047_" + alien.mes);
-      chk("MES: boshqa pochka detali rad etildi", STEP === s0, alien.mes);
+      chk("MES: boshqa pochka detali rad etildi", STEP === s1 && CUR === 0, alien.mes);
       checkScan("B-2026-047_YOQ_999");
-      chk("MES: notanish ID qadamni surmaydi", STEP === s0, "STEP=" + STEP);
+      chk("MES: notanish ID qadamni surmaydi", STEP === s1, "STEP=" + STEP);
+      var nextIt = PACKS[0].seq[s1].it;
 
       // buyurtma raqami: notoʻgʻrisi rad, toʻgʻrisi yoziladi
       var e1 = mesOrderSet("2026-47"), e2 = mesOrderSet(" b-2026-047 ");
       chk("MES: buyurtma raqami tekshiriladi", !!e1 && e2 === "" && P.mesOrder === "B-2026-047",
           (e1 || "—") + " | " + P.mesOrder);
-      checkScan("B-2026-999_" + wantIt.mes);
-      chk("MES: boshqa buyurtma cheki rad etildi", STEP === s0, "STEP=" + STEP);
-      checkScan("B-2026-047_" + wantIt.mes);
-      chk("MES: oʻz buyurtmasi cheki qabul qilindi", STEP === s0 + 1, "STEP=" + STEP);
+      checkScan("B-2026-999_" + nextIt.mes);
+      chk("MES: boshqa buyurtma cheki rad etildi", STEP === s1, "STEP=" + STEP);
+      checkScan("B-2026-047_" + nextIt.mes);
+      chk("MES: oʻz buyurtmasi cheki qabul qilindi", STEP === s1 + 1, "STEP=" + STEP);
       setStep(s0);
 
       // reja: hamma pochka va hamma detal, toʻliq ID bilan

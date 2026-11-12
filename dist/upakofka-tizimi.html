@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-<!-- Upakofka tizimi — build 77c4140d -->
+<!-- Upakofka tizimi — build 8d490a9a -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Upakofka tizimi</title>
@@ -568,6 +568,38 @@ h3 .hint{color:var(--ink3);text-transform:none;letter-spacing:0}
 .planrow2.live{border-color:var(--mark);background:var(--panel2)}
 .planrow2.live b{color:var(--mark)}
 
+/* ---- v22: STELYAJ KOʻCHMA — qadoqlashga ketadi va qaytadi ---- */
+.msg.warn{color:var(--mark)}
+.bigcell.away{color:var(--ink3);font-size:clamp(90px,15vw,190px)}
+.awayword{color:var(--mark);letter-spacing:.06em}
+.rackready{
+  margin:16px 0 0;padding:12px 14px;border:2px solid var(--ok);border-radius:var(--r);
+  font-family:var(--mono);font-size:20px;font-weight:600;color:var(--ok);text-align:center;letter-spacing:.02em;
+}
+.awaytag{color:var(--mark)}
+.planid{font-family:var(--mono);letter-spacing:.08em;color:var(--ink2)}
+.rackrow .rstat{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px;
+  font-family:var(--mono);font-size:11px;color:var(--ink3);flex:0 0 auto}
+.rackrow .rstat em{font-style:normal}
+.rackrow .rstat em.away{color:var(--mark);font-weight:600}
+.rackrow .rstat .btn{padding:4px 10px;font-size:11.5px}
+.rackrow.away .cbox{opacity:.5}
+.cbox.busy.full{border-color:var(--ok)}
+.cbox.busy.full s{color:var(--ok)}
+/* shapkadagi post belgisi — qaysi kompyuterda turganimiz uzoqdan koʻrinsin */
+.postchip{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--mark);border:1px solid var(--mark);border-radius:var(--r);padding:3px 8px;margin:0 10px;white-space:nowrap;
+  align-self:center;flex:0 0 auto}
+/* stelyaj QR belgisi */
+.label.racklbl{align-items:center}
+.racklbl .rl-l{font-size:64px;font-weight:700;line-height:.9;letter-spacing:-.04em}
+.racklbl .rl-t{font-size:10px;font-weight:600;letter-spacing:.12em;margin-top:4px}
+.racklbl .rl-t small{display:block;font-size:7.5px;font-weight:400;letter-spacing:0;color:#444;margin-top:2px;font-family:var(--sans)}
+@media print{
+  #sheet.sz-lbl .racklbl .rl-l{font-size:22mm}
+  #sheet.sz-lbl.tiny .racklbl .rl-l{font-size:14mm}
+}
+
 /* Yacheyka belgisi qadoqlash ekranida — pochka detallari qayerda turgani */
 .celltag{
   display:inline-block;font-family:var(--mono);font-size:10.5px;font-weight:600;
@@ -938,6 +970,7 @@ select:focus-visible,
 <!-- 2.1 shapka -->
 <div class="top">
   <div class="brand"><b id="pname">—</b><small id="puuid">loyiha yuklanmoqda</small></div>
+  <span id="postChip" class="postchip" style="display:none"></span>
   <div class="stat"><u>Detal</u><b id="sParts">0<i>dona</i></b></div>
   <div class="stat"><u>Massa</u><b id="sKg">0<i>kg</i></b></div>
   <div class="stat"><u>Pochka</u><b id="sPacks">0</b></div>
@@ -947,7 +980,7 @@ select:focus-visible,
   <div class="topact">
     <span id="saveState" class="savedot" title="avtomatik saqlash"></span>
     <button class="btn pri" id="btnLoad">Loyiha yuklash</button>
-    <input type="file" id="file" accept=".project,.xml,.txt" hidden>
+    <input type="file" id="file" accept=".project,.xml,.txt,.json" hidden>
   </div>
 </div>
 
@@ -973,6 +1006,7 @@ select:focus-visible,
       <div class="sortfoot">
         <span id="sortHint"></span>
         <span id="sortCells"></span>
+        <span id="sortPlanId" class="planid" title="reja raqami — qadoqlash postida ham shu boʻlishi kerak"></span>
         <span id="sortSaved" class="saved"></span>
         <span class="grow"></span>
         <button class="btn gh" id="btnSortRack">Stelyajlar</button>
@@ -1048,7 +1082,7 @@ select:focus-visible,
       <div class="drophint" id="dropHint">
         <div>
           <b>.project faylni shu yerga sudrab tashlang</b>
-          <small>yoki tanlang · <kbd>Ctrl</kbd>+<kbd>O</kbd> · qoʻllab-quvvatlanadi: .project, .xml, .txt</small>
+          <small>yoki tanlang · <kbd>Ctrl</kbd>+<kbd>O</kbd> · qoʻllab-quvvatlanadi: .project, .xml, .txt va reja fayli .upk.json</small>
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn pri" id="btnLoad2">Fayl tanlash</button>
@@ -1061,6 +1095,17 @@ select:focus-visible,
 
       <h3>Buyurtma</h3>
       <div id="mgrInfo" class="note" style="border-left-color:var(--mark)"></div>
+
+      <!-- v22: saralash posti va qadoqlash posti — alohida kompyuterlar -->
+      <h3>Postlar <span class="hint">— saralash va qadoqlash alohida</span></h3>
+      <div class="fields">
+        <div class="f"><label for="mgrPost">Bu kompyuter <span class="q" tabindex="0" data-tip="Saralash posti: ishchilar detallarni stelyajlarga saralaydi; stelyaj toʻlgach butunligicha qadoqlashga olib boriladi.&#10;&#10;Qadoqlash posti: stelyajdagi detal skanerlanadi — pochkasi oʻzi ochiladi, 3D boʻyicha teriladi, tugagach chek chiqadi.&#10;&#10;Post tanlansa boshqa postning ekrani yashiriladi va dastur shu post ekranida ochiladi. Tanlov shu kompyuterda saqlanadi.">?</span></label>
+          <select id="mgrPost"><option value="all">Hamma boʻlim</option><option value="sort">Saralash posti</option><option value="pack">Qadoqlash posti</option></select>
+          <small>tanlov shu kompyuterda saqlanadi</small></div>
+        <div class="f"><label>Reja raqami <span class="q" tabindex="0" data-tip="Pochkalar tarkibidan hisoblanadi. Saralash posti va qadoqlash postida BIR XIL boʻlishi shart — aks holda yacheykadagi detallar qadoqlashda boshqa pochkalarga tegishli chiqadi.&#10;&#10;Farq qilsa: qadoqlash postida shu yerdan saqlangan reja faylini oching.">?</span></label><b id="mgrPlanId" class="planid">—</b><small>ikkala post ekranida bir xil boʻlsin</small></div>
+        <div class="f"><label>Reja fayli</label><button class="btn" id="btnPlanSave">Reja faylini saqlash</button><small>boshqa postda «Loyiha yuklash» bilan ochiladi</small></div>
+      </div>
+      <div id="planNote" class="note" style="display:none;margin-top:0"></div>
 
       <!-- v22: MebeliX MES bilan bogʻlanish — buyurtma raqami va reja eksporti -->
       <h3>MES <span class="hint">— MebeliX MES dagi buyurtma</span></h3>
@@ -5828,10 +5873,14 @@ function makeSnapshot(){
     sort: (typeof SORT === "object" && SORT)
       ? { cell:snapClone(SORT.cell||{},{}), pack:snapClone(SORT.pack||{},{}),
           put:snapClone(SORT.put||{},{}),
-          seen:snapClone(SORT.seen||{},{}) }       // v22: skanerlangan MES cheklar
+          seen:snapClone(SORT.seen||{},{}),        // v22: skanerlangan MES cheklar
+          away:snapClone(SORT.away||{},{}),        // v22: qadoqlashdagi stelyajlar
+          gone:snapClone(SORT.gone||{},{}) }       // v22: stelyaji bilan ketgan pochkalar
       : null,
     /* P ning sof nusxasi: name, uuid, materials, parts (+ rev kabi qoʻshimcha
        maydonlar ham oʻz-oʻzidan tushadi — P da faqat oddiy maʼlumot turadi) */
+    // v22: qadoqlash postida skanerlangan MES cheklar — qayta skan himoyasi brauzer yopilsa ham qolsin
+    packSeen: (typeof PACK_SEEN === "object" && PACK_SEEN) ? snapClone(PACK_SEEN, {}) : {},
     project: P ? (snapClone(P, null) || { name:P.name, uuid:P.uuid, rev:P.rev || 0,
                    materials: snapClone(P.materials || [], []),
                    parts:     snapClone(P.parts     || [], []) }) : null,
@@ -5940,6 +5989,8 @@ function restoreSnapshot(snap){
       SORT.pack = snapClone(snap.sort.pack, {}) || {};
       SORT.put  = snapClone(snap.sort.put,  {}) || {};
       SORT.seen = snapClone(snap.sort.seen || {}, {}) || {};   // v22
+      SORT.away = snapClone(snap.sort.away || {}, {}) || {};   // v22: stelyaj qadoqlashda
+      SORT.gone = snapClone(snap.sort.gone || {}, {}) || {};
       SORT.last = null;                 // katta yozuv qayta koʻrsatilmaydi
     }
     // 2) loyiha — snapshot obyektiga tegmaslik uchun yana nusxa olinadi
@@ -6051,6 +6102,7 @@ function restoreSnapshot(snap){
     if (bad){ putState(bak); return false; }     // moslik yoʻq — eski holat tegilmaydi
 
     PACKS = out;
+    if (typeof PACK_SEEN === "object") PACK_SEEN = isObj(snap.packSeen) ? (snapClone(snap.packSeen, {}) || {}) : {};
     CUR  = (isFinite(+snap.cur) && +snap.cur >= -1 && +snap.cur < PACKS.length)
              ? Math.round(+snap.cur) : (PACKS.length ? 0 : -1);
     STEP = PACKS[CUR]
@@ -6328,7 +6380,7 @@ function selectPack(i){
   CUR = i; STEP = 0; WRAP = false;
   var p = PACKS[i];
   if (!p){
-    // v10: ilgari bu yerda sarlavha tozalanmasdi — hamma hona oʻchirilганda
+    // v10: ilgari bu yerda sarlavha tozalanmasdi — hamma hona oʻchirilganda
     // ekranda avvalgi pochkaning nomi va gabariti qolib ketardi.
     CUR = -1;
     $("stageTitle").textContent = PACKS.length ? "Pochka tanlanmagan" : "Pochka yoʻq";
@@ -6403,7 +6455,14 @@ function togglePackOvh(p, on){
 /* 3.9.2 keyingi detal karti + skaner tekshiruvi */
 function renderStep(){
   var p = PACKS[CUR];
-  if (!p){ $("nextBox").innerHTML = '<div style="color:var(--ink3)">Pochka tanlang</div>'; $("lblwrap").innerHTML=""; draw3D(); draw2D(); return; }
+  if (!p){
+    // v22: qadoqlash postida pochka detal skanidan ochiladi — maydon shu yerda ham kerak
+    $("nextBox").innerHTML = '<div style="color:var(--ink3)">'+
+      (PACKS.length ? 'Pochka tanlang yoki stelyajdagi detalni skanerlang — pochkasi oʻzi ochiladi' : 'Pochka yoʻq')+'</div>'+
+      (PACKS.length ? SCAN_BOX : '');
+    bindScan(false);
+    $("lblwrap").innerHTML=""; draw3D(); draw2D(); return;
+  }
   var fin = STEP >= p.seq.length;
   var step = p.seq[Math.min(STEP, p.seq.length-1)];
   $("stepNo").textContent = Math.min(STEP+1,p.seq.length)+"/"+p.seq.length;
@@ -6419,6 +6478,9 @@ function renderStep(){
       // Endi uch joyda ham bitta manba — packBrutto().
       (liftTier(packBrutto(p)) > 1
         ? '<div class="heavy">⚠ '+packBrutto(p).toFixed(0)+' KG — '+liftText(packBrutto(p))+'</div>' : '')+
+      // v22: keyingi pochka — stelyajdagi detalni skanerlash bilan ochiladi
+      SCAN_BOX.replace('placeholder="QR skanerlang yoki kod yozing"',
+                       'placeholder="keyingi pochka: detalni skanerlang — oʻzi ochiladi"')+
       '<div class="btnrow" style="margin-top:14px"><button class="btn" id="bBack">← Orqaga</button>'+
       (CUR+1 < PACKS.length
         ? '<button class="btn pri" id="bNextPack">Keyingi pochka →</button>'
@@ -6427,6 +6489,7 @@ function renderStep(){
     $("bBack").onclick = function(){ setStep(STEP-1); WRAP=false; renderStep(); renderPacks(); };
     // v10: oxirgi pochkada tugma jim turardi — endi oʻchirilgan holatda va nomi boshqa
     $("bNextPack").onclick = function(){ if (CUR+1<PACKS.length) selectPack(CUR+1); };
+    bindScan(false);
   } else {
     var it = step.it;
     var role = step.role==="tag" ? "eng tag — yaxlit detal"
@@ -6457,29 +6520,36 @@ function renderStep(){
         '<div class="cell"><u>Kant</u><b>'+edgeText(it.edges)+'</b></div>'+
       '</div>'+
       '<div class="where"><u>Qayerga</u><b>'+where+'</b></div>'+
-      '<div class="scan"><input id="scan" placeholder="QR skanerlang yoki kod yozing" autocomplete="off"></div>'+
-      '<div class="msg" id="msg"></div>'+
+      SCAN_BOX+
       '<div class="btnrow"><button class="btn" id="bBack">← Orqaga</button>'+
       '<button class="btn pri" id="bOk">Qoʻyildi ✓</button></div>';
     $("bOk").onclick = advance;
     $("bBack").onclick = function(){ setStep(STEP-1); WRAP=false; renderStep(); renderPacks(); };
-    var sc = $("scan");
     /* v22: boʻsh maydonda Enter — qoʻlda «Qoʻyildi» (skaner hech qachon boʻsh satr
        yubormaydi). Fokus endi doim shu yerda turadi, shuning uchun qoʻlda
        tasdiqlash ham shu maydondan ishlashi kerak. */
-    sc.onkeydown = function(e){
-      if (e.key !== "Enter") return;
-      e.preventDefault();
-      var val = sc.value.trim(); sc.value = "";
-      if (val) checkScan(val); else if (PACKS[CUR]) advance();
-    };
-    setTimeout(function(){ sc.focus(); }, 30);
-    if (PEND){ var m=$("msg"); m.className="msg "+PEND.k; m.textContent=PEND.t; PEND=null; }
+    bindScan(true);
     $("lblwrap").innerHTML = labelHTML(p, step, "qrLive");
     drawQR($("qrLive"), qrText(p, step));
   }
   var bw2=$("btnWrap"); if(bw2) bw2.textContent = WRAP ? "Qogʻozni ochish" : "Qogʻozga oʻrash";
   draw3D(); draw2D();
+}
+/* v22: skaner maydoni — qadam kartasida, tayyor pochkada va pochka tanlanmaganda
+   ham bir xil. Tayyor pochkada maydon boʻlmasa qadoqlovchi keyingi pochkani skan
+   bilan ocholmasdi (klaviatura ushlagichi ham harflarni hech qayerga bermasdi). */
+var SCAN_BOX = '<div class="scan"><input id="scan" placeholder="QR skanerlang yoki kod yozing" autocomplete="off"></div>'+
+               '<div class="msg" id="msg"></div>';
+function bindScan(emptyAdvance){
+  var sc = $("scan"); if (!sc) return;
+  sc.onkeydown = function(e){
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    var val = sc.value.trim(); sc.value = "";
+    if (val) checkScan(val); else if (emptyAdvance && PACKS[CUR]) advance();
+  };
+  setTimeout(function(){ sc.focus(); }, 30);
+  if (PEND){ var m = $("msg"); if (m){ m.className = "msg " + PEND.k; m.textContent = PEND.t; } PEND = null; }
 }
 function advance(){ var p=PACKS[CUR]; if (!p) return;
   flashClear();                       // eski xabar yangi qadamga oʻtmasin
@@ -6519,11 +6589,10 @@ function flashClear(){
    QR format: PREFIKS.UUID.Rn|Pnn|Qn|KOD|LxWxT
    v10: reviziya (Rn) tekshiriladi — buyurtma qayta pochkalangandan keyin eski chek
    skanerlansa operator buni darhol biladi, aks holda notoʻgʻri pochka yigʻiladi. */
-function checkScan(v){
-  var p = PACKS[CUR]; if (!p || !v) return;
-  v = String(v).trim();
-  if (STEP >= p.seq.length){ flash("ok","pochka allaqachon tayyor"); return; }
-  var step = p.seq[STEP], f = v.split("|");
+function checkScan(v, again){
+  v = String(v == null ? "" : v).trim();
+  if (!v) return;
+  var f = v.split("|");
 
   /* v22: OʻZ CHEKIMIZ — «PREFIKS.LOYIHA.Rn|Pnn|Qn|KOD|LxWxT». Reviziya va loyiha
      FAQAT shu formatda tekshiriladi. Ilgari: (1) loyiha belgisi solishtirilmasdi —
@@ -6552,7 +6621,42 @@ function checkScan(v){
     return s.it.code === v || mesMatch(v, s.it);
   }
 
-  if (hitIn(p, step)){ advance(); flash("ok","toʻgʻri — qoʻyildi ✓"); return; }
+  /* v22: BITTA CHEK — BITTA DETAL. MES chekida nusxa raqami bor (…_3), demak
+     oʻsha chekning ikkinchi skani — oʻsha jismoniy detal. Ilgari u bir xil
+     detalli keyingi oʻringa (yoki skan bilan ochiladigan boshqa pochkaga)
+     qoʻyilib ketardi: jismonan yoʻq detal «qoʻyildi» boʻlardi. Oʻz chekimiz va
+     oddiy kod nusxani ajratmaydi — ular uchun bu tekshiruv yoʻq. */
+  var mk = own ? "" : mesStrip(v);
+  if (mk && PACK_SEEN[mk]){
+    var wp = uidPlaced(PACK_SEEN[mk]);
+    if (wp){ flash("err","bu chek allaqachon skanerlangan — P"+pad2(wp.p.no)+" ga qoʻyilgan ("+(wp.i+1)+"-qadam)"); return; }
+  }
+  function seenMark(s){ if (mk && s.it.code !== v && mesMatch(v, s.it)) PACK_SEEN[mk] = s.it.uid; }
+
+  /* v22: QADOQLASH POSTI — POCHKA DETAL SKANIDAN OCHILADI. Stelyaj qadoqlash
+     boʻlimiga keladi; qadoqlovchi yacheykadan detal olib skanerlaydi. Hozir hech
+     qaysi pochka yigʻilmayotgan boʻlsa (tanlanmagan, tugagan yoki hali
+     boshlanmagan) — shu detal kutilayotgan pochka oʻzi ochiladi va skan unda
+     hisoblanadi. Yigʻilayotgan pochka hech qachon jimgina almashtirilmaydi. */
+  var p = PACKS[CUR];
+  if (!again && (!p || STEP === 0 || STEP >= p.seq.length)){
+    var o = scanOpenPack(hitIn);
+    if (o.err){ flash("err", o.err); return; }
+    if (o.idx >= 0 && o.idx !== CUR){
+      var q0 = PACKS[o.idx];
+      var cellQ = (typeof SORT === "object" && SORT && SORT.pack) ? SORT.pack[q0.no] : null;
+      selectPack(o.idx);
+      checkScan(v, true);
+      var head = "P" + pad2(q0.no) + " ochildi" + (cellQ ? " (" + cellQ + " yacheyka)" : "");
+      flash(PEND ? PEND.k : "ok", head + (PEND && PEND.t ? " · " + PEND.t : ""));
+      return;
+    }
+  }
+  if (!p){ elsewhere(); return; }
+  if (STEP >= p.seq.length){ elsewhere(true); return; }
+  var step = p.seq[STEP];
+
+  if (hitIn(p, step)){ seenMark(step); advance(); flash("ok","toʻgʻri — qoʻyildi ✓"); return; }
 
   /* v22: QAVAT ICHIDA ERKIN TARTIB (MES gʻoyasi: qaror qadoqlovchida). Shu
      qavatdagi hali qoʻyilmagan detal skanerlansa — qabul qilinadi va yigʻish
@@ -6564,6 +6668,7 @@ function checkScan(v){
     if (p.seq[i].layer === step.layer){
       var sw = p.seq.splice(i, 1)[0];
       p.seq.splice(STEP, 0, sw);
+      seenMark(sw);
       advance(); flash("ok","toʻgʻri — qoʻyildi ✓ (shu qavat, boshqa tartibda)");
       return;
     }
@@ -6578,24 +6683,66 @@ function checkScan(v){
     if (hitIn(p, p.seq[d])){ flash("err","bu detal allaqachon qoʻyilgan ("+(d+1)+"-qadam) — ikkinchi nusxa yoʻq"); return; }
   }
 
+  elsewhere();
+
   // boshqa pochkada bormi? — operatorga aniq yoʻl koʻrsatamiz
-  for (var k = 0; k < PACKS.length; k++){
-    if (k === CUR) continue;
-    var q = PACKS[k];
-    for (var j = 0; j < q.seq.length; j++){
-      if (hitIn(q, q.seq[j])){
-        flash("err","bu detal P"+pad2(q.no)+" pochkasiga tegishli ("+(j+1)+"-qadam)");
-        return;
+  function elsewhere(curDone){
+    for (var k = 0; k < PACKS.length; k++){
+      if (k === CUR) continue;
+      var q = PACKS[k];
+      for (var j = 0; j < q.seq.length; j++){
+        if (hitIn(q, q.seq[j])){
+          var qFin = (q.done || 0) >= q.seq.length;
+          flash("err","bu detal P"+pad2(q.no)+" pochkasiga tegishli ("+(j+1)+"-qadam)"+
+                (qFin ? " — P"+pad2(q.no)+" allaqachon tayyor" : ""));
+          return;
+        }
       }
     }
+    // v22: MES cheki, lekin boshqa buyurtmaniki — umumiy «topilmadi» dan aniqroq
+    var vo = mesOrderOf(v);
+    if (vo && P && P.mesOrder && vo !== P.mesOrder){
+      flash("err","bu detal boshqa buyurtmadan ("+vo+"), joriy buyurtma "+P.mesOrder);
+      return;
+    }
+    if (curDone){ flash("ok","pochka allaqachon tayyor"); return; }
+    flash("err","bu detal bu buyurtmada topilmadi");
   }
-  // v22: MES cheki, lekin boshqa buyurtmaniki — umumiy «topilmadi» dan aniqroq
-  var vo = mesOrderOf(v);
-  if (vo && P && P.mesOrder && vo !== P.mesOrder){
-    flash("err","bu detal boshqa buyurtmadan ("+vo+"), joriy buyurtma "+P.mesOrder);
-    return;
+}
+
+/* v22: qadoqlash postida skanerlangan MES cheklar: buyurtmasiz MES ID -> uid.
+   Seans bilan saqlanadi (09-storage), qayta pochkalashda tozalanadi (13-app). */
+var PACK_SEEN = {};
+/* uid hozir qoʻyilganmi — qaysi pochkaning qaysi qadamida. «Orqaga» bilan
+   qaytarilgan detal qoʻyilmagan hisoblanadi, shuning uchun eski yozuv xalaqit bermaydi. */
+function uidPlaced(uid){
+  for (var k = 0; k < PACKS.length; k++){
+    var q = PACKS[k], dn = Math.min((k === CUR) ? STEP : (q.done || 0), q.seq.length);
+    for (var i = 0; i < dn; i++) if (q.seq[i].it.uid === uid) return { p:q, i:i };
   }
-  flash("err","bu detal bu buyurtmada topilmadi");
+  return null;
+}
+
+/* v22: skanerlangan detal qaysi YIGʻILMAGAN pochkada kutilmoqda.
+   Qaytadi: {idx} — bitta pochka (joriy pochka oʻzi boʻlsa — u), {idx:-1} — hech
+   qayerda, {err} — bir xil detal bir necha pochkada (MES cheki nusxani pochkaga
+   bogʻlamaydi) — shunda pochka taxmin qilinmaydi. */
+function scanOpenPack(hitIn){
+  var cands = [];
+  for (var k = 0; k < PACKS.length; k++){
+    var q = PACKS[k], from = (k === CUR) ? STEP : Math.max(0, Math.min(q.done || 0, q.seq.length));
+    for (var j = from; j < q.seq.length; j++) if (hitIn(q, q.seq[j])){ cands.push(k); break; }
+  }
+  if (!cands.length) return { idx:-1 };
+  if (cands.indexOf(CUR) >= 0) return { idx:CUR };
+  if (cands.length === 1) return { idx:cands[0] };
+  // boshlangan pochka bittasi boʻlsa — qadoqlovchi oʻshani davom ettiryapti
+  var started = cands.filter(function(k){ return (PACKS[k].done || 0) > 0; });
+  if (started.length === 1) return { idx:started[0] };
+  return { err:"bu detal " + cands.length + " ta pochkada bor (" +
+    cands.slice(0, 4).map(function(k){ return "P" + pad2(PACKS[k].no); }).join(", ") +
+    (cands.length > 4 ? " …" : "") + ") — shu yacheykadagi eng katta detalni (tagini) skanerlang " +
+    "yoki pochkani roʻyxatdan tanlang" };
 }
 
 /* 3.9.3 shapka statistikasi + audit belgisi */
@@ -6604,7 +6751,11 @@ function stats(){
   var items = buildItems();
   $("pname").textContent = P.name;
   $("puuid").textContent = "UPK v" + APP_VER + " · id " + (P.uuid||"—") + " · R" + (P.rev||1) +
+                           // v22: reja raqami — saralash va qadoqlash postida bir xil boʻlishi shart
+                           ((typeof planId === "function" && planId()) ? " · reja " + planId() : "") +
                            " · " + P.materials.length + " material";
+  var mpi = $("mgrPlanId");
+  if (mpi) mpi.textContent = (typeof planId === "function" && planId()) ? planId() : "—";
   $("sParts").innerHTML = items.length+'<i>dona</i>';
   $("sKg").innerHTML = items.reduce(function(s,i){ return s+i.kg; },0).toFixed(0)+'<i>kg</i>';
   // v10c: shapkada JAMI pochka soni turadi. Ilgari bu yerda faqat oddiy pochkalar
@@ -8045,7 +8196,7 @@ var UP_SCANMAX = 4 * 1024 * 1024;  // matn skaneri shuncha belgidan koʻpini ko�
    `accept` atributiga ham qoʻyiladi (`initUpload`) — ilgari u index.html da
    alohida yozilgan edi va ikkalasi bir-biridan uzilib qolishi mumkin edi.
    Kengaytma mos kelmasa fayl baribir oʻqiladi, faqat ogohlantirish chiqadi. */
-var UP_EXT   = [".project", ".xml", ".txt"];
+var UP_EXT   = [".project", ".xml", ".txt", ".json"];   // v22: .upk.json — postlar uchun reja fayli
 var UP_BOUND = false;              // oyna hodisalari bir marta bogʻlanadi
 var UP_DRAG  = 0;                  // dragenter/dragleave hisoblagichi
 var UP_ZONE  = false;              // overlay hozir koʻrinib turibdimi
@@ -8279,7 +8430,7 @@ function readFile(f, enc){
     for (i = 0; i < UP_EXT.length; i++){
       if (low.length >= UP_EXT[i].length && low.slice(-UP_EXT[i].length) === UP_EXT[i]) okExt = true;
     }
-    if (!okExt) upDiagWarn("KENGAYTMA", "«" + nm + "» — kutilgani .project, .xml yoki .txt edi. Fayl baribir oʻqib koʻriladi.");
+    if (!okExt) upDiagWarn("KENGAYTMA", "«" + nm + "» — kutilgani .project, .xml, .txt yoki reja fayli (.upk.json) edi. Fayl baribir oʻqib koʻriladi.");
     if (!f.size){
       showLoadError(new Error("Fayl boʻsh — hajmi 0 bayt. Toʻliq koʻchirilmagan yoki nusxa olishda uzilib qolgan boʻlishi mumkin."), "", nm);
       return;
@@ -8307,6 +8458,15 @@ function readFile(f, enc){
 }
 
 function loadXmlText(xmlText, fname){
+  /* v22: REJA FAYLI (boshqa postda saqlangan) — XML emas, tayyor pochkalar.
+     Oyna ochilmaydi: pochkalar fayldagidek tiklanadi (15-post.js). */
+  if (typeof looksLikePlan === "function" && looksLikePlan(xmlText)){
+    var pr = planFileLoad(xmlText);
+    if (!pr.ok){ showLoadError(new Error(pr.msg), "", fname); return null; }
+    showTab(typeof postHome === "function" ? postHome() : "work");
+    flash(pr.same ? "ok" : "err", pr.msg);
+    return P;
+  }
   upDiagClear();
   var d = upDiag(), st = upStore(), data = null, err = null;
   d.fileName = fname || "";
@@ -9161,6 +9321,7 @@ function recompute(){
        endi notoʻgʻri («P07 → B3» degan yozuv boshqa detallarga tegishli boʻlib
        qoladi). Shu sabab saralash nolga tushadi. */
     if (typeof sortReset === "function") sortReset();
+    if (typeof PACK_SEEN === "object") PACK_SEEN = {};   // v22: yangi pochkalar — eski skanlar yaroqsiz
     if (typeof showCellTot === "function") showCellTot();
     // v14: qalinlik matritsasi LOYIHADAN chiqadi — yangi fayl yuklangach yangilanadi
     if (typeof renderThickMix === "function") renderThickMix();
@@ -9255,7 +9416,7 @@ $("mOk").onclick = function(){
   $("modal").style.display = "none";
   var data = PENDING; PENDING = null;
   boot(data);
-  document.querySelector('.tabs button[data-v="work"]').click();
+  showTab("work");                     // v22: post rejimida — postning oʻz ekrani
 };
 $("mCancel").onclick = function(){ $("modal").style.display = "none"; PENDING = null; };
 
@@ -9273,6 +9434,8 @@ document.querySelectorAll(".tabs button").forEach(function(b){
   };
 });
 function showTab(name){
+  // v22: post rejimida boshqa postning ekrani yashirin — oʻrniga postning oʻzi
+  if (typeof postHidden === "function" && postHidden(name)) name = postHome();
   var b = document.querySelector('.tabs button[data-v="'+name+'"]');
   if (b) b.click();
 }
@@ -9571,9 +9734,17 @@ if (typeof initUpload === "function") initUpload();
    NEGA DINAMIK TAQSIMOT. Yacheyka pochkaga OLDINDAN emas, oʻsha pochkaning
    birinchi detali skanerlanganda biriktiriladi. Sabab: 55 pochkaga 60 yacheyka
    kerak boʻlardi, sexda esa masalan 3 ta stelyaj (30 yacheyka) bor. Dinamik
-   taqsimotda yacheyka faqat kerak boʻlganda band boʻladi va pochka qadoqlanib
-   boʻlgach darhol boʻshaydi — shu sabab 30 yacheyka bilan 55 pochkani
-   toʻlqin-toʻlqin saralab chiqish mumkin.
+   taqsimotda yacheyka faqat kerak boʻlganda band boʻladi va qaytadan boʻshaydi —
+   shu sabab 30 yacheyka bilan 55 pochkani toʻlqin-toʻlqin saralab chiqish mumkin.
+
+   v22: POSTLAR ALOHIDA, STELYAJ KOʻCHMA (tsex jarayoni, 2026-11-12). Saralash
+   va qadoqlash — alohida joy, odatda alohida kompyuter. Stelyaj toʻlgach u
+   BUTUNLIGICHA qadoqlash boʻlimiga olib boriladi, u yerda 3D boʻyicha
+   qadoqlanadi va chek yopishtiriladi, boʻsh stelyaj qaytadi. Shuning uchun
+   yacheyka pochka qadoqlanganda emas (bu boshqa kompyuterda boʻladi), STELYAJ
+   QAYTGANDA boʻshaydi:
+     toʻlmoqda → TAYYOR (hamma pochkasi toʻla, unga boshqa pochka rejalanmagan)
+               → qadoqlashda (SORT.away) → qaytdi (rackReturn yoki stelyaj QR i).
    ============================================================ */
 
 var SORT = {
@@ -9582,6 +9753,8 @@ var SORT = {
   put:  {},   // detal uid -> "A3"   (aynan qaysi nusxa qoʻyilgani)
   plan: {},   // pochka no -> rejalashtirilgan yacheyka (hali band emas)
   seen: {},   // v22: skanerlangan MES ID (buyurtmasiz) -> uid — bitta chek ikki marta sanalmasin
+  away: {},   // v22: stelyaj harfi -> {ts, auto} — stelyaj qadoqlash boʻlimida
+  gone: {},   // v22: pochka no -> stelyaj harfi — stelyaj boʻsh qaytdi, pochka saralashdan ketdi
   last: null  // oxirgi skaner natijasi — katta yozuv uchun
 };
 /* v22: SORT.put dagi bu qiymat — detal saralangan VA pochkasi qadoqlangan.
@@ -9669,6 +9842,20 @@ function rackEditSave(){
 }
 /* Tizim foydalana oladigan yacheykalar — yopiqlari chiqarib tashlanadi */
 function openCells(){ return allCells().filter(function(c){ return !cellOff(c); }); }
+/* v22: yacheyka qaysi stelyajniki — «AB7» -> «AB» */
+function rackOf(code){ var m = /^[A-Z]+/.exec(String(code || "")); return m ? m[0] : ""; }
+function rackAway(L){ return !!(SORT.away && SORT.away[L]); }
+function rackExists(L){
+  for (var r = 0; r < rackCount(); r++) if (rackLetter(r) === L) return true;
+  return false;
+}
+/* v22: saralash HOZIR foydalana oladigan yacheykalar — ochiq VA stelyaji shu yerda
+   (qadoqlashdagi stelyajga detal qoʻyib boʻlmaydi). */
+function usableCells(){ return openCells().filter(function(c){ return !rackAway(rackOf(c)); }); }
+function packByNo(no){
+  for (var i = 0; i < PACKS.length; i++) if (PACKS[i].no === no) return PACKS[i];
+  return null;
+}
 
 /* Yacheykani ochish/yopish. Ichida pochka turgan boʻlsa yopib boʻlmaydi —
    aks holda detallar «yoʻqolgan» holatga tushib qolardi. */
@@ -9711,7 +9898,7 @@ function packItems(p){
 
 /* Boʻsh yacheyka topish — yopiqlari hisobga olinmaydi. Yoʻq boʻlsa null. */
 function freeCell(){
-  var all = openCells();
+  var all = usableCells();
   for (var i = 0; i < all.length; i++) if (!SORT.cell[all[i]]) return all[i];
   return null;
 }
@@ -9720,6 +9907,7 @@ function freeCell(){
 function packFinished(p){ return !!p && !!p.seq && p.seq.length > 0 && (p.done || 0) >= p.seq.length; }
 function packLeft(p){
   if (packFinished(p)) return 0;                // v22: yigʻib boʻlingan pochka saralanmaydi
+  if (p && SORT.gone && SORT.gone[p.no]) return 0;   // v22: stelyaji bilan ketgan — yangi yacheyka olmaydi
   var its = packItems(p), n = 0;
   for (var i = 0; i < its.length; i++) if (!SORT.put[its[i].uid]) n++;
   return n;
@@ -9756,7 +9944,7 @@ function sortPlan(){
   });
   // eng koʻp qolgan detal — eng yaqin yacheykaga
   open.sort(function(a,b){ return b.left - a.left || a.no - b.no; });
-  var free = openCells().filter(function(c){ return !SORT.cell[c]; });
+  var free = usableCells().filter(function(c){ return !SORT.cell[c]; });
   SORT.plan = {};
   for (var i = 0; i < open.length && i < free.length; i++) SORT.plan[open[i].no] = free[i];
   return open;
@@ -9794,6 +9982,9 @@ function walkCost(){
 function sortFreeCell(no){
   var c = SORT.pack[no];
   if (!c) return false;
+  /* v22: stelyaj qadoqlash boʻlimida — yacheyka stelyaj QAYTGANDA boʻshaydi
+     (rackReturn). Bu yerda boʻshatilsa saralash posti yoʻq stelyajga detal berardi. */
+  if (rackAway(rackOf(c))) return false;
   delete SORT.cell[c]; delete SORT.pack[no];
   // v22: detallar belgisi OʻCHIRILMAYDI — «qadoqlangan» boʻladi (SORT_PACKED)
   Object.keys(SORT.put).forEach(function(uid){ if (SORT.put[uid] === c) SORT.put[uid] = SORT_PACKED; });
@@ -9807,6 +9998,105 @@ function cellDone(no){
   var n = 0;
   Object.keys(SORT.put).forEach(function(uid){ if (SORT.put[uid] === c) n++; });
   return n;
+}
+
+/* ---- v22: STELYAJ HAYOT SIKLI ---- */
+
+/* Stelyaj holati: band yacheykalar (pochka, saralangan/jami), boʻsh yacheykalar
+   va ularning qanchasiga pochka REJALANGAN. TAYYOR — hamma band pochka toʻla va
+   stelyajga boshqa pochka rejalanmagan (aks holda u yoʻlda toʻldirilardi). */
+/* Har yacheykada nechta detal — bitta oʻtishda (cellDone har yacheyka uchun
+   butun SORT.put ni aylanardi: 60 stelyaj × 10 yacheyka × 1000 detal har skanda). */
+function cellCounts(){
+  var cnt = {};
+  Object.keys(SORT.put).forEach(function(uid){ var c = SORT.put[uid]; cnt[c] = (cnt[c] || 0) + 1; });
+  return cnt;
+}
+function rackInfo(L, cnt){
+  var busy = [], free = 0, full = 0, planned = 0, pl = {};
+  if (!cnt) cnt = cellCounts();
+  Object.keys(SORT.plan || {}).forEach(function(no){ pl[SORT.plan[no]] = 1; });
+  for (var i = 1; i <= cellCount(); i++){
+    var c = L + i, no = SORT.cell[c];
+    if (no){
+      var n = packItems(packByNo(no)).length, d = cnt[c] || 0;
+      busy.push({ c:c, no:no, n:n, done:d, full:d >= n });
+      if (d >= n) full++;
+    } else if (!cellOff(c)){ free++; if (pl[c]) planned++; }
+  }
+  var away = rackAway(L);
+  return { L:L, busy:busy, full:full, free:free, planned:planned, away:away,
+           ready: !away && busy.length > 0 && full === busy.length && planned === 0 };
+}
+/* Har skandan keyin: yangi TAYYOR boʻlgan stelyajlar qadoqlashga ketgan deb
+   belgilanadi — ularning yacheykalari boʻsh stelyaj qaytguncha rejaga kirmaydi.
+   Qaytadi: shu safar tayyor boʻlgan stelyaj harflari. */
+function rackCheckReady(){
+  sortPlan();
+  var out = [], cnt = cellCounts();
+  for (var r = 0; r < rackCount(); r++){
+    var L = rackLetter(r);
+    if (!rackAway(L) && rackInfo(L, cnt).ready){ SORT.away[L] = { ts:Date.now(), auto:true }; out.push(L); }
+  }
+  if (out.length) sortPlan();
+  return out;
+}
+/* Qoʻlda joʻnatish — toʻliq boʻlmagan stelyajni ham (masalan bitta detal brakka
+   ketgan). force boʻlmasa toʻliq emas pochkalar roʻyxati qaytadi, joʻnatilmaydi. */
+function rackSend(L, force){
+  L = String(L || "").toUpperCase();
+  if (!rackExists(L)) return { ok:false, msg:"«" + L + "» — bunday stelyaj yoʻq" };
+  if (rackAway(L)) return { ok:false, msg:L + " stelyaji allaqachon qadoqlashda" };
+  var info = rackInfo(L);
+  if (!info.busy.length) return { ok:false, msg:L + " stelyaji boʻsh — joʻnatadigan pochka yoʻq" };
+  var inc = info.busy.filter(function(b){ return !b.full; });
+  if (inc.length && !force)
+    return { ok:false, need:true, incomplete:inc,
+             msg:L + " da " + inc.length + " ta pochka toʻliq emas: " +
+                 inc.map(function(b){ return "P" + pad2(b.no) + " " + b.done + "/" + b.n; }).join(", ") };
+  SORT.away[L] = { ts:Date.now(), auto:false };
+  sortPlan();
+  if (typeof autosave === "function") autosave();
+  return { ok:true, msg:L + " stelyaji qadoqlashga joʻnatildi" +
+           (inc.length ? " — " + inc.length + " ta pochka toʻliq emas, qolgan detallari qadoqlashga eltiladi" : "") };
+}
+/* Boʻsh stelyaj qaytdi: yacheykalari boʻshaydi, undagi pochkalar saralashdan
+   chiqib ketgan (SORT.gone) — ularning kechikkan detali endi qadoqlashga eltiladi. */
+function rackReturn(L){
+  L = String(L || "").toUpperCase();
+  if (!rackExists(L)) return { ok:false, msg:"«" + L + "» — bunday stelyaj yoʻq" };
+  if (!rackAway(L)) return { ok:false, msg:L + " stelyaji saralashda turibdi — u qadoqlashga joʻnatilmagan" };
+  var freed = 0, packs = [];
+  Object.keys(SORT.cell).forEach(function(c){
+    if (rackOf(c) !== L) return;
+    var no = SORT.cell[c];
+    SORT.gone[no] = L; packs.push(no);
+    delete SORT.cell[c]; delete SORT.pack[no]; freed++;
+    Object.keys(SORT.put).forEach(function(uid){ if (SORT.put[uid] === c) SORT.put[uid] = SORT_PACKED; });
+  });
+  delete SORT.away[L];
+  sortPlan();
+  if (typeof autosave === "function") autosave();
+  return { ok:true, freed:freed, packs:packs,
+           msg:L + " stelyaji qaytdi — " + freed + " ta yacheyka boʻshadi" };
+}
+/* Stelyaj belgisi (QR): «UPK|STELYAJ|A». Qaytgan stelyaj shu bilan skanerlanadi —
+   ishchi sichqonchaga tegmaydi. */
+var RACK_QR = /^UPK\|STELYAJ\|([A-Z]+)$/;
+function rackQR(raw){ var m = RACK_QR.exec(String(raw || "").trim().toUpperCase()); return m ? m[1] : ""; }
+function rackQRText(L){ return "UPK|STELYAJ|" + L; }
+function sortRackScan(L){
+  if (!rackExists(L))
+    return { ok:false, kind:"err", msg:"«" + L + "» stelyaji bu sexda yoʻq (sozlamada " + rackCount() + " ta stelyaj)" };
+  if (rackAway(L)){
+    var r = rackReturn(L);
+    SORT.last = { rack:L, freed:r.freed, packs:r.packs };
+    return { ok:true, kind:"ok", rack:L, msg:"" };
+  }
+  var info = rackInfo(L);
+  return { ok:false, kind:"", rack:L,
+           msg:L + " stelyaji saralashda: " + info.busy.length + " ta pochka (" + info.full + " tasi toʻla), " +
+               info.free + " ta boʻsh yacheyka" };
 }
 
 /* ---- 3.15.2 SKANER ---- */
@@ -9879,25 +10169,34 @@ function sortResolve(raw){
 }
 
 /* Nomzodlar ichidan hali saralanmagan nusxa. Tartib:
+     0) v22: pochkasi QADOQLASHDA turgan nusxa (stelyaj toʻliq boʻlmay joʻnatilgan
+        yoki qaytgan) — qadoqlovchi aynan shu detalni kutyapti;
      1) yacheykasi BOR pochka — ochiq yacheykani tezroq toʻldirib boʻshatamiz;
      2) soʻng eng kichik raqamli pochka — natija oldindan aytib boʻladigan boʻlsin.
    Yigʻib boʻlingan pochka nomzod emas (v22). */
 function findSortTarget(cands){
   if (typeof cands === "string") cands = sortResolve(cands).cands;   // eski chaqiruv: kod
-  var withCell = null, any = null;
+  var urgent = null, gone = null, withCell = null, any = null;
   for (var i = 0; i < cands.length; i++){
     var c = cands[i];
     if (SORT.put[c.it.uid] || packFinished(c.p)) continue;
-    if (SORT.pack[c.p.no]){ if (!withCell) withCell = c; }
+    var cell = SORT.pack[c.p.no];
+    if (cell){
+      if (rackAway(rackOf(cell))){ if (!urgent) urgent = c; }
+      else if (!withCell) withCell = c;
+    }
+    else if (SORT.gone && SORT.gone[c.p.no]){ if (!gone) gone = c; }
     else if (!any) any = c;
   }
-  return withCell || any;
+  return urgent || gone || withCell || any;
 }
 
 /* Asosiy amal: detal skanerlandi -> qaysi yacheykaga qoʻyilsin.
    Qaytadi: {ok, cell, pack, item, msg, kind} */
 function sortScan(raw){
   if (!String(raw || "").trim()) return { ok:false, kind:"err", msg:"kod boʻsh" };
+  var rq = rackQR(raw);                                  // v22: qaytgan stelyaj belgisi
+  if (rq) return sortRackScan(rq);
   if (!PACKS.length) return { ok:false, kind:"err", msg:"pochkalar hisoblanmagan — avval «Pochkalash» ni bosing" };
   var r = sortResolve(raw);
   if (r.err) return { ok:false, kind:"err", msg:r.err };
@@ -9925,19 +10224,45 @@ function sortScan(raw){
     return { ok:false, kind:"err", msg:"«" + label + "» — bu detal buyurtmada yoʻq" };
   }
 
+  /* v22: KECHIKKAN DETAL. Pochka stelyaji bilan qadoqlashda (yoki stelyaj qaytgan) —
+     detal yacheykaga emas, qadoqlash boʻlimiga eltiladi. */
+  var cellNow = SORT.pack[t.p.no];
+  if (cellNow && rackAway(rackOf(cellNow))){
+    SORT.put[t.it.uid] = cellNow;
+    if (mkey) SORT.seen[mkey] = t.it.uid;
+    SORT.last = { cell:cellNow, no:t.p.no, code:t.it.code, item:t.it, away:rackOf(cellNow),
+                  done:cellDone(t.p.no), n:packItems(t.p).length };
+    if (typeof autosave === "function") autosave();
+    return { ok:true, kind:"warn", cell:cellNow, pack:t.p, item:t.it, away:true,
+             msg:"«" + label + "» — P" + pad2(t.p.no) + " " + rackOf(cellNow) + " stelyaji bilan QADOQLASHDA: " +
+                 "detalni qadoqlash boʻlimiga eltib, " + cellNow + " yacheykaga qoʻying" };
+  }
+  if (SORT.gone && SORT.gone[t.p.no]){
+    SORT.put[t.it.uid] = SORT_PACKED;
+    if (mkey) SORT.seen[mkey] = t.it.uid;
+    SORT.last = { cell:null, no:t.p.no, code:t.it.code, item:t.it, gone:SORT.gone[t.p.no] };
+    if (typeof autosave === "function") autosave();
+    return { ok:true, kind:"warn", pack:t.p, item:t.it, gone:true,
+             msg:"«" + label + "» — P" + pad2(t.p.no) + " qadoqlashga ketgan (" + SORT.gone[t.p.no] +
+                 " stelyaji bilan): detalni qadoqlash boʻlimiga eltib bering" };
+  }
+
   var cell = claimCell(t.p.no);
   if (!cell){
     /* Yacheyka yoʻq yoki boʻsh yacheykalar kattaroq pochkalarga ajratilgan.
        Ishchi shu detal bilan NIMA qilishini bilishi kerak: detal paddonda qoladi
        va keyingi toʻlqinda saralanadi. Ochiq yacheykalarga tegishli detallarni
        esa u davom ettiraveradi. */
-    var open = Object.keys(SORT.cell).map(function(c){ return c + "=P" + pad2(SORT.cell[c]); }).join(", ");
-    var freeN = openCells().filter(function(c){ return !SORT.cell[c]; }).length;
+    var open = Object.keys(SORT.cell).filter(function(c){ return !rackAway(rackOf(c)); })
+      .map(function(c){ return c + "=P" + pad2(SORT.cell[c]); }).join(", ");
+    var freeN = usableCells().filter(function(c){ return !SORT.cell[c]; }).length;
+    var awayL = Object.keys(SORT.away || {});
     return { ok:false, kind:"err",
       msg:"«" + label + "» P" + pad2(t.p.no) + " ga tegishli, lekin " +
           (freeN ? "boʻsh yacheykalar kattaroq pochkalarga ajratilgan (keyingi toʻlqin)"
                  : "boʻsh yacheyka yoʻq") +
-          " — detalni paddonda qoldiring." + (open ? " Ochiq: " + open : "") };
+          " — detalni paddonda qoldiring." + (open ? " Ochiq: " + open : "") +
+          (awayL.length ? " · Qadoqlashda: " + awayL.join(", ") + " (qaytgach boʻshaydi)" : "") };
   }
 
   SORT.put[t.it.uid] = cell;
@@ -9945,8 +10270,10 @@ function sortScan(raw){
   var n = packItems(t.p).length;
   SORT.last = { cell:cell, no:t.p.no, code:t.it.code, item:t.it,
                 done:cellDone(t.p.no), n:n, gname:(t.p.gname || (t.p.base && t.p.base.prod) || "") };
+  var ready = rackCheckReady();                         // v22: stelyaj toʻldimi
+  if (ready.length) SORT.last.ready = ready;
   if (typeof autosave === "function") autosave();
-  return { ok:true, kind:"ok", cell:cell, pack:t.p, item:t.it, msg:"" };
+  return { ok:true, kind:"ok", cell:cell, pack:t.p, item:t.it, msg:"", ready:ready };
 }
 
 /* Butun buyurtma boʻyicha saralash holati */
@@ -9959,9 +10286,12 @@ function sortStats(){
   });
   var busy = Object.keys(SORT.cell).length;
   var off  = openCells().length;                    // ochiq yacheykalar soni
+  // v22: qadoqlashdagi stelyajning boʻsh yacheykasi ham «boʻsh» emas — u bu yerda yoʻq
+  var free = usableCells().filter(function(c){ return !SORT.cell[c]; }).length;
   return { tot:tot, done:done, cells:busy,
-           free: off - busy,                        // ochiq va band emas
-           off: allCells().length - off };          // ishchi yopgani
+           free: free,                              // ochiq, band emas va stelyaji shu yerda
+           off: allCells().length - off,            // ishchi yopgani
+           away: Object.keys(SORT.away || {}) };    // v22: qadoqlashdagi stelyajlar
 }
 
 /* ---- 3.15.3 INTERFEYS ---- */
@@ -9981,7 +10311,10 @@ function renderSort(){
     (st.done>=st.tot && st.tot ? 'var(--ok)' : 'var(--mark)')+'">'+
     (st.tot ? Math.round(st.done/st.tot*100) : 0)+'%</b>';
   var cnt = $("sortCells");
-  if (cnt) cnt.textContent = st.cells+" band · "+st.free+" boʻsh"+(st.off ? " · "+st.off+" yopiq" : "");
+  if (cnt) cnt.innerHTML = esc(st.cells+" band · "+st.free+" boʻsh"+(st.off ? " · "+st.off+" yopiq" : ""))+
+    (st.away.length ? ' <span class="awaytag">qadoqlashda: '+esc(st.away.join(", "))+'</span>' : '');
+  var pid = $("sortPlanId");
+  if (pid) pid.textContent = (typeof planId === "function" && planId()) ? "reja " + planId() : "";
 
   /* Oxirgi skanerlangan detal EKRANDA QOLADI — keyingi skanergacha. Ishchi
      detalni qoʻlga olib, stelyajgacha yurib borguncha ekranga qayta qaray oladi. */
@@ -9990,14 +10323,33 @@ function renderSort(){
     box.innerHTML = '<div class="sortidle">Detalni skanerlang</div>';
     return;
   }
+  /* v22: qaytgan stelyaj skanerlandi */
+  if (L2.rack){
+    box.innerHTML =
+      '<div class="bigcell full">'+esc(L2.rack)+'</div>'+
+      '<div class="bigpack"><span class="okword">STELYAJ QAYTDI</span> · <b>'+L2.freed+'</b> ta yacheyka boʻshadi</div>';
+    return;
+  }
   var it = L2.item, full = L2.done >= L2.n;
-  box.innerHTML =
-    '<div class="bigcell'+(full?" full":"")+'">'+esc(L2.cell)+'</div>'+
-    '<div class="bigpack">P'+pad2(L2.no)+' · <b>'+L2.done+'/'+L2.n+'</b> detal'+
-      (full ? ' · <span class="okword">YACHEYKA TOʻLDI</span>' : '')+'</div>'+
+  /* v22: stelyaj toʻldi — qadoqlashga olib borish vaqti. Keyingi skangacha turadi. */
+  var ready = (L2.ready && L2.ready.length)
+    ? '<div class="rackready">⚑ '+esc(L2.ready.join(", "))+' STELYAJ'+(L2.ready.length > 1 ? 'LARI' : 'I')+
+      ' TAYYOR — qadoqlashga olib boring</div>' : '';
+  var tail =
     '<div class="bigcode">'+esc(it.code)+'</div>'+
     '<div class="bigdim">'+it.L+' × '+it.W+' × '+it.T+' mm · '+it.kg.toFixed(2)+' kg</div>'+
     '<div class="bigname">'+esc(it.name)+'</div>';
+  if (L2.gone || L2.away){
+    // kechikkan detal: pochkasi qadoqlashda — yacheykaga emas, oʻsha yoqqa
+    box.innerHTML =
+      '<div class="bigcell away">'+esc(L2.away ? L2.cell : "P"+pad2(L2.no))+'</div>'+
+      '<div class="bigpack">P'+pad2(L2.no)+' · <b class="awayword">QADOQLASHDA</b> — detalni qadoqlash boʻlimiga eltib bering</div>'+tail;
+    return;
+  }
+  box.innerHTML = ready +
+    '<div class="bigcell'+(full?" full":"")+'">'+esc(L2.cell)+'</div>'+
+    '<div class="bigpack">P'+pad2(L2.no)+' · <b>'+L2.done+'/'+L2.n+'</b> detal'+
+      (full ? ' · <span class="okword">YACHEYKA TOʻLDI</span>' : '')+'</div>'+tail;
 }
 
 /* «Reja» — qaysi pochka qaysi yacheykaga tushishi. Ish boshlashdan oldin
@@ -10038,15 +10390,21 @@ function renderPlanBox(){
 function renderRackBox(){
   var box = $("sortRackBox"); if (!box) return;
   if (box.style.display !== "block"){ box.innerHTML = ""; return; }
-  var R = rackCount(), C = cellCount(), h = "";
+  var R = rackCount(), C = cellCount(), h = "", cntR = cellCounts();
   for (var r = 0; r < R; r++){
     var L = rackLetter(r), offN = 0;
     for (var q = 1; q <= C; q++) if (draftOff(L + q)) offN++;
-    h += '<div class="rackrow"><button type="button" class="rackbtn'+(offN>=C?" off":"")+
+    var ri = rackInfo(L, cntR);
+    h += '<div class="rackrow'+(ri.away?" away":"")+'"><button type="button" class="rackbtn'+(offN>=C?" off":"")+
          '" data-rack="'+L+'"'+(RACK_EDIT?"":" disabled")+'>'+L+'</button><div class="rackcells">';
     for (var c = 1; c <= C; c++){
       var code = L + c, no = SORT.cell[code], cls = "", txt = "boʻsh";
-      if (no){ cls = " busy"; txt = "P"+pad2(no); }
+      if (no){
+        cls = " busy"; txt = "P"+pad2(no);
+        // v22: toʻla pochka — yashil; stelyaj qadoqlashda — xira
+        var bi = ri.busy.filter(function(b){ return b.c === code; })[0];
+        if (bi && bi.full) cls += " full";
+      }
       else if (draftOff(code)){ cls = " off"; txt = "yopiq"; }
       // v12: katta (chuqur) yacheyka koʻzga darrov tashlanishi kerak —
       // ishchi eni katta detalni aynan shunga olib boradi
@@ -10057,13 +10415,26 @@ function renderRackBox(){
            (RACK_EDIT?"":" disabled")+'><b>'+code+'</b><s>'+txt+'</s>'+
            (kind === "katta" ? '<u>chuqur</u>' : '')+'</button>';
     }
-    h += '</div></div>';
+    h += '</div>';
+    /* v22: stelyaj holati. Qadoqlashda — «Qaytdi» (yoki stelyaj QR ini skanerlash);
+       saralashda pochkasi bor — qoʻlda «Joʻnatish» (toʻliq boʻlmasa ikki marta bosiladi). */
+    if (!RACK_EDIT){
+      if (ri.away) h += '<div class="rstat"><em class="away">qadoqlashda</em>'+
+                        '<button type="button" class="btn gh" data-ret="'+L+'">Qaytdi</button></div>';
+      // «kutilmoqda» — boʻsh yacheykaga pochka rejalangan: stelyaj u toʻlguncha tayyor emas
+      else if (ri.busy.length) h += '<div class="rstat"><em>'+ri.full+'/'+ri.busy.length+' toʻla'+
+                        (ri.planned ? ' · '+ri.planned+' kutilmoqda' : '')+'</em>'+
+                        '<button type="button" class="btn gh" data-send="'+L+'">'+
+                        (SEND_ARM === L ? 'Rostdan? '+(ri.busy.length - ri.full)+' toʻliq emas' : 'Joʻnatish')+'</button></div>';
+    }
+    h += '</div>';
   }
 
   // qoralamadagi hisob — tahrirlash paytida saqlanmagan holatni koʻrsatadi
   var offN2 = 0, all = allCells();
   all.forEach(function(c){ if (draftOff(c)) offN2++; });
   var busyN = Object.keys(SORT.cell).length;
+  var stA = Object.keys(SORT.away || {});
 
   var bar = RACK_EDIT
     ? '<div class="rackbar edit">'+
@@ -10076,7 +10447,9 @@ function renderRackBox(){
         '<b>'+(all.length - offN2 - busyN)+'</b> boʻsh · '+
         '<b class="m">'+busyN+'</b> band · '+
         '<b class="o">'+offN2+'</b> yopiq'+
+        (stA.length ? ' · <b class="m">'+stA.length+'</b> stelyaj qadoqlashda' : '')+
         '<span class="grow"></span>'+
+        '<button class="btn gh" id="rackLblBtn" title="har stelyajga QR belgi — qaytgan stelyaj shu bilan skanerlanadi">Belgilar</button>'+
         '<button class="btn" id="rackEditBtn">Tahrirlash</button>'+
       '</div>';
 
@@ -10100,6 +10473,29 @@ function renderRackBox(){
 
   var eb = $("rackEditBtn");
   if (eb) eb.onclick = function(){ rackEditStart(); renderRackBox(); };
+  var lb = $("rackLblBtn");
+  if (lb) lb.onclick = function(){ if (typeof printRackLabels === "function") printRackLabels(); sortFocus(); };
+  // v22: stelyaj qaytdi / qoʻlda joʻnatish
+  [].slice.call(box.querySelectorAll("[data-ret]")).forEach(function(b){
+    b.onclick = function(){
+      var r = rackReturn(b.dataset.ret);
+      if (r.ok) SORT.last = { rack:b.dataset.ret, freed:r.freed, packs:r.packs };
+      sortFlash(r.ok ? "ok" : "err", r.msg);
+      renderSort(); renderPlanBox(); renderRackBox(); sortFocus();
+    };
+  });
+  [].slice.call(box.querySelectorAll("[data-send]")).forEach(function(b){
+    b.onclick = function(){
+      var L = b.dataset.send, r = rackSend(L, SEND_ARM === L);
+      if (!r.ok && r.need){
+        SEND_ARM = L;                                   // ikkinchi bosish — tasdiq
+        if (SEND_T) clearTimeout(SEND_T);
+        SEND_T = setTimeout(function(){ SEND_ARM = null; renderRackBox(); }, 5000);
+      } else SEND_ARM = null;
+      sortFlash(r.ok ? "ok" : (r.need ? "warn" : "err"), r.msg + (r.need ? " — joʻnatish uchun yana bosing" : ""));
+      renderSort(); renderPlanBox(); renderRackBox(); sortFocus();
+    };
+  });
   var sb = $("rackSaveBtn");
   if (sb) sb.onclick = function(){
     var d = rackEditSave();
@@ -10136,6 +10532,10 @@ function renderRackBox(){
   });
 }
 
+/* v22: toʻliq boʻlmagan stelyajni joʻnatish — ikki bosish bilan (modal oyna yoʻq:
+   u skanerni toʻsib qoʻyadi). Birinchi bosish 5 soniya «qurollanadi». */
+var SEND_ARM = null, SEND_T = null;
+
 /* «Saqlandi» yozuvi — 3 soniyada soʻnadi */
 var RACK_T = null;
 function rackSaved(what){
@@ -10149,6 +10549,7 @@ function rackSaved(what){
 /* Saralashni noldan boshlash */
 function sortReset(){
   SORT.cell = {}; SORT.pack = {}; SORT.put = {}; SORT.plan = {}; SORT.seen = {}; SORT.last = null;
+  SORT.away = {}; SORT.gone = {};                        // v22
   sortPlan();
   renderSort(); renderPlanBox(); sortFlash("", "");
   if (typeof autosave === "function") autosave();
@@ -10162,9 +10563,9 @@ function sortInit(){
       if (e.key !== "Enter") return;
       var v = sc.value; sc.value = "";
       var r = sortScan(v);
-      renderSort(); renderPlanBox();
-      if (r.ok) sortFlash("", "");            // katta yozuvning oʻzi yetarli
-      else sortFlash(r.kind, r.msg);
+      renderSort(); renderPlanBox(); renderRackBox();
+      if (r.ok && !r.msg) sortFlash("", "");  // katta yozuvning oʻzi yetarli
+      else sortFlash(r.kind, r.msg);          // v22: kechikkan detal — ok, lekin yoʻl-yoʻriq bilan
     };
   }
   var rb = $("btnSortReset");
@@ -10208,6 +10609,188 @@ function sortFocus(){
    hech nima boʻlmasdi. Bogʻlash oʻz faylining oxirida turishi ishonchli —
    bu yerda hamma funksiya allaqachon eʼlon qilingan. */
 sortInit();
+
+</script>
+<script>
+/* ===== src/js/15-post.js ===== */
+/* ============================================================
+   3.16 POSTLAR — SARALASH VA QADOQLASH ALOHIDA (v22)
+   ============================================================
+   Tsex jarayoni (2026-11-12):
+     1) SARALASH POSTI — ishchilar detallarni stelyaj yacheykalariga saralaydi
+        (bir yacheyka = bir pochka). Stelyaj toʻlgach u BUTUNLIGICHA qadoqlash
+        boʻlimiga olib boriladi (14-sort.js — rackCheckReady).
+     2) QADOQLASH POSTI — stelyajdan detal olinadi va skanerlanadi, pochkasi
+        oʻzi ochiladi (10-ui.js — scanOpenPack), 3D boʻyicha teriladi, pochka
+        tugagach chek chiqadi va pochka ustiga yopishtiriladi (S.autoLbl).
+        Boʻsh stelyaj saralashga qaytadi va u yerda QR belgisi skanerlanadi.
+
+   Postlar odatda ALOHIDA kompyuterda va ular orasida tarmoq boʻlishi shart emas.
+   Bitta talab: ikkalasida REJA bir xil boʻlsin — aks holda saralash posti P07
+   deb yigʻgan yacheykadagi detallar qadoqlash postida boshqa pochkalarga tegishli
+   chiqadi. Shuning uchun:
+     - REJA RAQAMI (planId) — pochkalar tarkibidan hisoblanadi va ikkala postning
+       ekranida turadi; farq qilsa — rejalar har xil;
+     - REJA FAYLI — P/M (yoki saralash posti) rejani faylga saqlaydi, qadoqlash
+       posti oʻsha faylni ochadi. Pochkalar qayta hisoblanmaydi — fayldagidek
+       tiklanadi, demak qoʻlda tuzatilgan pochkalar ham, boshqa sozlamalar ham
+       aynan oʻtadi.
+   ============================================================ */
+
+/* ---- POST REJIMI — shu kompyuter qaysi post. Buyurtmaga emas, QURILMAGA
+   tegishli, shuning uchun alohida kalitda (sozlama va seansdan tashqarida). ---- */
+var POST_KEY = "upk_post";
+var POST_MEM = null;                 // localStorage ishlamasa — shu seans uchun
+var POSTS = { all:"Hamma boʻlim", sort:"Saralash posti", pack:"Qadoqlash posti" };
+var POST_HIDE = { sort:{ work:1 }, pack:{ sort:1 } };   // boshqa postning ekrani yashiriladi
+
+function postMode(){
+  var v = null;
+  try { v = localStorage.getItem(POST_KEY); } catch(e){}
+  if (v == null) v = POST_MEM;
+  return POSTS.hasOwnProperty(v) ? v : "all";
+}
+function postHome(){ return postMode() === "sort" ? "sort" : "work"; }
+function postHidden(tab){ var h = POST_HIDE[postMode()]; return !!(h && h[tab]); }
+function postSet(m){
+  if (!POSTS.hasOwnProperty(m)) m = "all";
+  POST_MEM = m;
+  try { localStorage.setItem(POST_KEY, m); } catch(e){}
+  postApply(m !== "all");
+}
+/* Tablar, shapkadagi belgi va P/M dagi tanlov. go — postning oʻz ekraniga oʻtish. */
+function postApply(go){
+  var m = postMode();
+  [].slice.call(document.querySelectorAll(".tabs button")).forEach(function(b){
+    b.style.display = postHidden(b.dataset.v) ? "none" : "";
+  });
+  var chip = $("postChip");
+  if (chip){ chip.textContent = m === "all" ? "" : POSTS[m]; chip.style.display = m === "all" ? "none" : ""; }
+  var sel = $("mgrPost"); if (sel) sel.value = m;
+  var on = document.querySelector(".tabs button.on");
+  // allaqachon postning oʻz ekranida boʻlsa — qayta bosilmaydi (ishga tushishda 3D ikki marta chizilmasin)
+  if ((go && (!on || on.dataset.v !== postHome())) || (on && postHidden(on.dataset.v))) showTab(postHome());
+}
+
+/* ---- REJA RAQAMI ----
+   Pochkalar TARKIBIDAN (raqam + detal uid lari) va terish reviziyasidan
+   hisoblanadi — 6 ta 16-lik belgi. Koordinata va massa kirmaydi: ular qayta
+   hisoblashda yaxlitlanishi mumkin, saralash uchun esa faqat «qaysi detal qaysi
+   pochkada» muhim. Reviziya kiradi: oʻz chekimizdagi R raqami boshqa boʻlsa
+   qadoqlash posti saralashda chop etilgan chekni «eski» deb rad etardi. */
+function planId(){
+  if (!P || !PACKS || !PACKS.length) return "";
+  var h = 0x811c9dc5;
+  function add(s){
+    for (var i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  }
+  add(projTag() + "|R" + (P.rev || 1));
+  PACKS.forEach(function(p){
+    add("|" + p.no + ":" + packItems(p).map(function(it){ return it.uid; }).sort().join(","));
+  });
+  return ("000000" + h.toString(16).toUpperCase()).slice(-6);
+}
+
+/* ---- REJA FAYLI ----
+   Seans snapshoti (09-storage.js) — progresssiz: qabul qiluvchi post noldan
+   boshlaydi. Saralash holati ham, yigʻish tartibi ham oʻtmaydi. */
+var PLAN_FMT = "upk-reja";
+function planFileObj(){
+  if (!P || !PACKS.length) return null;
+  var snap = makeSnapshot();
+  snap.cur = 0; snap.sort = null; snap.packSeen = {};
+  (snap.packs || []).forEach(function(s){ s.done = 0; delete s.ord; });
+  return { format:PLAN_FMT, v:1, app:"UPK v" + APP_VER, planId:planId(), ts:Date.now(),
+           name:P.name || "", packs:PACKS.length, snapshot:snap };
+}
+function planFileName(){
+  return String(P.mesOrder || P.name || "reja").replace(/[\\\/:*?"<>|]+/g, "_") +
+         "_reja-" + planId() + ".upk.json";
+}
+function planFileSave(){
+  var o = planFileObj();
+  if (!o){ flash("err", "reja yoʻq — avval loyihani yuklang"); return null; }
+  dlText(JSON.stringify(o), planFileName(), "application/json;charset=utf-8", false);
+  var n = $("planNote");
+  if (n){
+    n.style.display = "block";
+    n.innerHTML = 'Reja fayli saqlandi: <b>' + esc(planFileName()) + '</b>. Qadoqlash postida shu faylni ' +
+      '«Loyiha yuklash» orqali oching — ikkala ekranda <b>reja ' + esc(o.planId) + '</b> turishi kerak.';
+  }
+  return o;
+}
+/* Matn reja fayli boʻlib koʻrinadimi (yuklash oqimi shunga qarab ajraladi). */
+function looksLikePlan(txt){ return /^\s*\{/.test(String(txt || "").replace(/^﻿/, "")); }
+
+/* Reja faylini ochish. Qaytadi: {ok, msg, id, same}.
+   Pochkalar fayldagidek TIKLANADI (qayta hisoblanmaydi) — bu postdagi
+   sozlamalar boshqa boʻlsa ham tarkib aynan oʻtadi. */
+function planFileLoad(txt){
+  var o = null;
+  try { o = JSON.parse(String(txt || "").replace(/^﻿/, "")); }
+  catch(e){ return { ok:false, msg:"reja fayli oʻqilmadi — JSON buzilgan" }; }
+  if (!o || o.format !== PLAN_FMT || !o.snapshot || typeof o.snapshot !== "object")
+    return { ok:false, msg:"bu fayl upakofka reja fayli emas" + (o && o.format ? " (format: " + o.format + ")" : "") };
+  if (+o.v > 1) return { ok:false, msg:"reja fayli yangiroq versiyada yozilgan (v" + o.v + ") — upakofkani yangilang" };
+  var before = planId(), ok = false;
+  try { ok = restoreSnapshot(o.snapshot); } catch(e){ ok = false; }
+  if (!ok) return { ok:false, msg:"reja tiklanmadi — fayldagi detallar mos kelmadi (fayl buzilgan yoki boshqa versiya)" };
+  // reviziya fayldagi loyihada bor; boʻlmasa — pochkalardagi eng kattasi (09-storage start bilan bir xil)
+  var mx = 0;
+  PACKS.forEach(function(p){ if ((p.rev || 0) > mx) mx = p.rev || 0; });
+  P.rev = Math.max(P.rev || 0, mx) || 1;
+  if (typeof PACK_SEEN === "object") PACK_SEEN = {};
+  var now = planId();
+  /* Boshqa reja — bu postdagi eski saralash yaroqsiz (xuddi yangi .project
+     yuklangandagidek). Oʻsha reja qayta ochilsa — saralash joyida qoladi. */
+  if (now !== before && typeof sortReset === "function") sortReset();
+  if (typeof writeConf === "function") writeConf();
+  planAfterLoad();
+  var same = !o.planId || o.planId === now;
+  return { ok:true, id:now, same:same,
+           msg: same ? "reja fayli ochildi — " + (P.name || "loyiha") + " · reja " + now
+                     : "reja ochildi, lekin raqami mos emas: faylda " + o.planId + ", tiklangani " + now };
+}
+function planAfterLoad(){
+  renderPacks(); renderParts(); renderMats(); renderMgr(); renderCat(); stats();
+  if (PACKS.length) selectPack(0); else renderStep();
+  if (typeof renderThickMix === "function") renderThickMix();
+  if (typeof showCellTot === "function") showCellTot();
+  if (typeof renderDiag === "function") renderDiag();
+  if (typeof renderSort === "function"){ renderSort(); renderPlanBox(); }
+  if (typeof autosave === "function") autosave();
+}
+
+/* ---- STELYAJ BELGILARI — har stelyajga bitta QR. Boʻsh stelyaj qaytganda
+   saralash postida shu belgi skanerlanadi (14-sort.js — sortRackScan). ---- */
+function rackLabelsHTML(){
+  var html = '<div class="lbls">';
+  for (var r = 0; r < rackCount(); r++){
+    var L = rackLetter(r);
+    html += '<div class="label racklbl"><div><div class="rl-l">' + esc(L) + '</div>' +
+      '<div class="rl-t">STELYAJ<small>' + cellCount() + ' yacheyka · boʻsh qaytganda skanerlang</small></div></div>' +
+      '<canvas id="rq' + r + '"></canvas></div>';
+  }
+  return html + '</div>';
+}
+function printRackLabels(){
+  applyPageSize();
+  $("sheet").innerHTML = rackLabelsHTML();
+  for (var r = 0; r < rackCount(); r++) drawQR($("rq" + r), rackQRText(rackLetter(r)));
+  setTimeout(function(){
+    window.print();
+    setTimeout(function(){ $("sheet").innerHTML = ""; }, 1000);
+  }, 60);
+}
+
+/* ---- bogʻlash ---- */
+(function postInit(){
+  var sel = $("mgrPost");
+  if (sel) sel.onchange = function(){ postSet(sel.value); };
+  var b = $("btnPlanSave");
+  if (b) b.onclick = function(){ planFileSave(); };
+  postApply(postMode() !== "all");
+})();
 
 </script>
 </body>

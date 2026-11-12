@@ -7,6 +7,7 @@
 #     .\tests\shot.ps1 -View diag                   # diagnostika
 #     .\tests\shot.ps1 -View sort                   # saralash (stelyaj)
 #     .\tests\shot.ps1 -View work -Steps 6          # 6 detal qo'yilgan holat
+#     .\tests\shot.ps1 -View sort -Js "sortScan('01_021')"   # holatni JS bilan tayyorlash
 #     .\tests\shot.ps1 -Width 1600 -Height 1000
 #
 #  Natija: tests\shot-<view>.png
@@ -19,7 +20,8 @@ param(
   [int]$Width = 1600,
   [int]$Height = 1000,
   [string]$Out = "",
-  [string]$Browser = ""
+  [string]$Browser = "",
+  [string]$Js = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -42,6 +44,8 @@ $idx  = Join-Path $root "index.html"
 $html = [System.IO.File]::ReadAllText($idx, [System.Text.Encoding]::UTF8)
 
 # --- haydovchi: yuklanishni kutadi, kerakli bo'limni ochadi, qadamlarni bosadi ---
+# -Js: bo'lim ochilgandan keyin bajariladigan JS (base64 — qo'shtirnoq va $ buzilmasin)
+$jsB64 = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($Js))
 $driver = @"
 <script>
 (function(){
@@ -61,6 +65,8 @@ $driver = @"
         for (var i = 0; i < STEPS; i++) advance();
         draw3D(); draw2D();
       }
+      var JS = decodeURIComponent(escape(atob("$jsB64")));
+      if (JS){ window.print = function(){}; (new Function(JS))(); }
     } catch(e){ if (window.console) console.error(e); }
     setTimeout(function(){ document.title = "SHOT-READY"; }, 400);
   });

@@ -186,12 +186,23 @@ kutib qolmaydi, «mashina to'lmaguncha yurmaydi» degan narsa yo'q:
 
 Ya'ni yacheyka «bo'shaydi» degan tushuncha emas — **butun stelaj aylanadi**.
 
-> **Holat.** Tizimda aylanma **yacheyka** darajasida ishlaydi: pochka
-> qadoqlanib bo'lgach uning yacheykasi darhol bo'shaydi va navbatdagi eng
-> katta pochkaga beriladi (`14-sort.js` → `sortFreeCell`, `sortPlan`).
-> Shu sabab 30 yacheyka bilan 55 pochkani to'lqin-to'lqin saralab chiqish
-> mumkin. ⏳ «Butun stelaj bir butun bo'lib ko'chadi» degan qism esa hali
-> yo'q — stelaj holati (saralashdami yoki pochkalashdami) tizimda saqlanmaydi.
+> **Holat (v22) — ✅ bajarildi.** Tsex 2026-11-12 da tasdiqladi: saralash va
+> qadoqlash — alohida post (odatda alohida kompyuter), stelyaj butunligicha
+> ko'chadi. Tizimda stelyaj holati saqlanadi (`SORT.away`, seans bilan):
+>
+> - stelyajning hamma pochkasi to'lsa va unga boshqa pochka rejalanmagan bo'lsa —
+>   ekranda «A STELYAJI TAYYOR — qadoqlashga olib boring», yacheykalari rejaga
+>   kirmaydi (`rackCheckReady`);
+> - bo'sh stelyaj qaytganda uning **QR belgisi** skanerlanadi (yoki «Qaytdi») —
+>   yacheykalar bo'shaydi (`rackReturn`); stelyaj QR lari Stelyajlar → «Belgilar»;
+> - kechikkan detal (pochkasi qadoqlashda) — «qadoqlash bo'limiga eltib bering»;
+> - to'liq bo'lmagan stelyajni qo'lda jo'natish — ikki bosish bilan (`rackSend`).
+>
+> Qadoqlash postida stelyajdagi detal skanerlansa pochkasi o'zi ochiladi.
+> Ikki kompyuterda reja bir xilligi — reja raqami va reja fayli
+> ([README](../README.md) «Alohida postlar»). Bir kompyuterda ishlansa ham
+> to'g'ri: stelyaji saralashda turgan pochka qadoqlansa yacheykasi darhol
+> bo'shaydi (eskicha).
 
 ### Nostandart va yirik detallar
 

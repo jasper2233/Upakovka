@@ -403,10 +403,14 @@ function makeSnapshot(){
     sort: (typeof SORT === "object" && SORT)
       ? { cell:snapClone(SORT.cell||{},{}), pack:snapClone(SORT.pack||{},{}),
           put:snapClone(SORT.put||{},{}),
-          seen:snapClone(SORT.seen||{},{}) }       // v22: skanerlangan MES cheklar
+          seen:snapClone(SORT.seen||{},{}),        // v22: skanerlangan MES cheklar
+          away:snapClone(SORT.away||{},{}),        // v22: qadoqlashdagi stelyajlar
+          gone:snapClone(SORT.gone||{},{}) }       // v22: stelyaji bilan ketgan pochkalar
       : null,
     /* P ning sof nusxasi: name, uuid, materials, parts (+ rev kabi qoʻshimcha
        maydonlar ham oʻz-oʻzidan tushadi — P da faqat oddiy maʼlumot turadi) */
+    // v22: qadoqlash postida skanerlangan MES cheklar — qayta skan himoyasi brauzer yopilsa ham qolsin
+    packSeen: (typeof PACK_SEEN === "object" && PACK_SEEN) ? snapClone(PACK_SEEN, {}) : {},
     project: P ? (snapClone(P, null) || { name:P.name, uuid:P.uuid, rev:P.rev || 0,
                    materials: snapClone(P.materials || [], []),
                    parts:     snapClone(P.parts     || [], []) }) : null,
@@ -515,6 +519,8 @@ function restoreSnapshot(snap){
       SORT.pack = snapClone(snap.sort.pack, {}) || {};
       SORT.put  = snapClone(snap.sort.put,  {}) || {};
       SORT.seen = snapClone(snap.sort.seen || {}, {}) || {};   // v22
+      SORT.away = snapClone(snap.sort.away || {}, {}) || {};   // v22: stelyaj qadoqlashda
+      SORT.gone = snapClone(snap.sort.gone || {}, {}) || {};
       SORT.last = null;                 // katta yozuv qayta koʻrsatilmaydi
     }
     // 2) loyiha — snapshot obyektiga tegmaslik uchun yana nusxa olinadi
@@ -626,6 +632,7 @@ function restoreSnapshot(snap){
     if (bad){ putState(bak); return false; }     // moslik yoʻq — eski holat tegilmaydi
 
     PACKS = out;
+    if (typeof PACK_SEEN === "object") PACK_SEEN = isObj(snap.packSeen) ? (snapClone(snap.packSeen, {}) || {}) : {};
     CUR  = (isFinite(+snap.cur) && +snap.cur >= -1 && +snap.cur < PACKS.length)
              ? Math.round(+snap.cur) : (PACKS.length ? 0 : -1);
     STEP = PACKS[CUR]

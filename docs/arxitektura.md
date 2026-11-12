@@ -45,6 +45,7 @@ seed.js         namuna loyiha          — sof ma'lumot
 12-upload.js    fayl yuklash           — 03, 08, 09, 11, 13 (yumshoq)
 13-app.js       sozlama, ishga tushish — hammasi
 14-sort.js      saralash posti         — 02, 04, 08, 10
+15-post.js      postlar, reja fayli    — 04, 08, 09, 10, 13, 14
 ```
 
 **Yumshoq bog'liqlik** — `typeof X === "function"` bilan tekshiriladi va modul
@@ -239,11 +240,12 @@ Yangi modul qo'shayotgan bo'lsangiz, bu nomlar **band**.
 | 11-diag | `DIAG_MAXW` `DIAG_OV` |
 | 12-upload | `UP_MAXMB` `UP_SCANMAX` `UP_EXT` `UP_BOUND` `UP_DRAG` `UP_ZONE` `UP_DRAGT` `UP_WATCH` `UP_REC` |
 | 13-app | `CONF_IDS` `CONF_VIEW_ONLY` `CONF_DEFAULTS` `MATCAT_DEFAULT` `PROG_TIMER` `SOON` `PENDING` |
-| 14-sort | `RACK_EDIT` `RACK_DRAFT` `RACK_T` |
+| 14-sort | `RACK_EDIT` `RACK_DRAFT` `RACK_T` `SEND_ARM` `SEND_T` `RACK_QR` |
+| 15-post | `POST_KEY` `POST_MEM` `POSTS` `POST_HIDE` `PLAN_FMT` |
 
 Funksiya nomlari ham global. Yangi modulda **prefiks** ishlating —
 `12-upload.js` dagi `up*`, `11-diag.js` dagi `diag*`, `14-sort.js` dagi
-`sort*`/`rack*`, `05-audit.js` dagi `aud*` kabi.
+`sort*`/`rack*`, `15-post.js` dagi `post*`/`plan*`, `05-audit.js` dagi `aud*` kabi.
 
 ---
 
