@@ -15,9 +15,12 @@ var S = {
      massa xatosi (katalogsiz material, notoʻgʻri qalinlik). Detal baribir
      pochkalanadi — faqat Diagnostika va audit aytadi. 0 = tekshiruv oʻchiq. */
   partKgMax:65,
-  /* v22: ALOHIDA KETADIGAN MATERIALLAR (TZ-v2 §5) — nomida shu soʻzlardan biri
-     boʻlsa detal pochkalanmaydi. Vergul bilan, katta-kichik harf farqsiz. */
-  sepMat:"OYNA, KOZGU, ZERKAL, STEKL",
+  /* v22: MOʻRT DETALLAR — koʻzgu, oyna polka, alyumin ramkali oynali detal, oyna
+     yopishtirilgan detal. Material yoki detal NOMIDA shu soʻzlardan biri boʻlsa
+     detal umumiy pochkaga qoʻshilmaydi: har biri ALOHIDA pochka boʻladi va
+     chekida «EHTIYOT BOʻLING» turadi (tsex talabi). Vergul bilan, katta-kichik
+     harf va tutuq belgisi (koʻzgu / ko'zgu / kozgu) farqsiz. */
+  sepMat:"OYNA, KOZGU, ZERKAL, STEKL, ЗЕРКАЛ, СТЕКЛ, ALYUMIN",
 
   /* ---- v14: TAG (PADDON) OʻLCHOV OYNASI ----------------------------------
      Qaysi detal tag boʻla oladi. Toʻrt chegara bitta oynani beradi:

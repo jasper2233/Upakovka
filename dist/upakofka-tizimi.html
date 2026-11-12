@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-<!-- Upakofka tizimi — build c246e898 -->
+<!-- Upakofka tizimi — build 466c263b -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Upakofka tizimi</title>
@@ -120,6 +120,12 @@ main{flex:1;min-height:0;overflow:hidden}
 .pk .kg{font-family:var(--mono);font-size:13px;text-align:right;white-space:nowrap;line-height:1.25}
 /* «2 KISHI» — ko'tarish xavfsizligi haqidagi yozuv 9px bo'lishi mumkin emas */
 .pk .kg em{display:block;font-style:normal;font-size:11px;font-weight:700;color:var(--mark);letter-spacing:.02em}
+/* v22: MOʻRT (koʻzgu, oyna) — roʻyxat belgisi va chekdagi ogohlantirish */
+.fragtag{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.04em;
+  color:#fff;background:var(--alert);border-radius:2px;padding:1px 5px;margin-right:6px;vertical-align:1px}
+.label .warn.fragile{margin:0 0 4px;background:#000;color:#fff;font-size:9.5px;font-weight:700;
+  letter-spacing:.06em;padding:3px 6px;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+#sheet.sz-lbl.tiny .label .warn.fragile{font-size:7.5px;padding:1px 3px;margin-bottom:1mm}
 /* v22: koʻtarish darajasi — 1 kishi xira, 2 kishi sariq (eskicha), 3+ qizil */
 .pk .kg em.lift.t1{color:var(--ink3);font-weight:500}
 .pk .kg em.lift.t3{color:var(--alert)}
@@ -1242,6 +1248,7 @@ select:focus-visible,
           <div class="f"><label for="cTwoMan">2 kishi koʻtarish chegarasi, kg <span class="q" tabindex="0" data-tip="Pochka BRUTTO massasi shundan oshsa — «3+ KISHI / ARAVA» belgisi chiqadi.&#10;&#10;Kimga kerak: nostandart detallar katta va ogʻir boʻladi — yaxlit LDSP list 60 kg dan oshadi. Uni ikki kishi xavfsiz koʻtarolmaydi; chekda buni oldindan koʻrsatish kerak.&#10;&#10;50 = 2 × 25 kg. 0 = uchinchi daraja oʻchiq (hammasi «2 KISHI»). Terishga taʼsir qilmaydi.">?</span></label><input id="cTwoMan" type="number" value="50" step="1" min="0"><small>shundan ogʻiri — «3+ KISHI / ARAVA». 0 = oʻchiq</small></div>
           <div class="f"><label for="cTare">Qadoq materiali (tara), kg <span class="q" tabindex="0" data-tip="Qogʻoz + burchak + tasma massasi. Toza massaga qoʻshilib BRUTTO beradi.&#10;&#10;Brutto chekda koʻrsatiladi va «2 KISHI» belgisi shunga qarab qoʻyiladi. Terish chegarasi (35/40 kg) esa TOZA massa boʻyicha hisoblanadi.">?</span></label><input id="cTare" type="number" value="0.6" step="0.1" min="0"><small>qogʻoz + burchak + tasma. Bruttoga qoʻshiladi</small></div>
           <div class="f"><label for="cPartKgMax">Bitta detal maks. massasi, kg <span class="q" tabindex="0" data-tip="Sexdagi eng ogʻir BITTA detal — odatda yaxlit list (2800×2070×16 LDSP ≈ 65 kg).&#10;&#10;Undan ogʻir detal chiqsa — bu deyarli har doim massa xatosi: material katalogda yoʻq (zichlik taxminiy) yoki qalinlik notoʻgʻri. Detal baribir pochkalanadi, lekin Diagnostika va audit buni aytadi.&#10;&#10;Namuna fayllarda shunday chiqqan: 30 mm «MATO» paneli LDSP deb hisoblanib 90,7 kg boʻlgan.&#10;0 = tekshiruv oʻchiq.">?</span></label><input id="cPartKgMax" type="number" value="65" step="1" min="0"><small>undan ogʻiri — massa xatosi deb ogohlantiriladi</small></div>
+          <div class="f"><label for="cSepMat">Moʻrt detallar — alohida pochka <span class="q" tabindex="0" data-tip="Material yoki detal NOMIDA shu soʻzlardan biri boʻlsa — detal moʻrt: koʻzgu, oyna polka, alyumin ramkali oynali detal, oyna yopishtirilgan detal.&#10;&#10;Moʻrt detal umumiy pochkaga QOʻSHILMAYDI — har biri ALOHIDA pochka boʻladi, chekida va roʻyxatda «⚠ EHTIYOT BOʻLING» turadi.&#10;&#10;Vergul bilan; katta-kichik harf va tutuq belgisi farqsiz (koʻzgu = ko'zgu = kozgu). Boʻsh qoldirilsa — moʻrt detal yoʻq.">?</span></label><input id="cSepMat" type="text" value="OYNA, KOZGU, ZERKAL, STEKL, ЗЕРКАЛ, СТЕКЛ, ALYUMIN" spellcheck="false"><small>material yoki detal nomidagi soʻz — vergul bilan</small></div>
           <div class="f">
             <label>Qalinlik <span class="q" tabindex="0" data-tip="Yoqilgan holda har qalinlik alohida pochkalanadi: 16 mm alohida, 3 mm alohida.&#10;&#10;Oʻchirilganda turli qalinlik bitta pochkaga tushishi mumkin (lekin bitta QAVATda baribir aralashmaydi — pastdagi «Qalinlik matritsasi» ga qarang).">?</span></label>
             <label class="chk"><input type="checkbox" id="cThick" checked><span>qalinlik boʻyicha ajratish</span></label>
@@ -1251,10 +1258,9 @@ select:focus-visible,
 
         <details class="adv adv-in">
           <summary>Kengaytirilgan — quyruq va tom <span>(sexdagi nosozliklar boʻyicha sozlangan)</span><em class="advmod"></em></summary>
-          <h4 class="sub">Pochkalanmaydigan obyektlar — xona devori, oyna</h4>
+          <h4 class="sub">Xona obyektlari — pochkalanmaydi</h4>
           <div class="fields">
             <div class="f"><label for="cMaxPartT">Detal maks. qalinligi, mm <span class="q" tabindex="0" data-tip="Shundan qalin obyekt umuman pochkalanmaydi va massaga ham kirmaydi.&#10;&#10;Raskroy faylida detal bilan bir qatorda XONA obyektlari ham keladi — devor, pol, shift. Ular 100…300 mm «qalinlikda» boʻladi va pochkaga tushsa massa yolgʻon chiqadi (namunada 2396 kg li «pochka» chiqqan edi).&#10;&#10;Rad etilganlar «Diagnostika» boʻlimida roʻyxat boʻlib koʻrinadi.">?</span></label><input id="cMaxPartT" type="number" value="60" step="5" min="0"><small>undan qalini pochkalanmaydi — xona devori, pol, shift</small></div>
-            <div class="f"><label for="cSepMat">Alohida ketadigan materiallar <span class="q" tabindex="0" data-tip="Material NOMIDA shu soʻzlardan biri boʻlsa detal pochkalanmaydi — «alohida ketadi» roʻyxatiga tushadi (Diagnostika).&#10;&#10;Asos: TZ-v2 §5 — oyna va shunga oʻxshash narsalar pochkaga qoʻshilmaydi, TMO da tayyor buyurtmaga qoʻshiladi.&#10;&#10;Vergul bilan, katta-kichik harf farqsiz. Masalan kafel ham alohida ketsa: «OYNA, KOZGU, ZERKAL, STEKL, KAFEL». Boʻsh qoldirilsa — hammasi pochkalanadi.">?</span></label><input id="cSepMat" type="text" value="OYNA, KOZGU, ZERKAL, STEKL" spellcheck="false"><small>material nomidagi soʻz — vergul bilan</small></div>
           </div>
           <h4 class="sub">Quyruq — guruh oxiridagi qoldiq</h4>
           <div class="fields">
@@ -1611,9 +1617,12 @@ var S = {
      massa xatosi (katalogsiz material, notoʻgʻri qalinlik). Detal baribir
      pochkalanadi — faqat Diagnostika va audit aytadi. 0 = tekshiruv oʻchiq. */
   partKgMax:65,
-  /* v22: ALOHIDA KETADIGAN MATERIALLAR (TZ-v2 §5) — nomida shu soʻzlardan biri
-     boʻlsa detal pochkalanmaydi. Vergul bilan, katta-kichik harf farqsiz. */
-  sepMat:"OYNA, KOZGU, ZERKAL, STEKL",
+  /* v22: MOʻRT DETALLAR — koʻzgu, oyna polka, alyumin ramkali oynali detal, oyna
+     yopishtirilgan detal. Material yoki detal NOMIDA shu soʻzlardan biri boʻlsa
+     detal umumiy pochkaga qoʻshilmaydi: har biri ALOHIDA pochka boʻladi va
+     chekida «EHTIYOT BOʻLING» turadi (tsex talabi). Vergul bilan, katta-kichik
+     harf va tutuq belgisi (koʻzgu / ko'zgu / kozgu) farqsiz. */
+  sepMat:"OYNA, KOZGU, ZERKAL, STEKL, ЗЕРКАЛ, СТЕКЛ, ALYUMIN",
 
   /* ---- v14: TAG (PADDON) OʻLCHOV OYNASI ----------------------------------
      Qaysi detal tag boʻla oladi. Toʻrt chegara bitta oynani beradi:
@@ -2289,20 +2298,19 @@ function partSkipWhy(m){
   if (lim && t > lim)
     return t + " mm qalinlik — " + lim + " mm dan qalin (" +
            ((m && m.name) ? m.name : "material") + ")";
-  /* v22: TZ-v2 §5 — «oyna va shunga oʻxshash narsalar alohida ketadi, pochkaga
-     qoʻshilmaydi». Qaysi material shunday ekanini tsex kalit soʻzlar bilan
-     belgilaydi (S.sepMat, vergul bilan). Ilgari oyna oddiy pochkaga, yana
-     yogʻoch zichligida terilardi. */
-  var k = sepMatHit(m && m.name);
-  if (k) return "alohida ketadi — «" + k + "» (" + m.name + "), pochkaga qoʻshilmaydi";
   return null;
 }
-/* Material nomida tsex belgilagan «alohida» kalit soʻzi bormi — topilganini qaytaradi. */
+/* v22: MOʻRT DETAL — material yoki detal nomida tsex belgilagan kalit soʻz bormi
+   (S.sepMat). Topilgan soʻzni qaytaradi. Tutuq belgilari (ʻ ' ` ’) olib
+   tashlanadi: «koʻzgu», «ko'zgu» va «kozgu» bir xil. Mo'rt detal pochkalanadi,
+   lekin har biri ALOHIDA pochkada (04-packer `packAllGen`) va chekida
+   «EHTIYOT BOʻLING» turadi. */
+function sepNorm(x){ return String(x || "").toUpperCase().replace(/[ʻʼ'`‘’]/g, ""); }
 function sepMatHit(nm){
   if (!nm || !S.sepMat) return "";
-  var u = String(nm).toUpperCase(), ks = String(S.sepMat).split(",");
+  var u = sepNorm(nm), ks = String(S.sepMat).split(",");
   for (var i = 0; i < ks.length; i++){
-    var k = ks[i].trim().toUpperCase();
+    var k = sepNorm(ks[i]).trim();
     if (k && u.indexOf(k) >= 0) return k;
   }
   return "";
@@ -2365,7 +2373,9 @@ function buildItems(){
       // v12: part, area, idx, band maydonlari olib tashlandi — ular yozilardi,
       // lekin butun loyihada bir marta ham oʻqilmasdi
       // v22: MES ID — nusxa raqami faqat koʻp nusxali detalda (MES `serial_qrs`)
+      // v22: moʻrt — material yoki detal nomida (oyna yopishtirilgan LDSP eshik ham)
       out.push({ uid:base+"#"+k, code:p.c, name:p.n, prod:p.p, prodCode:p.pc,
+        fragile:!!(sepMatHit(m && m.name) || sepMatHit(p.n)),
         mesKey:mkOf[pi], mes:q > 1 ? mkOf[pi] + "_" + (k+1) : mkOf[pi],
         unit:u, unitName:unitName(p), cls:classify(p.n),
         L:L, W:W, T:m?m.t:16, mat:m, matId:p.m, edges:p.e,
@@ -3291,7 +3301,8 @@ function absorbTails(packs, sameKey){
   for (var round = 0; round < 4 && packs.length > 1; round++){
     var did = false;
     // eng yengildan boshlaymiz — kichigi kattaga singishi osonroq
-    var light = packs.filter(function(p){ return p.kg < packKgCap(p) * 0.5; })
+    // v22: moʻrt pochka hech qayerga singdirilmaydi (va unga hech narsa qoʻshilmaydi — u bogʻ)
+    var light = packs.filter(function(p){ return !packFragile(p) && p.kg < packKgCap(p) * 0.5; })
                      .sort(function(a,b){ return a.kg - b.kg || uidCmp(packUid(a), packUid(b)); });
     for (var wi = 0; wi < light.length; wi++){
       var w = light[wi];
@@ -3750,12 +3761,16 @@ function* packAllGen(){
   var items = buildItems();
   var rule = S.split || { prod:true, mat:false };   // v12: bitta umumiy qoida
   MAIN_T = mainThick(items);        // v14: qalinlik matritsasining asosi
-  var oddPre = [], main = [];
+  var oddPre = [], main = [], fragile = [];
   /* v14: NOSTANDART FILTRI. Detal tag oynasining YUQORI chegarasidan chiqsa
      nostandart oqimga oʻtadi — chunki u hech qanday tagga sigʻmaydi.
      Oynaning PAST chegarasi (minBase, baseLMin) bu yerda tekshirilmaydi:
      kichik detal tag boʻlolmaydi, lekin qavatga bemalol tushadi. */
   items.forEach(function(it){
+    /* v22: MOʻRT DETAL (koʻzgu, oyna) hech qaysi oqimga kirmaydi — pastda har
+       biri ALOHIDA pochka boʻladi. Tsex talabi: koʻzgu umumiy pochkaga
+       qoʻshilmaydi, chekida «EHTIYOT BOʻLING». */
+    if (it.fragile){ it.nst = false; it.why = null; fragile.push(it); return; }
     var why = null;
     if (it.L > S.maxLen)               why = it.L + " mm > " + S.maxLen + " mm (tag boʻyi)";
     else if (it.W > (S.baseWMax||1e9)) why = it.W + " mm > " + S.baseWMax + " mm (tag eni)";
@@ -3825,6 +3840,12 @@ function* packAllGen(){
   // v14: nostandartlar endi saralanadi — 3.6.8.5 ga qarang
   var oddOut = yield* oddPackGen(best.odd, rule);
   for (var oi = 0; oi < oddOut.length; oi++) out.push(oddOut[oi]);
+  /* v22: har moʻrt detal — oʻz pochkasi (bitta detalli bogʻ). Guruh kaliti va
+     nomi boshqalarnikidek: roʻyxatda oʻz moduli ostida turadi. */
+  fragile.slice().sort(function(a, b){ return uidCmp(a.uid, b.uid); }).forEach(function(it){
+    out.push({ odd:true, items:[it], key:packKey(it, rule), nst:false,
+               gname:groupLabel([it], rule), room:groupRoom([it]) });
+  });
 
   /* v16: YAKUNIY SINGDIRISH — butun buyurtma boʻylab.
      packGroupGen ichidagi singdirish faqat OʻZ guruhi bilan ishlaydi va
@@ -4046,6 +4067,15 @@ function packKgAbs(p){
    Tara pochkalash hisobiga KIRMAYDI (u sof detal massasi bilan ishlaydi),
    faqat chek va «2 kishi» ogohlantirishi uchun qoʻshiladi. */
 function packBrutto(p){ return (p ? p.kg : 0) + (+S.tare || 0); }
+/* v22: pochkada moʻrt (koʻzgu, oyna) detal bormi — chek va roʻyxatdagi
+   «EHTIYOT BOʻLING» belgisi shunga qaraydi. Belgi detaldan olinadi (buildItems),
+   shuning uchun seans tiklangandan keyin ham toʻgʻri. */
+function packFragile(p){
+  if (!p) return false;
+  var its = p.odd ? (p.items || []) : (p.seq || []).map(function(s){ return s.it; });
+  for (var i = 0; i < its.length; i++) if (its[i] && its[i].fragile) return true;
+  return false;
+}
 
 /* v22: KOʻTARISH DARAJASI — brutto boʻyicha, chegaralarni tsex belgilaydi.
    1 — bir kishi (≤ oneMan), 2 — ikki kishi (≤ twoMan), 3 — undan ogʻir:
@@ -4168,6 +4198,14 @@ function auditPacks(packs, items){
     if (!p) return;
     var lab = audPno(p, pi), kg = audNum(p.kg, 0);
     totalKg += kg;
+
+    /* v22: MOʻRT DETAL ALOHIDA — koʻzgu/oyna detali bor pochkada boshqa detal
+       boʻlmasligi shart (tsex talabi). Belgi detaldan (buildItems) olinadi. */
+    var allIts = p.odd ? (p.items || []) : [p.base].concat([].concat.apply([], (p.layers || []).map(function(L){
+      return (L.items || []).map(function(q){ return q.it; }); })));
+    var frN = allIts.filter(function(x){ return x && x.fragile; }).length;
+    if (frN && allIts.length > 1)
+      err("MORT", lab, "moʻrt detal (koʻzgu/oyna) boshqa " + (allIts.length - 1) + " ta detal bilan bitta pochkada — u alohida boʻlishi kerak");
 
     /* ---------- NOODATIY POCHKA ---------- */
     if (p.odd){
@@ -5083,9 +5121,11 @@ function labelHTML(p, step, id){
      ostidagi uzun matn tushiriladi — 58×40 da har detal cheki 2 stikerga
      chiqardi. Kod va QR — asosiysi, ular qoladi. */
   var mmL = (typeof labelMM === "function") ? labelMM() : null, tinyL = !!(mmL && mmL.h < 62);
-  var role = step.role==="tag" ? "ENG TAG" : step.role==="ust" ? ("QOPQOQ"+(step.of>1?" "+step.n+"/"+step.of:"")) : step.role==="noodatiy" ? "NOODATIY" : (step.layer+"-QAVAT"+(step.of>1?" "+step.n+"/"+step.of:""));
-  return '<div class="label">'+
+  var role = step.role==="tag" ? "ENG TAG" : step.role==="ust" ? ("QOPQOQ"+(step.of>1?" "+step.n+"/"+step.of:"")) : step.role==="noodatiy" ? (it.fragile ? "ALOHIDA" : "NOODATIY") : (step.layer+"-QAVAT"+(step.of>1?" "+step.n+"/"+step.of:""));
+  return '<div class="label'+(it.fragile ? ' fragile' : '')+'">'+
     '<div>'+
+      // v22: moʻrt detal cheki — eng yuqorida, koʻzga tashlanadigan qilib
+      (it.fragile ? '<div class="warn fragile">⚠ EHTIYOT BOʻLING</div>' : '')+
       '<div class="lc">'+esc(it.code)+'</div>'+
       '<div class="ln">'+esc(it.name)+'</div>'+
       '<table>'+
@@ -5094,7 +5134,7 @@ function labelHTML(p, step, id){
         '<tr><td>Oʻlcham</td><td class="big">'+it.L+' × '+it.W+' × '+it.T+'</td></tr>'+
         '<tr><td>Massa</td><td class="big">'+it.kg.toFixed(2)+' kg</td></tr>'+
         (tinyL ? '' : '<tr><td>Material</td><td>'+esc(m?m.name:"—")+'</td></tr>')+
-        '<tr><td>Modul</td><td>'+esc(unitLabel(it.unit, it.unitName || it.prod))+'</td></tr>'+
+        ((tinyL && it.fragile) ? '' : '<tr><td>Modul</td><td>'+esc(unitLabel(it.unit, it.unitName || it.prod))+'</td></tr>')+
         (tinyL ? '' : '<tr><td>Pochka</td><td><span class="pill">P'+pad2(p.no)+' · '+role+'</span></td></tr>')+
       '</table>'+
     '</div>'+
@@ -5106,6 +5146,16 @@ function packQR(p){
   return S.prefix + "." + projTag() + ".R" + (p.rev || (P&&P.rev) || 1) + "|P" + pad2(p.no) + "|" +
          (p.t||"") + "mm|" + p.seq.length + "det|" + packBrutto(p).toFixed(1) + "kg|" +
          (p.odd ? "NOODATIY" : p.gabL+"x"+p.gabW+"x"+Math.round(p.h));
+}
+/* v22: chekdagi gabarit. Bitta detalli bogʻda (koʻzgu, oyna — har doim yolgʻiz)
+   detalning oʻz oʻlchami: ilgari «—» chiqardi va omborchi qadoqni oʻlchamidan
+   taniy olmasdi. Koʻp detalli bogʻda — «—» (gabarit qoʻlda yigʻiladi). */
+function packDimText(p, x){
+  if (p.odd){
+    var it = (p.items || [])[0];
+    return (p.items && p.items.length === 1) ? (it.L + x + it.W + x + it.T) : "—";
+  }
+  return p.gabL + x + p.gabW + x + Math.round(p.h);
 }
 function packLabelHTML(p, id){
   var brutto = packBrutto(p);         // detallar + qadoq materiali (tara)
@@ -5122,16 +5172,19 @@ function packLabelHTML(p, id){
      (58×40 da 4–5 taga), «2 KISHI» ogohlantirishi va detallar roʻyxati
      ikkinchi stikerga tushardi. Termalda faqat ishchiga va omborga keraklisi
      qoladi; koʻtarish darajasi brutto qatorida. A4 chek oʻzgarmaydi. */
+  // v22: moʻrt detal — «EHTIYOT BOʻLING» (koʻzgu, oyna har doim alohida pochkada)
+  var frag = packFragile(p) ? '<div class="warn fragile">⚠ EHTIYOT BOʻLING — MOʻRT (KOʻZGU / OYNA)</div>' : '';
   if (typeof labelMM === "function" && labelMM()){
     var lay = p.odd ? p.items.length : (p.layers.length + 1);
     return '<div class="label plabel thermal">'+
       '<div class="ph"><b>POCHKA P'+pad2(p.no)+'</b><span>'+esc(cut(P.name, 28))+' · R'+(p.rev||1)+'</span></div>'+
+      frag+
       '<div class="pb">'+
         '<table>'+
         (room ? '<tr><td>Xona</td><td class="big">'+esc(cut(room, 24))+'</td></tr>' : '')+
         '<tr><td>Modul</td><td class="big">'+esc(cut(Object.keys(mods).join(", "), 30))+'</td></tr>'+
         '<tr><td>Detal</td><td class="big">'+p.seq.length+' dona · '+lay+' qavat</td></tr>'+
-        '<tr><td>Gabarit</td><td>'+(p.odd?"—":p.gabL+"×"+p.gabW+"×"+Math.round(p.h))+'</td></tr>'+
+        '<tr><td>Gabarit</td><td>'+packDimText(p, "×")+'</td></tr>'+
         '<tr><td>Brutto</td><td class="big">'+brutto.toFixed(1)+' kg'+
           (tier > 1 ? ' <span class="pill">'+liftText(brutto)+'</span>' : '')+'</td></tr>'+
         '</table>'+
@@ -5142,6 +5195,7 @@ function packLabelHTML(p, id){
   }
   return '<div class="label plabel">'+
     '<div class="ph"><b>POCHKA P'+pad2(p.no)+'</b><span>'+esc(P.name)+' · R'+(p.rev||1)+'</span></div>'+
+    frag+
     '<div class="pb">'+
       '<div>'+
         '<table>'+
@@ -5151,7 +5205,7 @@ function packLabelHTML(p, id){
         '<tr><td>Qalinlik</td><td class="big">'+(p.t||"—")+' mm</td></tr>'+
         '<tr><td>Qator</td><td class="big">'+(p.odd?p.items.length:(p.layers.length+1))+' qavat</td></tr>'+
         '<tr><td>Detal</td><td class="big">'+p.seq.length+' dona</td></tr>'+
-        '<tr><td>Gabarit</td><td class="big">'+(p.odd?"—":p.gabL+" × "+p.gabW+" × "+Math.round(p.h)+" mm")+'</td></tr>'+
+        '<tr><td>Gabarit</td><td class="big">'+packDimText(p, " × ")+(p.odd && p.items.length !== 1 ? "" : " mm")+'</td></tr>'+
         '<tr><td>Netto</td><td>'+p.kg.toFixed(1)+' kg</td></tr>'+
         '<tr><td>Brutto</td><td class="big">'+brutto.toFixed(1)+' kg</td></tr>'+
         '<tr><td>Koʻtarish</td><td class="big">'+liftText(brutto)+'</td></tr>'+
@@ -5762,7 +5816,8 @@ function makeSnapshot(){
        holda ishchi butun paddonni qaytadan saralashga majbur boʻlardi. */
     sort: (typeof SORT === "object" && SORT)
       ? { cell:snapClone(SORT.cell||{},{}), pack:snapClone(SORT.pack||{},{}),
-          put:snapClone(SORT.put||{},{}) }
+          put:snapClone(SORT.put||{},{}),
+          seen:snapClone(SORT.seen||{},{}) }       // v22: skanerlangan MES cheklar
       : null,
     /* P ning sof nusxasi: name, uuid, materials, parts (+ rev kabi qoʻshimcha
        maydonlar ham oʻz-oʻzidan tushadi — P da faqat oddiy maʼlumot turadi) */
@@ -5873,6 +5928,7 @@ function restoreSnapshot(snap){
       SORT.cell = snapClone(snap.sort.cell, {}) || {};
       SORT.pack = snapClone(snap.sort.pack, {}) || {};
       SORT.put  = snapClone(snap.sort.put,  {}) || {};
+      SORT.seen = snapClone(snap.sort.seen || {}, {}) || {};   // v22
       SORT.last = null;                 // katta yozuv qayta koʻrsatilmaydi
     }
     // 2) loyiha — snapshot obyektiga tegmaslik uchun yana nusxa olinadi
@@ -6175,7 +6231,7 @@ function renderPacks(){
     }
     // sarlavha — GABARIT: 55 pochkadan 51 tasi shu bilan farq qiladi va ishchi
     // stoldagi pochkani aynan oʻlchamidan tanib oladi
-    var ttl = p.odd ? ("noodatiy" + cls)
+    var ttl = p.odd ? (packFragile(p) ? "alohida · " + packDimText(p, "×") : ("noodatiy" + cls))   // v22
                     : (p.gabL+"×"+p.gabW+"×"+Math.round(p.h) + (p.oddSrc ? " · NS" : ""));
     var weak = !p.odd && p.layers.some(function(L){ return L.weak; });
     // v10: har satr <s> ichida — CSS uni kesadi, shuning uchun matn hech qachon
@@ -6205,7 +6261,8 @@ function renderPacks(){
     var cellTag = (typeof SORT === "object" && SORT && SORT.pack && SORT.pack[p.no])
       ? '<span class="celltag">'+SORT.pack[p.no]+'</span>' : '';
     d.innerHTML = '<div class="no">'+mark+'</div>'+
-      '<div><div class="ttl">'+cellTag+esc(ttl)+'</div><div class="sub">'+sub+'</div>'+
+      // v22: koʻzgu/oyna pochkasi roʻyxatda ham koʻzga tashlansin
+      '<div><div class="ttl">'+cellTag+(packFragile(p) ? '<span class="fragtag">⚠ MOʻRT</span>' : '')+esc(ttl)+'</div><div class="sub">'+sub+'</div>'+
       '<div class="bar"><i class="'+(fill>92?"hot":"")+'" style="width:'+fill.toFixed(0)+'%"></i></div></div>'+
       // v22: koʻtarish darajasi — 1 kishilik pochka ham belgilanadi (xira), 3+ — qizil
       '<div class="kg">'+brutto.toFixed(1)+'<em class="lift t'+liftTier(brutto)+'">'+liftText(brutto)+'</em></div>';
@@ -6272,7 +6329,7 @@ function selectPack(i){
   STEP = Math.max(0, Math.min(p.done || 0, p.seq.length));
   if (STEP >= p.seq.length && !p.odd) WRAP = true;
   $("stageTitle").innerHTML = p.odd
-    ? 'Pochka <b style="font-family:var(--mono)">P'+pad2(p.no)+'</b> — noodatiy · '+p.t+' mm'
+    ? 'Pochka <b style="font-family:var(--mono)">P'+pad2(p.no)+'</b> — '+(packFragile(p) ? 'moʻrt, alohida (koʻzgu / oyna)' : 'noodatiy')+' · '+p.t+' mm'
     : 'Pochka <b style="font-family:var(--mono)">P'+pad2(p.no)+'</b>'+
       // v11: detallar qaysi yacheykada turibdi
       ((typeof SORT === "object" && SORT && SORT.pack && SORT.pack[p.no])
@@ -6364,7 +6421,7 @@ function renderStep(){
     var role = step.role==="tag" ? "eng tag — yaxlit detal"
              : step.role==="ust" ? "eng ust — qopqoq"+(step.of>1?" ("+step.n+"/"+step.of+")":"")+(step.weak?" · toʻliq emas":"")
              : step.role==="quyruq" ? "quyruq — qopqoq ostiga"+(step.of>1?" ("+step.n+"/"+step.of+")":"")
-             : step.role==="noodatiy" ? "noodatiy — alohida"
+             : step.role==="noodatiy" ? (it.fragile ? "moʻrt — alohida pochka" : "noodatiy — alohida")
              : step.layer+"-qavat"+(step.of>1?" ("+step.n+"/"+step.of+")":"");
     function axis(v, inWord){
       v = Math.round(v);
@@ -6377,6 +6434,8 @@ function renderStep(){
       : axis(step.pos.x,"chap")+" · "+axis(step.pos.y,"orqa")+(step.pos.rot?" · 90° burilgan":"");
     $("nextBox").innerHTML =
       '<div class="step">qadam '+(STEP+1)+' · '+role+'</div>'+
+      // v22: moʻrt detal — ishchi qoʻliga olishdan oldin koʻrsin
+      (it.fragile ? '<div class="heavy fragile">⚠ EHTIYOT BOʻLING — MOʻRT (koʻzgu / oyna), alohida pochka</div>' : '')+
       '<div class="code">'+esc(it.code)+'</div>'+
       '<div class="nm">'+esc(it.name)+'</div>'+
       (it.mes ? '<div class="mesid" title="MES chekidagi ID">'+esc(mesFull(it))+'</div>' : '')+
@@ -6777,6 +6836,7 @@ function mesPlan(){
         thickness: p.t || null,
         net_kg: +p.kg.toFixed(2), gross_kg: +packBrutto(p).toFixed(2),
         lift: liftTier(packBrutto(p)),                    // 1 / 2 / 3 (3 = 3+ kishi yoki arava)
+        fragile: packFragile(p),                          // v22: koʻzgu/oyna — EHTIYOT BOʻLING
         size_mm: p.odd ? null : [Math.round(p.gabL), Math.round(p.gabW), Math.round(p.h)],
         steps: p.seq.map(function(s, i){
           var it = s.it, pos = s.pos;
@@ -7555,10 +7615,10 @@ function diagSkipHTML(){
   var n = sk.reduce(function(a, x){ return a + (x.q || 1); }, 0);
   var h = '<h3>Pochkalanmagan obyektlar · ' + n + '</h3>' +
     '<div class="note" style="border-left-color:var(--mark)">' +
-    'Ikki xil obyekt: xona devori, pol, shift (proyekt faylida ular ham «detal» boʻlib ' +
-    'keladi) va <b>alohida ketadigan</b> materiallar — oyna, koʻzgu (TZ-v2 §5: pochkaga ' +
-    'qoʻshilmaydi, TMO da buyurtmaga qoʻshiladi). Ular pochkalanmaydi va massaga kirmaydi. ' +
-    'Chegara: <b>Sozlamalar → Umumiy → Kengaytirilgan</b>.</div>';
+    'Xona devori, pol, shift — proyekt faylida ular ham «detal» boʻlib keladi — va soni 0 ' +
+    'boʻlgan detallar. Ular pochkalanmaydi va massaga kirmaydi. Koʻzgu va oyna esa BU YERDA ' +
+    'EMAS: ular pochkalanadi, lekin har biri alohida pochkada («⚠ MOʻRT»). ' +
+    'Chegara: <b>Sozlamalar → Umumiy</b>.</div>';
   var rows = '<tr><th>Kod</th><th>Nom</th><th>Soni</th><th>Sabab</th></tr>';
   sk.forEach(function(x){
     rows += '<tr><td class="m">' + esc(x.code || "—") + '</td>' +
@@ -8698,6 +8758,8 @@ function confCheck(){
   var maxKg = +S.maxKg || 0, over = +S.tailKgOver || 0, odd = oddKgCap();
   var eff = maxKg + over, tare = +S.tare || 0;
 
+  if (S._sortLost)
+    add("err", "Stelyaj/yacheyka soni kamaytirilmadi: " + S._sortLost + " da saralangan detallar turibdi — avval ularni qadoqlang.");
   if (S.minBase > (S.baseWMax || 1e9))
     add("err", "Tag eni min (" + S.minBase + " mm) maks (" + S.baseWMax + " mm) dan katta — hech bir detal tag boʻlolmaydi.");
   if ((S.baseLMin || 0) > S.maxLen)
@@ -8900,8 +8962,24 @@ function readConf(){
   /* terish logikasi (doimiy Avto) va variantlar soni endi 04-packer.js dagi
      PACK_TRIES konstantasida — ular sozlama emas, shuning uchun S da turmaydi */
   // v11: saralash posti sigʻimi
+  var prevR = S.rackN, prevC = S.cellN;            // v22: kamaytirish himoyasi uchun
   if ($("cRackN")) S.rackN = Math.max(1, Math.min(60, parseInt($("cRackN").value,10) || 5));
   if ($("cCellN")) S.cellN = Math.max(1, Math.min(40, parseInt($("cCellN").value,10) || 6));
+  /* v22: STELYAJ/YACHEYKA SONINI KAMAYTIRISH band yacheykani «yoʻq qilib»
+     yubormasin. Ilgari 2 stelyaj 1 taga tushirilsa B1 dagi pochka detallari
+     yoʻq yacheyka B1 ga yuborilaverardi va hisob notoʻgʻri chiqardi. Detallar
+     jismonan oʻsha yacheykada turibdi — avval pochka qadoqlanishi kerak. */
+  S._sortLost = "";
+  if (typeof SORT === "object" && SORT && typeof allCells === "function" && prevR != null){
+    var allc = {}; allCells().forEach(function(c){ allc[c] = 1; });
+    var lost = Object.keys(SORT.cell).filter(function(c){ return !allc[c]; });
+    if (lost.length){
+      S._sortLost = lost.map(function(c){ return c + " (P" + pad2(SORT.cell[c]) + ")"; }).join(", ");
+      S.rackN = prevR; S.cellN = prevC;
+      if ($("cRackN")) $("cRackN").value = prevR;
+      if ($("cCellN")) $("cCellN").value = prevC;
+    }
+  }
   // v12: yacheykaning fizik oʻlchamlari
   var cellNums = { cBigN:["bigN",0,20,1], cCellW:["cellW",20,2000,250], cCellD:["cellD",50,3000,400],
                    cCellH:["cellH",100,5000,1500],
@@ -9487,8 +9565,14 @@ var SORT = {
   pack: {},   // pochka no -> "A3"
   put:  {},   // detal uid -> "A3"   (aynan qaysi nusxa qoʻyilgani)
   plan: {},   // pochka no -> rejalashtirilgan yacheyka (hali band emas)
+  seen: {},   // v22: skanerlangan MES ID (buyurtmasiz) -> uid — bitta chek ikki marta sanalmasin
   last: null  // oxirgi skaner natijasi — katta yozuv uchun
 };
+/* v22: SORT.put dagi bu qiymat — detal saralangan VA pochkasi qadoqlangan.
+   Ilgari yacheyka boʻshaganda belgilar oʻchirilardi va yigʻib boʻlingan pochka
+   yana «saralanmagan» boʻlib qolardi: reja unga yangi yacheyka berar, keyingi
+   skan oʻralgan pochka uchun yacheyka ochardi. */
+var SORT_PACKED = "*";
 
 /* Stelyaj harfi: 0->A, 1->B … 25->Z, keyin AA, AB … */
 function rackLetter(i){
@@ -9556,7 +9640,12 @@ function rackEditCancel(){ RACK_EDIT = false; RACK_DRAFT = null; }
 function rackEditSave(){
   if (!RACK_EDIT) return 0;
   var before = Object.keys(S.cellOff || {}).length;
-  S.cellOff = RACK_DRAFT || {};
+  /* v22: qoralama ochiq turgan paytda skan yacheykani band qilgan boʻlishi
+     mumkin — band yacheyka yopilmaydi (aks holda u bir vaqtda yopiq va band
+     boʻlib qolardi, boʻsh yacheykalar soni notoʻgʻri chiqardi). */
+  var draft = RACK_DRAFT || {};
+  Object.keys(draft).forEach(function(c){ if (SORT.cell[c]) delete draft[c]; });
+  S.cellOff = draft;
   RACK_EDIT = false; RACK_DRAFT = null;
   sortPlan();
   if (typeof saveConf === "function") saveConf();
@@ -9612,7 +9701,9 @@ function freeCell(){
 }
 
 /* Pochkada nechta detal hali saralanmagan */
+function packFinished(p){ return !!p && !!p.seq && p.seq.length > 0 && (p.done || 0) >= p.seq.length; }
 function packLeft(p){
+  if (packFinished(p)) return 0;                // v22: yigʻib boʻlingan pochka saralanmaydi
   var its = packItems(p), n = 0;
   for (var i = 0; i < its.length; i++) if (!SORT.put[its[i].uid]) n++;
   return n;
@@ -9660,8 +9751,10 @@ function claimCell(no){
   if (SORT.pack[no]) return SORT.pack[no];
   sortPlan();
   var c = SORT.plan[no];
-  if (!c || SORT.cell[c]) c = freeCell();      // reja boʻlmasa — birinchi boʻsh
-  if (!c) return null;
+  /* v22: rejada yoʻq pochka KEYINGI TOʻLQINDA. Ilgari u birinchi boʻsh
+     yacheykani olardi va katta pochkaga atalgan yaqin yacheykani egallardi
+     (1 detalli pochka A1 ni olib, 16 detallisini A2 ga surardi). */
+  if (!c || SORT.cell[c]) return null;
   SORT.cell[c] = no; SORT.pack[no] = c;
   sortPlan();                                   // qolganlar uchun rejani yangilaymiz
   return c;
@@ -9686,8 +9779,8 @@ function sortFreeCell(no){
   var c = SORT.pack[no];
   if (!c) return false;
   delete SORT.cell[c]; delete SORT.pack[no];
-  // shu pochkaga qoʻyilgan detallar belgisi ham olinadi
-  Object.keys(SORT.put).forEach(function(uid){ if (SORT.put[uid] === c) delete SORT.put[uid]; });
+  // v22: detallar belgisi OʻCHIRILMAYDI — «qadoqlangan» boʻladi (SORT_PACKED)
+  Object.keys(SORT.put).forEach(function(uid){ if (SORT.put[uid] === c) SORT.put[uid] = SORT_PACKED; });
   sortPlan();          // boʻshagan yacheyka endi eng katta kutayotgan pochkaga tegadi
   return true;
 }
@@ -9702,18 +9795,15 @@ function cellDone(no){
 
 /* ---- 3.15.2 SKANER ---- */
 
-/* Skanerlangan matndan detal kodini ajratib olish.
-   Chek QR i «SM.5EED0000.R1|P01|Q0|01_021|1753x600x16» koʻrinishida —
-   kod 4-maydonda. Oddiy shtrix-kod boʻlsa matnning oʻzi. */
+/* Skanerlangan matndan detal kodini ajratib olish (eski yoʻl — tashqi
+   chaqiruvlar uchun qoldi). Chek QR i «SM.5EED0000.R1|P01|Q0|01_021|…»
+   koʻrinishida — kod 4-maydonda; MES cheki shu buyurtmadagi detal kodiga
+   oʻgiriladi; oddiy shtrix-kod boʻlsa matnning oʻzi. */
 function scanCode(v){
   v = String(v || "").trim();
   if (!v) return "";
   var f = v.split("|");
   if (f.length > 3 && f[3]) return f[3].trim();
-  /* v22: MES cheki — `B-2026-047_100701_03_002_1`. Saralash detalni KOD
-     bilan qidiradi, shuning uchun MES satri shu buyurtmadagi detal kodiga
-     oʻgiriladi. Topilmasa matn oʻzicha qaytadi — «buyurtmada yoʻq» javobi
-     odatdagi yoʻldan chiqadi. */
   for (var i = 0; i < PACKS.length; i++){
     var its = packItems(PACKS[i]);
     for (var j = 0; j < its.length; j++) if (mesMatch(v, its[j])) return its[j].code;
@@ -9721,23 +9811,69 @@ function scanCode(v){
   return v;
 }
 
-/* Shu kodli, hali qoʻyilmagan detalni topish.
-   Bir xil koddagi detallar oʻzaro ALMASHINADI (bu tizimda allaqachon shunday —
-   qadoqlash ekranidagi checkScan ham shunga tayanadi), shuning uchun qaysi
-   nusxani olish farq qilmaydi. Lekin tartib bejiz emas:
-     1) yacheykasi BOR pochka — ochiq yacheykani tezroq toʻldirib boʻshatamiz;
-     2) soʻng eng kichik raqamli pochka — natija oldindan aytib boʻladigan boʻlsin. */
-function findSortTarget(code){
-  var withCell = null, any = null;
-  for (var i = 0; i < PACKS.length; i++){
-    var p = PACKS[i], its = packItems(p);
-    for (var j = 0; j < its.length; j++){
-      var it = its[j];
-      if (it.code !== code) continue;
-      if (SORT.put[it.uid]) continue;              // bu nusxa allaqachon qoʻyilgan
-      if (SORT.pack[p.no]){ if (!withCell) withCell = { p:p, it:it }; }
-      else if (!any) any = { p:p, it:it };
+/* v22: SKAN -> DETAL (kod emas). Ilgari saralash faqat KOD bilan qidirardi:
+   - koʻzgu juftlik (chap/oʻng bok, MES da `-2`) BOSHQA pochkaning yacheykasiga
+     tushardi — qadoqlash posti esa uni rad etardi (205 faylning 112 tasida
+     bunday kodlar bor);
+   - oʻz chekimizdagi pochka raqami va oʻlcham eʼtiborsiz qolardi;
+   - kodsiz detalni umuman saralab boʻlmasdi.
+   Endi skan aniq detalga (yoki uning bir xil nusxalariga) aylanadi:
+     MES cheki    — `mesMatch` (nusxalar almashinadi, `-2` boshqa detal);
+     oʻz chekimiz — chekdagi pochka + kod + oʻlcham;
+     oddiy kod    — faqat bitta detalga (bitta MES kalitiga) tegishli boʻlsa.
+   Qaytadi: { cands:[{p,it}], label, err, mes } */
+function sortResolve(raw){
+  var v = String(raw || "").trim(), out = { cands:[], label:v, err:null, mes:false };
+  if (!v) return out;
+  var f = v.split("|"), hdr = f[0] ? f[0].split(".") : [];
+  var own = f.length >= 5 && hdr.length >= 3 && /^R\d+$/.test(hdr[hdr.length - 1]);
+  if (own){
+    if (hdr[1] !== projTag()){ out.err = "bu chek boshqa buyurtmaniki (" + hdr[1] + ")"; return out; }
+    var rev = +hdr[hdr.length - 1].slice(1);
+    if (P && P.rev && rev !== P.rev){
+      out.err = "bu chek ESKI terishdan (R" + rev + "), joriy R" + P.rev + " — cheklarni qayta chop eting";
+      return out;
     }
+    out.label = f[3];
+    PACKS.forEach(function(p){
+      if ("P" + pad2(p.no) !== f[1]) return;
+      packItems(p).forEach(function(it){
+        if (it.code === f[3] && (it.L + "x" + it.W + "x" + it.T) === f[4]) out.cands.push({ p:p, it:it });
+      });
+    });
+    return out;
+  }
+  PACKS.forEach(function(p){
+    packItems(p).forEach(function(it){ if (mesMatch(v, it)) out.cands.push({ p:p, it:it }); });
+  });
+  if (out.cands.length){ out.mes = true; out.label = out.cands[0].it.code || v; return out; }
+  // oddiy kod — bir nechta HAR XIL detalga tegishli boʻlsa, tanlab boʻlmaydi
+  var keys = {};
+  PACKS.forEach(function(p){
+    packItems(p).forEach(function(it){
+      if (it.code === v){ out.cands.push({ p:p, it:it }); keys[it.mesKey || it.code] = 1; }
+    });
+  });
+  var kn = Object.keys(keys).length;
+  if (kn > 1){
+    out.err = "«" + v + "» kodi " + kn + " xil detalga tegishli (masalan chap va oʻng bok) — chekdagi QR ni skanerlang";
+    out.cands = [];
+  }
+  return out;
+}
+
+/* Nomzodlar ichidan hali saralanmagan nusxa. Tartib:
+     1) yacheykasi BOR pochka — ochiq yacheykani tezroq toʻldirib boʻshatamiz;
+     2) soʻng eng kichik raqamli pochka — natija oldindan aytib boʻladigan boʻlsin.
+   Yigʻib boʻlingan pochka nomzod emas (v22). */
+function findSortTarget(cands){
+  if (typeof cands === "string") cands = sortResolve(cands).cands;   // eski chaqiruv: kod
+  var withCell = null, any = null;
+  for (var i = 0; i < cands.length; i++){
+    var c = cands[i];
+    if (SORT.put[c.it.uid] || packFinished(c.p)) continue;
+    if (SORT.pack[c.p.no]){ if (!withCell) withCell = c; }
+    else if (!any) any = c;
   }
   return withCell || any;
 }
@@ -9745,34 +9881,51 @@ function findSortTarget(code){
 /* Asosiy amal: detal skanerlandi -> qaysi yacheykaga qoʻyilsin.
    Qaytadi: {ok, cell, pack, item, msg, kind} */
 function sortScan(raw){
-  var code = scanCode(raw);
-  if (!code) return { ok:false, kind:"err", msg:"kod boʻsh" };
+  if (!String(raw || "").trim()) return { ok:false, kind:"err", msg:"kod boʻsh" };
   if (!PACKS.length) return { ok:false, kind:"err", msg:"pochkalar hisoblanmagan — avval «Pochkalash» ni bosing" };
+  var r = sortResolve(raw);
+  if (r.err) return { ok:false, kind:"err", msg:r.err };
+  var label = r.label;
 
-  var t = findSortTarget(code);
+  /* v22: bitta MES chek ikki marta skanerlansa ikkinchi nusxa belgilanmaydi —
+     aks holda bitta yacheyka bir detal kam, keyingi haqiqiy nusxa esa
+     «allaqachon saralangan» boʻlib qolardi. Javobda yacheyka aytiladi. */
+  var mkey = r.mes ? mesStrip(raw) : null;
+  if (mkey && SORT.seen[mkey] && SORT.put[SORT.seen[mkey]]){
+    var wc = SORT.put[SORT.seen[mkey]];
+    return { ok:false, kind:"ok", msg:"«" + label + "» — bu chek allaqachon skanerlangan" +
+             (wc !== SORT_PACKED ? ": " + wc + " yacheykada" : ", pochkasi qadoqlangan") };
+  }
+
+  var t = findSortTarget(r.cands);
   if (!t){
-    // kod umuman buyurtmada bormi — ishchiga aniq javob beramiz
-    var exists = false;
-    for (var i = 0; i < PACKS.length && !exists; i++)
-      packItems(PACKS[i]).forEach(function(it){ if (it.code === code) exists = true; });
-    return exists
-      ? { ok:false, kind:"ok",  msg:"«"+code+"» — bu koddagi hamma detal allaqachon saralangan" }
-      : { ok:false, kind:"err", msg:"«"+code+"» — bu detal buyurtmada yoʻq" };
+    if (r.cands.length){
+      var cellsOf = {};
+      r.cands.forEach(function(c){ var x = SORT.put[c.it.uid]; if (x && x !== SORT_PACKED) cellsOf[x] = 1; });
+      var where = Object.keys(cellsOf);
+      return { ok:false, kind:"ok", msg:"«" + label + "» — bu detalning hamma nusxasi allaqachon saralangan" +
+               (where.length ? " (" + where.join(", ") + ")" : "") };
+    }
+    return { ok:false, kind:"err", msg:"«" + label + "» — bu detal buyurtmada yoʻq" };
   }
 
   var cell = claimCell(t.p.no);
   if (!cell){
-    /* Hamma yacheyka band. Ishchi shu detal bilan NIMA qilishini bilishi kerak —
-       «boʻsh joy yoʻq» degan quruq xabar uni ekran oldida qoldiradi. Detal
-       paddonda qoladi va keyingi toʻlqinda saralanadi. Ochiq yacheykalarga
-       tegishli detallarni esa u davom ettiraveradi. */
-    var open = Object.keys(SORT.cell).map(function(c){ return c+"=P"+pad2(SORT.cell[c]); }).join(", ");
+    /* Yacheyka yoʻq yoki boʻsh yacheykalar kattaroq pochkalarga ajratilgan.
+       Ishchi shu detal bilan NIMA qilishini bilishi kerak: detal paddonda qoladi
+       va keyingi toʻlqinda saralanadi. Ochiq yacheykalarga tegishli detallarni
+       esa u davom ettiraveradi. */
+    var open = Object.keys(SORT.cell).map(function(c){ return c + "=P" + pad2(SORT.cell[c]); }).join(", ");
+    var freeN = openCells().filter(function(c){ return !SORT.cell[c]; }).length;
     return { ok:false, kind:"err",
-      msg:"«"+code+"» P"+pad2(t.p.no)+" ga tegishli, lekin boʻsh yacheyka yoʻq — "+
-          "detalni paddonda qoldiring. Ochiq: "+open };
+      msg:"«" + label + "» P" + pad2(t.p.no) + " ga tegishli, lekin " +
+          (freeN ? "boʻsh yacheykalar kattaroq pochkalarga ajratilgan (keyingi toʻlqin)"
+                 : "boʻsh yacheyka yoʻq") +
+          " — detalni paddonda qoldiring." + (open ? " Ochiq: " + open : "") };
   }
 
   SORT.put[t.it.uid] = cell;
+  if (mkey) SORT.seen[mkey] = t.it.uid;
   var n = packItems(t.p).length;
   SORT.last = { cell:cell, no:t.p.no, code:t.it.code, item:t.it,
                 done:cellDone(t.p.no), n:n, gname:(t.p.gname || (t.p.base && t.p.base.prod) || "") };
@@ -9979,7 +10132,7 @@ function rackSaved(what){
 
 /* Saralashni noldan boshlash */
 function sortReset(){
-  SORT.cell = {}; SORT.pack = {}; SORT.put = {}; SORT.plan = {}; SORT.last = null;
+  SORT.cell = {}; SORT.pack = {}; SORT.put = {}; SORT.plan = {}; SORT.seen = {}; SORT.last = null;
   sortPlan();
   renderSort(); renderPlanBox(); sortFlash("", "");
   if (typeof autosave === "function") autosave();

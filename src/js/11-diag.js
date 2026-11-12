@@ -221,10 +221,10 @@ function diagSkipHTML(){
   var n = sk.reduce(function(a, x){ return a + (x.q || 1); }, 0);
   var h = '<h3>Pochkalanmagan obyektlar · ' + n + '</h3>' +
     '<div class="note" style="border-left-color:var(--mark)">' +
-    'Ikki xil obyekt: xona devori, pol, shift (proyekt faylida ular ham «detal» boʻlib ' +
-    'keladi) va <b>alohida ketadigan</b> materiallar — oyna, koʻzgu (TZ-v2 §5: pochkaga ' +
-    'qoʻshilmaydi, TMO da buyurtmaga qoʻshiladi). Ular pochkalanmaydi va massaga kirmaydi. ' +
-    'Chegara: <b>Sozlamalar → Umumiy → Kengaytirilgan</b>.</div>';
+    'Xona devori, pol, shift — proyekt faylida ular ham «detal» boʻlib keladi — va soni 0 ' +
+    'boʻlgan detallar. Ular pochkalanmaydi va massaga kirmaydi. Koʻzgu va oyna esa BU YERDA ' +
+    'EMAS: ular pochkalanadi, lekin har biri alohida pochkada («⚠ MOʻRT»). ' +
+    'Chegara: <b>Sozlamalar → Umumiy</b>.</div>';
   var rows = '<tr><th>Kod</th><th>Nom</th><th>Soni</th><th>Sabab</th></tr>';
   sk.forEach(function(x){
     rows += '<tr><td class="m">' + esc(x.code || "—") + '</td>' +

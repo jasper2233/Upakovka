@@ -909,7 +909,8 @@ function absorbTails(packs, sameKey){
   for (var round = 0; round < 4 && packs.length > 1; round++){
     var did = false;
     // eng yengildan boshlaymiz — kichigi kattaga singishi osonroq
-    var light = packs.filter(function(p){ return p.kg < packKgCap(p) * 0.5; })
+    // v22: moʻrt pochka hech qayerga singdirilmaydi (va unga hech narsa qoʻshilmaydi — u bogʻ)
+    var light = packs.filter(function(p){ return !packFragile(p) && p.kg < packKgCap(p) * 0.5; })
                      .sort(function(a,b){ return a.kg - b.kg || uidCmp(packUid(a), packUid(b)); });
     for (var wi = 0; wi < light.length; wi++){
       var w = light[wi];
@@ -1368,12 +1369,16 @@ function* packAllGen(){
   var items = buildItems();
   var rule = S.split || { prod:true, mat:false };   // v12: bitta umumiy qoida
   MAIN_T = mainThick(items);        // v14: qalinlik matritsasining asosi
-  var oddPre = [], main = [];
+  var oddPre = [], main = [], fragile = [];
   /* v14: NOSTANDART FILTRI. Detal tag oynasining YUQORI chegarasidan chiqsa
      nostandart oqimga oʻtadi — chunki u hech qanday tagga sigʻmaydi.
      Oynaning PAST chegarasi (minBase, baseLMin) bu yerda tekshirilmaydi:
      kichik detal tag boʻlolmaydi, lekin qavatga bemalol tushadi. */
   items.forEach(function(it){
+    /* v22: MOʻRT DETAL (koʻzgu, oyna) hech qaysi oqimga kirmaydi — pastda har
+       biri ALOHIDA pochka boʻladi. Tsex talabi: koʻzgu umumiy pochkaga
+       qoʻshilmaydi, chekida «EHTIYOT BOʻLING». */
+    if (it.fragile){ it.nst = false; it.why = null; fragile.push(it); return; }
     var why = null;
     if (it.L > S.maxLen)               why = it.L + " mm > " + S.maxLen + " mm (tag boʻyi)";
     else if (it.W > (S.baseWMax||1e9)) why = it.W + " mm > " + S.baseWMax + " mm (tag eni)";
@@ -1443,6 +1448,12 @@ function* packAllGen(){
   // v14: nostandartlar endi saralanadi — 3.6.8.5 ga qarang
   var oddOut = yield* oddPackGen(best.odd, rule);
   for (var oi = 0; oi < oddOut.length; oi++) out.push(oddOut[oi]);
+  /* v22: har moʻrt detal — oʻz pochkasi (bitta detalli bogʻ). Guruh kaliti va
+     nomi boshqalarnikidek: roʻyxatda oʻz moduli ostida turadi. */
+  fragile.slice().sort(function(a, b){ return uidCmp(a.uid, b.uid); }).forEach(function(it){
+    out.push({ odd:true, items:[it], key:packKey(it, rule), nst:false,
+               gname:groupLabel([it], rule), room:groupRoom([it]) });
+  });
 
   /* v16: YAKUNIY SINGDIRISH — butun buyurtma boʻylab.
      packGroupGen ichidagi singdirish faqat OʻZ guruhi bilan ishlaydi va
@@ -1664,6 +1675,15 @@ function packKgAbs(p){
    Tara pochkalash hisobiga KIRMAYDI (u sof detal massasi bilan ishlaydi),
    faqat chek va «2 kishi» ogohlantirishi uchun qoʻshiladi. */
 function packBrutto(p){ return (p ? p.kg : 0) + (+S.tare || 0); }
+/* v22: pochkada moʻrt (koʻzgu, oyna) detal bormi — chek va roʻyxatdagi
+   «EHTIYOT BOʻLING» belgisi shunga qaraydi. Belgi detaldan olinadi (buildItems),
+   shuning uchun seans tiklangandan keyin ham toʻgʻri. */
+function packFragile(p){
+  if (!p) return false;
+  var its = p.odd ? (p.items || []) : (p.seq || []).map(function(s){ return s.it; });
+  for (var i = 0; i < its.length; i++) if (its[i] && its[i].fragile) return true;
+  return false;
+}
 
 /* v22: KOʻTARISH DARAJASI — brutto boʻyicha, chegaralarni tsex belgilaydi.
    1 — bir kishi (≤ oneMan), 2 — ikki kishi (≤ twoMan), 3 — undan ogʻir:

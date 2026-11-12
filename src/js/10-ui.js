@@ -130,7 +130,7 @@ function renderPacks(){
     }
     // sarlavha — GABARIT: 55 pochkadan 51 tasi shu bilan farq qiladi va ishchi
     // stoldagi pochkani aynan oʻlchamidan tanib oladi
-    var ttl = p.odd ? ("noodatiy" + cls)
+    var ttl = p.odd ? (packFragile(p) ? "alohida · " + packDimText(p, "×") : ("noodatiy" + cls))   // v22
                     : (p.gabL+"×"+p.gabW+"×"+Math.round(p.h) + (p.oddSrc ? " · NS" : ""));
     var weak = !p.odd && p.layers.some(function(L){ return L.weak; });
     // v10: har satr <s> ichida — CSS uni kesadi, shuning uchun matn hech qachon
@@ -160,7 +160,8 @@ function renderPacks(){
     var cellTag = (typeof SORT === "object" && SORT && SORT.pack && SORT.pack[p.no])
       ? '<span class="celltag">'+SORT.pack[p.no]+'</span>' : '';
     d.innerHTML = '<div class="no">'+mark+'</div>'+
-      '<div><div class="ttl">'+cellTag+esc(ttl)+'</div><div class="sub">'+sub+'</div>'+
+      // v22: koʻzgu/oyna pochkasi roʻyxatda ham koʻzga tashlansin
+      '<div><div class="ttl">'+cellTag+(packFragile(p) ? '<span class="fragtag">⚠ MOʻRT</span>' : '')+esc(ttl)+'</div><div class="sub">'+sub+'</div>'+
       '<div class="bar"><i class="'+(fill>92?"hot":"")+'" style="width:'+fill.toFixed(0)+'%"></i></div></div>'+
       // v22: koʻtarish darajasi — 1 kishilik pochka ham belgilanadi (xira), 3+ — qizil
       '<div class="kg">'+brutto.toFixed(1)+'<em class="lift t'+liftTier(brutto)+'">'+liftText(brutto)+'</em></div>';
@@ -227,7 +228,7 @@ function selectPack(i){
   STEP = Math.max(0, Math.min(p.done || 0, p.seq.length));
   if (STEP >= p.seq.length && !p.odd) WRAP = true;
   $("stageTitle").innerHTML = p.odd
-    ? 'Pochka <b style="font-family:var(--mono)">P'+pad2(p.no)+'</b> — noodatiy · '+p.t+' mm'
+    ? 'Pochka <b style="font-family:var(--mono)">P'+pad2(p.no)+'</b> — '+(packFragile(p) ? 'moʻrt, alohida (koʻzgu / oyna)' : 'noodatiy')+' · '+p.t+' mm'
     : 'Pochka <b style="font-family:var(--mono)">P'+pad2(p.no)+'</b>'+
       // v11: detallar qaysi yacheykada turibdi
       ((typeof SORT === "object" && SORT && SORT.pack && SORT.pack[p.no])
@@ -319,7 +320,7 @@ function renderStep(){
     var role = step.role==="tag" ? "eng tag — yaxlit detal"
              : step.role==="ust" ? "eng ust — qopqoq"+(step.of>1?" ("+step.n+"/"+step.of+")":"")+(step.weak?" · toʻliq emas":"")
              : step.role==="quyruq" ? "quyruq — qopqoq ostiga"+(step.of>1?" ("+step.n+"/"+step.of+")":"")
-             : step.role==="noodatiy" ? "noodatiy — alohida"
+             : step.role==="noodatiy" ? (it.fragile ? "moʻrt — alohida pochka" : "noodatiy — alohida")
              : step.layer+"-qavat"+(step.of>1?" ("+step.n+"/"+step.of+")":"");
     function axis(v, inWord){
       v = Math.round(v);
@@ -332,6 +333,8 @@ function renderStep(){
       : axis(step.pos.x,"chap")+" · "+axis(step.pos.y,"orqa")+(step.pos.rot?" · 90° burilgan":"");
     $("nextBox").innerHTML =
       '<div class="step">qadam '+(STEP+1)+' · '+role+'</div>'+
+      // v22: moʻrt detal — ishchi qoʻliga olishdan oldin koʻrsin
+      (it.fragile ? '<div class="heavy fragile">⚠ EHTIYOT BOʻLING — MOʻRT (koʻzgu / oyna), alohida pochka</div>' : '')+
       '<div class="code">'+esc(it.code)+'</div>'+
       '<div class="nm">'+esc(it.name)+'</div>'+
       (it.mes ? '<div class="mesid" title="MES chekidagi ID">'+esc(mesFull(it))+'</div>' : '')+
@@ -732,6 +735,7 @@ function mesPlan(){
         thickness: p.t || null,
         net_kg: +p.kg.toFixed(2), gross_kg: +packBrutto(p).toFixed(2),
         lift: liftTier(packBrutto(p)),                    // 1 / 2 / 3 (3 = 3+ kishi yoki arava)
+        fragile: packFragile(p),                          // v22: koʻzgu/oyna — EHTIYOT BOʻLING
         size_mm: p.odd ? null : [Math.round(p.gabL), Math.round(p.gabW), Math.round(p.h)],
         steps: p.seq.map(function(s, i){
           var it = s.it, pos = s.pos;

@@ -266,7 +266,8 @@ $tester = @'
 
     /* v22: YOGʻOCH EMAS MATERIALLAR. Real fayllardan: 30 mm «MATO» LDSP deb
        90,7 kg chiqqan, 4 mm oyna esa yogʻoch zichligida oddiy pochkaga
-       terilgan (TZ-v2 §5 ga zid). */
+       terilgan. Tsex talabi: koʻzgu/oyna umumiy pochkaga qoʻshilmaydi — har
+       biri ALOHIDA pochka, chekida «EHTIYOT BOʻLING». */
     var svP = P;
     try {
       var nw = '<project name="Material sinovi">' +
@@ -277,8 +278,10 @@ $tester = @'
           '<part id="b1" code="01_001" name="bok" l="1800" w="450" count="1"/>' +
           '<part id="b2" code="01_002" name="oyna" l="1000" w="500" count="1"/>' +
           '<part id="b3" code="01_003" name="mato" l="2400" w="1800" count="1"/>' +
+          '<part id="b4" code="01_004" name="eshik koʻzgu yopishtirilgan" l="1700" w="450" count="1"/>' +
+          '<part id="b5" code="01_005" name="polka" l="900" w="450" count="1"/>' +
         '</good>' +
-        '<operation typeId="CS"><material id="m1"/><part id="b1"/></operation>' +
+        '<operation typeId="CS"><material id="m1"/><part id="b1"/><part id="b4"/><part id="b5"/></operation>' +
         '<operation typeId="CS"><material id="m2"/><part id="b2"/></operation>' +
         '<operation typeId="CS"><material id="m3"/><part id="b3"/></operation>' +
         '</project>';
@@ -292,22 +295,41 @@ $tester = @'
           tx ? tx.msg.slice(0, 70) : "yoʻq");
       P = dn;
       var itn = buildItems();
-      var codes = itn.map(function(it){ return it.code; }).join(",");
-      chk("oyna pochkalanmaydi (TZ-v2 §5)", codes.indexOf("01_002") < 0, codes);
-      var skG = (DIAG.skipped || []).filter(function(x){ return x.code === "01_002"; })[0];
-      chk("oyna «alohida ketadi» roʻyxatida", !!skG && skG.why.indexOf("alohida") >= 0, skG ? skG.why : "yoʻq");
+      var fr = itn.filter(function(it){ return it.fragile; }).map(function(it){ return it.code; }).join(",");
+      chk("koʻzgu/oyna moʻrt deb belgilandi (material va detal nomidan)", fr === "01_002,01_004", fr || "yoʻq");
       var hv = (DIAG.heavy || []).map(function(x){ return x.code + " " + x.kg.toFixed(1); }).join(",");
       chk("65 kg dan ogʻir detal shubhali deb belgilandi", /^01_003 /.test(hv), hv || "yoʻq");
+      packAll();
+      var frPk = PACKS.filter(function(pk){ return packFragile(pk); });
+      var frAlone = frPk.filter(function(pk){ return pk.odd && pk.items.length === 1; }).length;
+      chk("har moʻrt detal ALOHIDA pochkada", frPk.length === 2 && frAlone === 2 &&
+          itn.length === PACKS.reduce(function(n, pk){ return n + packItems(pk).length; }, 0),
+          frPk.length + " ta moʻrt pochka, " + frAlone + " tasi yolgʻiz · jami " + PACKS.length + " pochka");
+      var frAud = auditPacks(PACKS, buildItems());
+      chk("moʻrt pochkalarda audit toza", frAud.errors.length === 0,
+          frAud.errors.map(function(e){ return e.code; }).join(",") || "toza");
+      var svLS = S.labelSize; S.labelSize = "80x60";
+      var frLbl = packLabelHTML(frPk[0], "frq"), frItL = labelHTML(frPk[0], frPk[0].seq[0], "frd");
+      S.labelSize = "a4";
+      var frA4 = packLabelHTML(frPk[0], "frq4");
+      S.labelSize = svLS;
+      chk("moʻrt pochka va detal chekida «EHTIYOT BOʻLING»",
+          /EHTIYOT/.test(frLbl) && /EHTIYOT/.test(frItL) && /EHTIYOT/.test(frA4), "80×60 + A4 + detal");
+      var mixA = auditPacks([{ odd:true, no:1, key:"x", items:[itn[0], itn.filter(function(it){ return it.fragile; })[0]] }], itn);
+      chk("audit moʻrt detal aralashganini koʻradi (MORT)", mixA.errors.some(function(e){ return e.code === "MORT"; }), "MORT");
       var svSep = S.sepMat; S.sepMat = "";
-      var allIn = buildItems().length;
+      var noneFr = buildItems().filter(function(it){ return it.fragile; }).length;
+      S.sepMat = "KOʻZGU";
+      var apos = buildItems().filter(function(it){ return it.fragile; }).map(function(it){ return it.code; }).join(",");
       S.sepMat = svSep;
-      chk("kalit soʻz olib tashlansa oyna pochkalanadi", allIn === 3, allIn + " detal");
+      chk("kalit soʻz boʻsh — moʻrt detal yoʻq; tutuq belgisi farqsiz", noneFr === 0 && apos === "01_004",
+          "boʻsh: " + noneFr + " · «KOʻZGU»: " + apos);
       var hvA = auditPacks([{ odd:true, no:1, items:itn.filter(function(it){ return it.code === "01_003"; }),
                               kg:itn.filter(function(it){ return it.code === "01_003"; })[0].kg, key:"x" }], itn)
                   .warnings.filter(function(w){ return w.code === "DETAL_OGIR"; }).length;
       chk("audit ogʻir detalni koʻradi (DETAL_OGIR)", hvA === 1, hvA + " ta");
     } catch(e){ chk("yogʻoch emas materiallar", false, e.message); }
-    P = svP; buildItems();
+    P = svP; packAll();
 
     /* v22: DETAL SONI MES QOIDASI BILAN — jami = detal × max(mahsulot, 1).
        Real fayllarda mahsulot count="7" (7 ta parta) boʻlganda 1 ta parta

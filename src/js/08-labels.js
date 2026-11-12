@@ -24,9 +24,11 @@ function labelHTML(p, step, id){
      ostidagi uzun matn tushiriladi — 58×40 da har detal cheki 2 stikerga
      chiqardi. Kod va QR — asosiysi, ular qoladi. */
   var mmL = (typeof labelMM === "function") ? labelMM() : null, tinyL = !!(mmL && mmL.h < 62);
-  var role = step.role==="tag" ? "ENG TAG" : step.role==="ust" ? ("QOPQOQ"+(step.of>1?" "+step.n+"/"+step.of:"")) : step.role==="noodatiy" ? "NOODATIY" : (step.layer+"-QAVAT"+(step.of>1?" "+step.n+"/"+step.of:""));
-  return '<div class="label">'+
+  var role = step.role==="tag" ? "ENG TAG" : step.role==="ust" ? ("QOPQOQ"+(step.of>1?" "+step.n+"/"+step.of:"")) : step.role==="noodatiy" ? (it.fragile ? "ALOHIDA" : "NOODATIY") : (step.layer+"-QAVAT"+(step.of>1?" "+step.n+"/"+step.of:""));
+  return '<div class="label'+(it.fragile ? ' fragile' : '')+'">'+
     '<div>'+
+      // v22: moʻrt detal cheki — eng yuqorida, koʻzga tashlanadigan qilib
+      (it.fragile ? '<div class="warn fragile">⚠ EHTIYOT BOʻLING</div>' : '')+
       '<div class="lc">'+esc(it.code)+'</div>'+
       '<div class="ln">'+esc(it.name)+'</div>'+
       '<table>'+
@@ -35,7 +37,7 @@ function labelHTML(p, step, id){
         '<tr><td>Oʻlcham</td><td class="big">'+it.L+' × '+it.W+' × '+it.T+'</td></tr>'+
         '<tr><td>Massa</td><td class="big">'+it.kg.toFixed(2)+' kg</td></tr>'+
         (tinyL ? '' : '<tr><td>Material</td><td>'+esc(m?m.name:"—")+'</td></tr>')+
-        '<tr><td>Modul</td><td>'+esc(unitLabel(it.unit, it.unitName || it.prod))+'</td></tr>'+
+        ((tinyL && it.fragile) ? '' : '<tr><td>Modul</td><td>'+esc(unitLabel(it.unit, it.unitName || it.prod))+'</td></tr>')+
         (tinyL ? '' : '<tr><td>Pochka</td><td><span class="pill">P'+pad2(p.no)+' · '+role+'</span></td></tr>')+
       '</table>'+
     '</div>'+
@@ -47,6 +49,16 @@ function packQR(p){
   return S.prefix + "." + projTag() + ".R" + (p.rev || (P&&P.rev) || 1) + "|P" + pad2(p.no) + "|" +
          (p.t||"") + "mm|" + p.seq.length + "det|" + packBrutto(p).toFixed(1) + "kg|" +
          (p.odd ? "NOODATIY" : p.gabL+"x"+p.gabW+"x"+Math.round(p.h));
+}
+/* v22: chekdagi gabarit. Bitta detalli bogʻda (koʻzgu, oyna — har doim yolgʻiz)
+   detalning oʻz oʻlchami: ilgari «—» chiqardi va omborchi qadoqni oʻlchamidan
+   taniy olmasdi. Koʻp detalli bogʻda — «—» (gabarit qoʻlda yigʻiladi). */
+function packDimText(p, x){
+  if (p.odd){
+    var it = (p.items || [])[0];
+    return (p.items && p.items.length === 1) ? (it.L + x + it.W + x + it.T) : "—";
+  }
+  return p.gabL + x + p.gabW + x + Math.round(p.h);
 }
 function packLabelHTML(p, id){
   var brutto = packBrutto(p);         // detallar + qadoq materiali (tara)
@@ -63,16 +75,19 @@ function packLabelHTML(p, id){
      (58×40 da 4–5 taga), «2 KISHI» ogohlantirishi va detallar roʻyxati
      ikkinchi stikerga tushardi. Termalda faqat ishchiga va omborga keraklisi
      qoladi; koʻtarish darajasi brutto qatorida. A4 chek oʻzgarmaydi. */
+  // v22: moʻrt detal — «EHTIYOT BOʻLING» (koʻzgu, oyna har doim alohida pochkada)
+  var frag = packFragile(p) ? '<div class="warn fragile">⚠ EHTIYOT BOʻLING — MOʻRT (KOʻZGU / OYNA)</div>' : '';
   if (typeof labelMM === "function" && labelMM()){
     var lay = p.odd ? p.items.length : (p.layers.length + 1);
     return '<div class="label plabel thermal">'+
       '<div class="ph"><b>POCHKA P'+pad2(p.no)+'</b><span>'+esc(cut(P.name, 28))+' · R'+(p.rev||1)+'</span></div>'+
+      frag+
       '<div class="pb">'+
         '<table>'+
         (room ? '<tr><td>Xona</td><td class="big">'+esc(cut(room, 24))+'</td></tr>' : '')+
         '<tr><td>Modul</td><td class="big">'+esc(cut(Object.keys(mods).join(", "), 30))+'</td></tr>'+
         '<tr><td>Detal</td><td class="big">'+p.seq.length+' dona · '+lay+' qavat</td></tr>'+
-        '<tr><td>Gabarit</td><td>'+(p.odd?"—":p.gabL+"×"+p.gabW+"×"+Math.round(p.h))+'</td></tr>'+
+        '<tr><td>Gabarit</td><td>'+packDimText(p, "×")+'</td></tr>'+
         '<tr><td>Brutto</td><td class="big">'+brutto.toFixed(1)+' kg'+
           (tier > 1 ? ' <span class="pill">'+liftText(brutto)+'</span>' : '')+'</td></tr>'+
         '</table>'+
@@ -83,6 +98,7 @@ function packLabelHTML(p, id){
   }
   return '<div class="label plabel">'+
     '<div class="ph"><b>POCHKA P'+pad2(p.no)+'</b><span>'+esc(P.name)+' · R'+(p.rev||1)+'</span></div>'+
+    frag+
     '<div class="pb">'+
       '<div>'+
         '<table>'+
@@ -92,7 +108,7 @@ function packLabelHTML(p, id){
         '<tr><td>Qalinlik</td><td class="big">'+(p.t||"—")+' mm</td></tr>'+
         '<tr><td>Qator</td><td class="big">'+(p.odd?p.items.length:(p.layers.length+1))+' qavat</td></tr>'+
         '<tr><td>Detal</td><td class="big">'+p.seq.length+' dona</td></tr>'+
-        '<tr><td>Gabarit</td><td class="big">'+(p.odd?"—":p.gabL+" × "+p.gabW+" × "+Math.round(p.h)+" mm")+'</td></tr>'+
+        '<tr><td>Gabarit</td><td class="big">'+packDimText(p, " × ")+(p.odd && p.items.length !== 1 ? "" : " mm")+'</td></tr>'+
         '<tr><td>Netto</td><td>'+p.kg.toFixed(1)+' kg</td></tr>'+
         '<tr><td>Brutto</td><td class="big">'+brutto.toFixed(1)+' kg</td></tr>'+
         '<tr><td>Koʻtarish</td><td class="big">'+liftText(brutto)+'</td></tr>'+

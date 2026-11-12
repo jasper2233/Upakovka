@@ -723,18 +723,25 @@ Ilgari filtr darhol `packKgAbs` ni ruxsat berardi va eng zich joylashuv g'olib b
 
 ---
 
-### 28a. Alohida ketadigan materiallar — `OYNA, KOZGU, ZERKAL, STEKL` (`S.sepMat`, v22)
+### 28a. Mo'rt detallar — alohida pochka (`S.sepMat`, v22)
 
-**Nima:** material nomida shu so'zlardan biri bo'lsa detal pochkalanmaydi —
-Diagnostikadagi «Pochkalanmagan obyektlar» ro'yxatiga «alohida ketadi» sababi
-bilan tushadi (`partSkipWhy` → `sepMatHit`).
+Standart: `OYNA, KOZGU, ZERKAL, STEKL, ЗЕРКАЛ, СТЕКЛ, ALYUMIN`.
 
-**Nega:** TZ-v2 §5 (kelishilgan): oyna va shunga o'xshash narsalar pochkaga
-qo'shilmaydi, TMO da tayyor buyurtmaga qo'shiladi. 205 ta real faylda `Oyna YOD`,
-`Kozgu fatset` (4–6 mm) uchraydi va v21 gacha ular oddiy pochkaga terilardi.
+**Nima:** material yoki detal **nomida** shu so'zlardan biri bo'lsa detal mo'rt
+(`item.fragile`, `sepMatHit`). Mo'rt detal pochkalanadi, lekin **har biri alohida
+pochkada** (`packAllGen` — bitta detalli bog'), chekda «⚠ EHTIYOT BO'LING».
+Tutuq belgilari (ʻ ' ` ’) solishtirishda olib tashlanadi.
 
-**Bog'liqligi:** `buildItems()` natijasini o'zgartiradi — shuning uchun
-`SNAP_CONF` da (matn sifatida tiklanadi). Bo'sh qoldirilsa hammasi pochkalanadi.
+**Nega:** tsex talabi (2026-11-12, TZ-v2 §5 ga qo'shimcha): ko'zgu, oyna polka,
+alyumin ramkali oynali detal va oyna yopishtirilgan detal umumiy pochkaga
+qo'shilmaydi. 205 ta real faylda `Oyna YOD`, `Kozgu fatset` (4–6 mm), alyumin
+profilli oynali fasad uchraydi; v21 gacha ular oddiy pochkaga terilardi.
+
+**Himoya:** `absorbTails` mo'rt pochkani singdirmaydi, `moveDetail` bog'ga
+tegmaydi, audit `MORT` — mo'rt detal boshqa detal bilan bitta pochkada bo'lsa XATO.
+
+**Bog'liqligi:** `buildItems()` natijasini (`fragile`) o'zgartiradi — shuning uchun
+`SNAP_CONF` da (matn sifatida tiklanadi). Bo'sh qoldirilsa mo'rt detal yo'q.
 
 ### 28b. Bitta detal maks. massasi — 65 kg (`S.partKgMax`, v22)
 

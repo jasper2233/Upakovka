@@ -87,6 +87,7 @@ misol, tuzilish — aniq):
 | Maydon | Ma'nosi |
 |---|---|
 | `kind` | `standart` — tag + qavatlar; `nostandart` — uzun/tor detallar bog'i (`place` = `null`) |
+| `lift` / `fragile` | ko'tarish darajasi (1 / 2 / 3 = 3+ kishi yoki arava) va mo'rt (ko'zgu/oyna — har doim alohida pochka, «EHTIYOT BO'LING») |
 | `role` | `tag`, `qavat`, `ust` (eng ustki qopqoq), `quyruq`, `noodatiy` |
 | `layer` | 0 = tag, 1… = qavatlar (pastdan tepaga) |
 | `place` | tag detalning chap-orqa burchagidan, mm; manfiy = tagdan chiqib turadi |

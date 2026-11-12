@@ -107,6 +107,14 @@ function auditPacks(packs, items){
     var lab = audPno(p, pi), kg = audNum(p.kg, 0);
     totalKg += kg;
 
+    /* v22: MOʻRT DETAL ALOHIDA — koʻzgu/oyna detali bor pochkada boshqa detal
+       boʻlmasligi shart (tsex talabi). Belgi detaldan (buildItems) olinadi. */
+    var allIts = p.odd ? (p.items || []) : [p.base].concat([].concat.apply([], (p.layers || []).map(function(L){
+      return (L.items || []).map(function(q){ return q.it; }); })));
+    var frN = allIts.filter(function(x){ return x && x.fragile; }).length;
+    if (frN && allIts.length > 1)
+      err("MORT", lab, "moʻrt detal (koʻzgu/oyna) boshqa " + (allIts.length - 1) + " ta detal bilan bitta pochkada — u alohida boʻlishi kerak");
+
     /* ---------- NOODATIY POCHKA ---------- */
     if (p.odd){
       oddPacks++;

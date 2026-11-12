@@ -420,6 +420,27 @@ bo'lmaydi: audit `BALANDLIK_NOODATIY` ogohlantirishini beradi (massa uchun
 
 ---
 
+## Mo'rt detallar — ko'zgu va oyna har doim alohida (v22)
+
+Ko'zgu, oyna polka, alyumin ramkali oynali detal va oyna yopishtirilgan detal
+(masalan ko'zgu yopishtirilgan LDSP eshik) **umumiy pochkaga qo'shilmaydi**:
+
+- har biri **alohida pochka** bo'ladi (bitta detal — bitta pochka);
+- pochka va detal chekida, ro'yxatda va «keyingi detal» kartasida
+  **«⚠ EHTIYOT BO'LING — MO'RT»** belgisi turadi;
+- qoldiqni singdirish va qo'lda ko'chirish unga tegmaydi; audit aralashganini
+  `MORT` xatosi bilan ushlaydi.
+
+205 ta real faylda: 40 pozitsiya mo'rt — material bo'yicha «Oyna YOD», «Kozgu fatset»,
+«Alyumin profil fasad … Yod oyna», detal nomi bo'yicha «kozgu pl», «ko'zgu ort»;
+noto'g'ri topilgani yo'q. Ular 17 faylda +81 alohida pochka bo'ldi.
+
+Qaysi detal mo'rt — **Sozlamalar → Umumiy → Mo'rt detallar**: material yoki
+detal **nomidagi** kalit so'zlar (standart `OYNA, KOZGU, ZERKAL, STEKL, ЗЕРКАЛ,
+СТЕКЛ, ALYUMIN`). Katta-kichik harf va tutuq belgisi farqsiz: «ko'zgu», «koʻzgu»
+va «kozgu» bir xil. Shisha va keramika massasi fizik zichlik bilan hisoblanadi
+(2500 / 2000 kg/m³).
+
 ## Pochkalanmaydigan obyektlar
 
 Haqiqiy proyekt fayllarida mebel detallari bilan bir qatorda **xona obyektlari**
@@ -1147,11 +1168,11 @@ Fayllar `namuna\Project` da kutiladi. **Bu papka `.gitignore` da** — u yerda
 haqiqiy mijoz buyurtmalari turadi va repo ochiq. Skript faqat statistika
 chiqaradi, tarkibni emas.
 
-Oxirgi o'lchov (v22, 205 fayl, 15 891 detal, 61 456 kg):
-**205/205 o'qildi, audit xatosi 0, detal yo'qolmadi** — 4735 pochka
-(shundan 888 tasi nostandart bog'), o'rtacha 13 kg, ochiq tom 437/2886 (15,1 %),
-zaxiradan foydalangan 76 pochka, pochkalanmagan obyekt 73 ta (xona devori, pol
-va v22 dan boshlab oyna/ko'zgu — TZ-v2 §5).
+Oxirgi o'lchov (v22, 205 fayl, 16 132 detal, 62 112 kg):
+**205/205 o'qildi, audit xatosi 0, detal yo'qolmadi** — 4829 pochka
+(shundan 969 tasi bog' — nostandart va mo'rt), o'rtacha 12,9 kg, ochiq tom
+435/2894 (15 %), zaxiradan foydalangan 78 pochka, pochkalanmagan obyekt 38 ta
+(xona devori, pol, soni 0 bo'lgan detal).
 
 Skript sahifani **haqiqiy brauzerda** (Edge yoki Chrome, headless) yuklaydi va
 **394 ta** tekshiruvni bajaradi. Node.js kerak emas. Nima tekshiriladi:

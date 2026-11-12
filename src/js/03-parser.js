@@ -338,20 +338,19 @@ function partSkipWhy(m){
   if (lim && t > lim)
     return t + " mm qalinlik — " + lim + " mm dan qalin (" +
            ((m && m.name) ? m.name : "material") + ")";
-  /* v22: TZ-v2 §5 — «oyna va shunga oʻxshash narsalar alohida ketadi, pochkaga
-     qoʻshilmaydi». Qaysi material shunday ekanini tsex kalit soʻzlar bilan
-     belgilaydi (S.sepMat, vergul bilan). Ilgari oyna oddiy pochkaga, yana
-     yogʻoch zichligida terilardi. */
-  var k = sepMatHit(m && m.name);
-  if (k) return "alohida ketadi — «" + k + "» (" + m.name + "), pochkaga qoʻshilmaydi";
   return null;
 }
-/* Material nomida tsex belgilagan «alohida» kalit soʻzi bormi — topilganini qaytaradi. */
+/* v22: MOʻRT DETAL — material yoki detal nomida tsex belgilagan kalit soʻz bormi
+   (S.sepMat). Topilgan soʻzni qaytaradi. Tutuq belgilari (ʻ ' ` ’) olib
+   tashlanadi: «koʻzgu», «ko'zgu» va «kozgu» bir xil. Mo'rt detal pochkalanadi,
+   lekin har biri ALOHIDA pochkada (04-packer `packAllGen`) va chekida
+   «EHTIYOT BOʻLING» turadi. */
+function sepNorm(x){ return String(x || "").toUpperCase().replace(/[ʻʼ'`‘’]/g, ""); }
 function sepMatHit(nm){
   if (!nm || !S.sepMat) return "";
-  var u = String(nm).toUpperCase(), ks = String(S.sepMat).split(",");
+  var u = sepNorm(nm), ks = String(S.sepMat).split(",");
   for (var i = 0; i < ks.length; i++){
-    var k = ks[i].trim().toUpperCase();
+    var k = sepNorm(ks[i]).trim();
     if (k && u.indexOf(k) >= 0) return k;
   }
   return "";
@@ -414,7 +413,9 @@ function buildItems(){
       // v12: part, area, idx, band maydonlari olib tashlandi — ular yozilardi,
       // lekin butun loyihada bir marta ham oʻqilmasdi
       // v22: MES ID — nusxa raqami faqat koʻp nusxali detalda (MES `serial_qrs`)
+      // v22: moʻrt — material yoki detal nomida (oyna yopishtirilgan LDSP eshik ham)
       out.push({ uid:base+"#"+k, code:p.c, name:p.n, prod:p.p, prodCode:p.pc,
+        fragile:!!(sepMatHit(m && m.name) || sepMatHit(p.n)),
         mesKey:mkOf[pi], mes:q > 1 ? mkOf[pi] + "_" + (k+1) : mkOf[pi],
         unit:u, unitName:unitName(p), cls:classify(p.n),
         L:L, W:W, T:m?m.t:16, mat:m, matId:p.m, edges:p.e,

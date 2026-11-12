@@ -127,6 +127,12 @@ kamaytiradi, kesimni butunlay o'chirish esa yana kamaytiradi.
   Yuklash paytida TMO dagi javobgar ortib beradi.
 - TMO ga qabul paytida skladdan skaner orqali mijoz yacheykasiga qo'yiladi.
 
+**2026-11-12 — tsex aniqlashtirdi (amalda shu):** ko'zgu, oyna polka, alyumin
+ramkali oynali detal va oyna yopishtirilgan detal **umumiy pochkaga qo'shilmaydi —
+har biri ALOHIDA pochka bo'ladi**, chekiga «⚠ EHTIYOT BO'LING» belgisi tushadi.
+Tizimda: `S.sepMat` kalit so'zlari material yoki detal nomida qidiriladi
+([meyorlar-TZ.md](meyorlar-TZ.md) 28a).
+
 ---
 
 ## 6. Saralash — stelaj va yacheyka

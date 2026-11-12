@@ -106,6 +106,12 @@ main{flex:1;min-height:0;overflow:hidden}
 .pk .kg{font-family:var(--mono);font-size:13px;text-align:right;white-space:nowrap;line-height:1.25}
 /* «2 KISHI» — ko'tarish xavfsizligi haqidagi yozuv 9px bo'lishi mumkin emas */
 .pk .kg em{display:block;font-style:normal;font-size:11px;font-weight:700;color:var(--mark);letter-spacing:.02em}
+/* v22: MOʻRT (koʻzgu, oyna) — roʻyxat belgisi va chekdagi ogohlantirish */
+.fragtag{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.04em;
+  color:#fff;background:var(--alert);border-radius:2px;padding:1px 5px;margin-right:6px;vertical-align:1px}
+.label .warn.fragile{margin:0 0 4px;background:#000;color:#fff;font-size:9.5px;font-weight:700;
+  letter-spacing:.06em;padding:3px 6px;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+#sheet.sz-lbl.tiny .label .warn.fragile{font-size:7.5px;padding:1px 3px;margin-bottom:1mm}
 /* v22: koʻtarish darajasi — 1 kishi xira, 2 kishi sariq (eskicha), 3+ qizil */
 .pk .kg em.lift.t1{color:var(--ink3);font-weight:500}
 .pk .kg em.lift.t3{color:var(--alert)}
