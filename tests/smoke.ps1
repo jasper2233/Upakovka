@@ -3114,6 +3114,9 @@ $tester = @'
       chk("post: qadoqlash postida saralash yashirin", !tabV("sort") && tabV("work") && el("v-work").classList.contains("on"), "");
       postSet("all");
       chk("post: hamma boʻlim — hammasi koʻrinadi", tabV("sort") && tabV("work") && el("postChip").style.display === "none", "");
+      chk("post: manzildagi ?post= (TV rejimidan chiqish yoʻli)",
+          postFromUrl("?post=all") === "all" && postFromUrl("?x=1&post=TV") === "tv" &&
+          postFromUrl("?post=xyz") === "" && postFromUrl("") === "", "");
     } catch(e){ chk("post rejimi", false, e.message); }
     try { localStorage.removeItem("upk_post"); } catch(e){}
 

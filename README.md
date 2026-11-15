@@ -242,6 +242,11 @@ ochadi. Server topilsa P/M → Postlar da **«Server: ulangan»** bloki chiqadi.
    *TV ekrani* (faqat ko'rsatish). Ishonchliroq: TV brauzeri nima bo'lishidan qat'i
    nazar ishlaydi. TV o'rniga unga ulangan arzon mini-PC yoki Android TV box ham bo'ladi.
 
+**Postni manzil bilan tanlash:** `http://SERVER-IP:8080/?post=tv` — har ochilishda
+TV ekrani (televizor brauzerida shu manzilni xatcho'p qiling). TV rejimida sozlamalar
+yashirin, ya'ni rejimdan chiqadigan tugma yo'q — `?post=all` oddiy rejimga qaytaradi.
+`?post=sort` va `?post=pack` ham ishlaydi. Tanlov shu qurilmada saqlanadi.
+
 Saralash holati serverda reviziya bilan turadi: TV brauzeri qayta yuklansa ham
 yo'qolmaydi. Bitta rejani ikki qurilma bir vaqtda saralasa, ikkinchisi «boshqa
 qurilma ham saralayapti» ogohlantirishini oladi (server — haqiqat, oxirgi detal

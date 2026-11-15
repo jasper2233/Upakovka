@@ -178,6 +178,23 @@ mumkin. Ixtiyoriy.
 - **Detal cheki** — MES ARRA da chiqaradi; upakofka o'zinikini chiqarmasa ham
   bo'ladi (MES cheki skanerlanadi).
 
+### M5a. Lokal sinovda topilgan shartlar (2026-11-13, MES `94a2f9e`)
+
+MES nusxasi lokal ishga tushirilib, bitta buyurtma (33 nusxa) beyjik bilan
+ARRA → KROMKA → PRISADKA → UPAKOVKA → TMO to'liq o'tkazildi — buyurtma
+`completed` bo'ldi. MES kodi o'zgartirilmadi; quyidagilar **sozlash** shartlari:
+
+| Shart | Busiz nima bo'ladi | Kim qiladi |
+|---|---|---|
+| Buyurtma anketasida **«Upakovka qilish»** (`survey.packaging = true`) — loyiha yuklanishidan OLDIN, yoki keyin qayta yuklash | marshrutda UPAKOVKA qadami umuman bo'lmaydi: detal PRISADKA dan to'g'ri TMO ga ketadi, upakofka rejasi ishlatilmaydi | menejer |
+| Qadoqlash ish markaziga **juftlangan printer agenti** (`can_print`) | qadoq yopilmaydi: 422 «ish markaziga printer biriktirilmagan». Agent oflayn bo'lsa xato emas — chek navbatda kutadi | admin |
+| Har postda kamida bitta **faol ish markazi** | beyjik bilan kirish rad etiladi | admin |
+| KROMKA ×2 (ikki qirra) — bir nusxaning ikkinchi skani 3 soniyadan keyin | 3 soniya ichidagi ikkinchi skan takror deb yutiladi (`CROSS_SOURCE_WINDOW`) — to'g'ri himoya | — |
+
+Kuzatuv: sinovda qadoq tarkibini skript «har qadoqqa 6 tadan» belgiladi —
+MES qadoqchi nima skanerlasa shuni qabul qiladi. Qaysi detal qaysi qadoqqa
+tushishi (upakofka rejasi) MES da hali yo'q — M2/M3 aynan shu.
+
 ### M6. ID qoidasi o'zgarsa — xabar bering
 
 `order_token()` o'zgarsa (masalan `B2026047`, `docs/11` da ko'zda tutilgan)

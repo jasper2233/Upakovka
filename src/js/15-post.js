@@ -193,8 +193,21 @@ function printRackLabels(){
   }, 60);
 }
 
+/* v22: manzildagi ?post=tv|sort|pack|all — postni manzil bilan tanlash.
+   TV rejimida sozlamalar yashirin, ya'ni rejimdan chiqadigan tugma yo'q:
+   «…:8080/?post=all» oddiy rejimga qaytaradi. «…:8080/?post=tv» ni televizor
+   brauzerida xatcho'p qilsa — har ochilishda TV ekrani. */
+function postFromUrl(search){
+  var m = /[?&]post=([a-z]+)/i.exec(String(search || ""));
+  var v = m ? m[1].toLowerCase() : "";
+  return POSTS.hasOwnProperty(v) ? v : "";
+}
+
 /* ---- bogʻlash ---- */
 (function postInit(){
+  var u = "";
+  try { u = postFromUrl(location.search); } catch(e){}
+  if (u){ POST_MEM = u; try { localStorage.setItem(POST_KEY, u); } catch(e){} }
   var sel = $("mgrPost");
   if (sel) sel.onchange = function(){ postSet(sel.value); };
   var nf = $("mgrNoFocus");
