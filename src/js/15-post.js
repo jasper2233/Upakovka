@@ -31,6 +31,8 @@ var POST_HIDE = { sort:{ work:1 }, pack:{ sort:1 },     // boshqa postning ekran
                   tv:{ mgr:1, work:1, parts:1, mats:1, diag:1, conf:1 } };   // v22: TV — faqat saralash ekrani
 
 function postMode(){
+  /* v23: MES ichida upakofka faqat ofis (docs/mes-kelishuv.md §1) — post tanlovi yoʻq */
+  if (typeof MES === "object" && MES && MES.on) return "all";
   var v = null;
   try { v = localStorage.getItem(POST_KEY); } catch(e){}
   if (v == null) v = POST_MEM;
@@ -44,7 +46,10 @@ function postNoFocus(){
   try { v = localStorage.getItem("upk_nofocus"); } catch(e){}
   return v === "1" || postMode() === "tv";
 }
-function postHidden(tab){ var h = POST_HIDE[postMode()]; return !!(h && h[tab]); }
+function postHidden(tab){
+  if (typeof MES === "object" && MES && MES.on && tab === "sort") return true;   // v23: saralash — MES posti
+  var h = POST_HIDE[postMode()]; return !!(h && h[tab]);
+}
 function postSet(m){
   if (!POSTS.hasOwnProperty(m)) m = "all";
   POST_MEM = m;

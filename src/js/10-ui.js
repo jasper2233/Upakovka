@@ -822,16 +822,66 @@ function partsCsv(){
    tomoni oʻqiy oladigan REJA: qaysi detal (MES ID si bilan) qaysi pochkaga,
    qaysi qavatga va qayerga. Tuzilishi `docs/mes-integratsiya.md` da.
    Reja tavsiya: MES dagi haqiqiy qadoq (as-built) undan farq qilishi mumkin. */
-var MES_PLAN_VER = 1;
+/* v23 (2026-11-21): VERSIYA 2 — MES qadoqlash terminali pochkani 3D (ekranning
+   2/3 qismi) va qavat 2D (1/3) da koʻrsatadi (docs/mes-kelishuv.md §3.6, U4).
+   Buning uchun har qadamda toʻliq joy: `place` = {x, y, z, a, b, rot90} —
+   x/y tag detalning chap-ORQA burchagidan (2D reja bilan bir xil), z — pol
+   ustidan, a×b — detalning tagdagi izi (burilgandan keyin). Pochkada tag oʻlchami,
+   chiqish konverti va qavatlar roʻyxati. v1 maydonlari oʻzgarmagan — MES ning
+   hozirgi sxemasi (`extra="allow"`) ikkalasini ham qabul qiladi.
+   Rejaga kirmagan detallar `rejasiz` da (sababi bilan) — MES ular uchun alohida
+   «rejasiz» qadoq ochadi (kelishuv §3.2). */
+var MES_PLAN_VER = 2;
+/* Rol — qadoqlash terminali tartibni shu bilan tekshiradi (kelishuv §3.5):
+   tag — birinchi; qavat va quyruq — erkin, lekin qopqoqdan (ust) oldin; ust —
+   oxirgi; noodatiy (bogʻ) — erkin. */
+function mesLayerRole(p, L, li){
+  return L.tail ? "quyruq" : (L.lid && li === p.layers.length - 1 ? "ust" : "qavat");
+}
+/* Pochka geometriyasi: qadam → joy, va qavatlar roʻyxati. 06-render3d draw3D()
+   bilan bir xil hisob (zex — faqat ekran uchun, bu yerda haqiqiy mm). */
+function mesPackGeom(p){
+  var at = new Map(), layers = [];
+  if (p.odd){
+    var zz = 0;
+    p.items.forEach(function(it, i){
+      at.set(i, { x:0, y:0, z:Math.round(zz), a:it.L, b:it.W, rot90:false });
+      zz += it.T;
+    });
+    return { at:at, layers:[], h:Math.round(zz) };
+  }
+  var z = p.base.T;
+  layers.push({ layer:0, role:"tag", z:0, h:p.base.T, n:1, fill:1, kg:+p.base.kg.toFixed(2) });
+  var byPos = new Map();
+  p.layers.forEach(function(L, li){
+    L.items.forEach(function(q){
+      byPos.set(q, { x:Math.round(q.x), y:Math.round(q.y), z:Math.round(z),
+                     a:Math.round(q.a), b:Math.round(q.b), rot90:!!q.rot });
+    });
+    layers.push({ layer:li + 1, role:mesLayerRole(p, L, li), z:Math.round(z), h:L.h,
+                  n:L.items.length, fill:+(+L.fill || 0).toFixed(3),
+                  kg:+(+L.kg || 0).toFixed(2), weak:!!L.weak });
+    z += L.h;
+  });
+  p.seq.forEach(function(s, i){
+    if (s.layer === 0) at.set(i, { x:0, y:0, z:0, a:p.base.L, b:p.base.W, rot90:false });
+    else if (s.pos && byPos.has(s.pos)) at.set(i, byPos.get(s.pos));
+  });
+  return { at:at, layers:layers, h:Math.round(z) };
+}
 function mesPlan(){
   if (!P) return null;
+  buildItems();                                   // DIAG.skipped — joriy sozlama bilan
+  var skipped = (typeof DIAG === "object" && DIAG && DIAG.skipped) || [];
   return {
     format: "upakofka-plan", version: MES_PLAN_VER, app: "UPK v" + APP_VER,
     order: P.mesOrder || null,
+    plan_id: PACKS.length && typeof planId === "function" ? planId() : null,
     project: { name: P.name || "", uuid: P.uuid || "", rev: P.rev || 1 },
     settings: { max_kg: S.maxKg, odd_max_kg: oddKgCap(), tare_kg: +S.tare || 0,
                 one_man_kg: S.oneMan, two_man_kg: +S.twoMan || null },
     packs: PACKS.map(function(p){
+      var g = mesPackGeom(p);
       return {
         no: p.no, code: "P" + pad2(p.no),
         kind: p.odd ? "nostandart" : "standart",
@@ -841,18 +891,24 @@ function mesPlan(){
         lift: liftTier(packBrutto(p)),                    // 1 / 2 / 3 (3 = 3+ kishi yoki arava)
         fragile: packFragile(p),                          // v22: koʻzgu/oyna — EHTIYOT BOʻLING
         size_mm: p.odd ? null : [Math.round(p.gabL), Math.round(p.gabW), Math.round(p.h)],
+        // v23: 3D uchun — tag, chiqish konverti (tag atrofida `off` mm), balandlik, qavatlar
+        base_mm: p.odd ? null : [p.base.L, p.base.W, p.base.T],
+        env_mm: p.odd ? null : { l: Math.round(p.envL), w: Math.round(p.envW), off: Math.round(p.off || 0) },
+        height_mm: g.h,
+        layers: g.layers,
         steps: p.seq.map(function(s, i){
-          var it = s.it, pos = s.pos;
+          var it = s.it;
           return {
             step: i + 1, layer: s.layer, role: s.role,
             mes_id: mesFull(it), mes_key: it.mesKey, code: it.code, name: it.name,
             size_mm: [it.L, it.W, it.T], kg: +it.kg.toFixed(3),
-            // tag detalning chap-orqa burchagidan, mm; manfiy = tagdan chiqib turadi
-            place: pos ? { x: Math.round(pos.x), y: Math.round(pos.y), rot90: !!pos.rot } : null
+            fragile: !!it.fragile,
+            place: g.at.get(i) || null
           };
         })
       };
-    })
+    }),
+    rejasiz: skipped.map(function(x){ return { code:x.code, name:x.name, q:x.q, why:x.why }; })
   };
 }
 function mesPlanSave(){
@@ -885,6 +941,7 @@ function mesRender(){
   n.textContent = P.mesOrder
     ? "MES cheki: " + (it ? mesFull(it) : P.mesOrder + "_…") + " — boshqa buyurtma cheki rad etiladi"
     : "Raqam kiritilmagan: MES cheki prefiksiz solishtiriladi" + (it ? " (" + it.mes + ")" : "");
+  if (typeof mesRenderBox === "function") mesRenderBox();   // v23: MES rejimidagi tasdiqlash tugmasi
 }
 
 /* umumiy fayl yozib berish */

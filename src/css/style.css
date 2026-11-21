@@ -1000,3 +1000,8 @@ select:focus-visible,
 /* oxirgi ustunda tooltip oʻngga chiqib ketmasin */
 .fields>.f:nth-child(4n) .q::after,
 .fields>.f:last-child .q::after{left:auto; right:0; border-left-width:1px; border-right:3px solid var(--mark)}
+
+/* v23: MES ichida (18-mes.js) — ofis rejimi. Post, server, profil va oʻz chekimiz
+   MES niki; sozlamalar MES admin panelida, bu yerda faqat koʻrish. */
+body.mes-mode .mes-hide{display:none !important}
+body.mes-mode #v-conf .mes-ro{opacity:.62}

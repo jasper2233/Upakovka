@@ -67,6 +67,9 @@ function srvReq(method, path, body){
 function srvDetect(){
   if (!SRV.mock && !/^https?:$/.test(location.protocol)) return Promise.resolve(false);
   return srvReq("GET", "ping").then(function(r){
+    /* v23: MES ichida (18-mes.js) saralash MES posti — bu protokol kerak emas.
+       MES ham `api/ping` ga javob beradi, shuning uchun alohida tekshiriladi. */
+    if (typeof MES === "object" && MES && MES.on){ SRV.on = false; srvUi(); return false; }
     SRV.on = !!(r.ok && r.json && r.json.server === "upk");
     srvUi();
     if (SRV.on) srvStart();

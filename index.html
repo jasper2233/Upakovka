@@ -120,8 +120,8 @@
         <div class="qrbox">
           <div id="lblwrap"></div>
           <div class="btnrow" style="width:100%;max-width:300px">
-            <button class="btn gh" id="btnPrint1">Shu chek</button>
-            <button class="btn gh" id="btnPrintPack">Detal cheklari</button>
+            <button class="mes-hide btn gh" id="btnPrint1">Shu chek</button>
+            <button class="mes-hide btn gh" id="btnPrintPack">Detal cheklari</button>
             <button class="btn gh" id="btnPackLbl">Pochka cheki</button>
           </div>
         </div>
@@ -152,8 +152,8 @@
       <div id="mgrInfo" class="note" style="border-left-color:var(--mark)"></div>
 
       <!-- v22: saralash posti va qadoqlash posti — alohida kompyuterlar -->
-      <h3>Postlar <span class="hint">— saralash va qadoqlash alohida</span></h3>
-      <div class="fields">
+      <h3 class="mes-hide">Postlar <span class="hint">— saralash va qadoqlash alohida</span></h3>
+      <div class="fields mes-hide">
         <div class="f"><label for="mgrPost">Bu kompyuter <span class="q" tabindex="0" data-tip="Saralash posti: ishchilar detallarni stelyajlarga saralaydi; stelyaj toʻlgach butunligicha qadoqlashga olib boriladi.&#10;&#10;Qadoqlash posti: stelyajdagi detal skanerlanadi — pochkasi oʻzi ochiladi, 3D boʻyicha teriladi, tugagach chek chiqadi.&#10;&#10;Post tanlansa boshqa postning ekrani yashiriladi va dastur shu post ekranida ochiladi. Tanlov shu kompyuterda saqlanadi.">?</span></label>
           <select id="mgrPost"><option value="all">Hamma boʻlim</option><option value="sort">Saralash posti</option><option value="pack">Qadoqlash posti</option><option value="tv">TV ekrani (saralash, faqat koʻrsatish)</option></select>
           <small>tanlov shu kompyuterda saqlanadi</small>
@@ -161,17 +161,20 @@
         <div class="f"><label>Reja raqami <span class="q" tabindex="0" data-tip="Pochkalar tarkibidan hisoblanadi. Saralash posti va qadoqlash postida BIR XIL boʻlishi shart — aks holda yacheykadagi detallar qadoqlashda boshqa pochkalarga tegishli chiqadi.&#10;&#10;Farq qilsa: qadoqlash postida shu yerdan saqlangan reja faylini oching.">?</span></label><b id="mgrPlanId" class="planid">—</b><small>ikkala post ekranida bir xil boʻlsin</small></div>
         <div class="f"><label>Reja fayli</label><button class="btn" id="btnPlanSave">Reja faylini saqlash</button><small>boshqa postda «Loyiha yuklash» bilan ochiladi</small></div>
       </div>
-      <div id="planNote" class="note" style="display:none;margin-top:0"></div>
+      <div id="planNote" class="note mes-hide" style="display:none;margin-top:0"></div>
       <!-- v22: tizim serverdan ochilganda (server/upk-server.py) — rejalar server orqali -->
-      <div id="srvBox" class="srvbox" style="display:none"></div>
+      <div id="srvBox" class="srvbox mes-hide" style="display:none"></div>
 
       <!-- v22: MebeliX MES bilan bogʻlanish — buyurtma raqami va reja eksporti -->
       <h3>MES <span class="hint">— MebeliX MES dagi buyurtma</span></h3>
       <div class="fields">
         <div class="f"><label for="mgrMesOrder">MES buyurtma raqami <span class="q" tabindex="0" data-tip="MebeliX MES dagi buyurtma raqami, masalan B-2026-047. MES detal chekining boshida aynan shu turadi.&#10;&#10;Kiritilsa: boshqa buyurtmaning cheki skanerda rad etiladi (mahsulot kodi buyurtmalararo takrorlanishi mumkin) va reja/CSV dagi ID lar toʻliq chiqadi.&#10;&#10;Boʻsh qolsa ham ishlaydi — MES cheki buyurtma prefiksisiz solishtiriladi.">?</span></label><input id="mgrMesOrder" type="text" placeholder="B-2026-047" autocomplete="off" spellcheck="false"><small>boʻsh qolsa — prefikssiz solishtiriladi</small></div>
         <div class="f"><label>Reja</label><button class="btn" id="btnMesPlan">MES rejasi (JSON)</button><small>pochka → qavat → detal, MES ID si bilan</small></div>
+        <!-- v23: MES ichida — reja faylsiz, toʻgʻridan-toʻgʻri (18-mes.js) -->
+        <div class="f" id="mesSendField" style="display:none"><label>MES ga <span class="q" tabindex="0" data-tip="Reja MES ga yuboriladi: MES pochkalarni shu rejadan yaratadi (P03 → PK-…-03), saralash va qadoqlash shu reja bilan ishlaydi.&#10;&#10;Birinchi saralash skanidan keyin reja MES da qulflanadi — oʻzgartirishni faqat texnolog yoki admin sabab yozib ochadi.">?</span></label><button class="btn pri" id="btnMesSend">Rejani tasdiqlash — MES ga yuborish</button><small>JSON fayl tashish shart emas</small></div>
       </div>
       <div id="mesNote" class="note" style="margin-top:0"></div>
+      <div id="mesSendNote" class="note" style="display:none;margin-top:0"></div>
 
       <h3>Pochka kesimlari <span class="hint">— buyurtma qaysi oʻq boʻyicha boʻlinsin</span></h3>
       <div class="fields">
@@ -280,7 +283,7 @@
       <div id="confWarn"></div>
 
       <!-- v22: NOMLANGAN PROFIL — meʼyorlar toʻplami (TZ-v3 §3.3). Boshqaruvlar sozlama emas (data-noconf) -->
-      <div class="profbar">
+      <div class="profbar mes-hide">
         <div class="profrow">
           <b>Profil <span class="q" tabindex="0" data-tip="Meʼyorlarning NOMLANGAN toʻplami — masalan «Mijozga» va «Omborga». Tanlansa hamma maydon bir yoʻla oʻrnatiladi.&#10;&#10;Kiradi: shu ekrandagi meʼyorlar, modul/material kesimi, material katalogi, qalinlik matritsasi, klass guruhlari. Kirmaydi: stelyaj, chek printeri, QR prefiksi (kompyuterniki) va modul nomlari/guruhlari (buyurtmaniki).&#10;&#10;Kalit soʻz loyiha yoki fayl nomida boʻlsa, yuklashda profil oʻzi taklif qilinadi.">?</span></b>
           <select id="profSel" data-noconf="1"></select>
@@ -479,7 +482,7 @@
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" id="btnReset">Standartga qaytarish</button>
         <button class="btn" id="btnRepack">Qayta pochkalash</button>
-        <button class="btn" id="btnPrintAll">Barcha cheklarni chop etish</button>
+        <button class="mes-hide btn" id="btnPrintAll">Barcha cheklarni chop etish</button>
         <button class="btn" id="btnCsv">Pochka roʻyxatini CSV</button>
         <button class="btn gh" id="btnClearSes">Seansni tozalash</button>
       </div>
@@ -542,5 +545,6 @@
 <script src="src/js/15-post.js"></script>
 <script src="src/js/16-server.js"></script>
 <script src="src/js/17-profile.js"></script>
+<script src="src/js/18-mes.js"></script>
 </body>
 </html>

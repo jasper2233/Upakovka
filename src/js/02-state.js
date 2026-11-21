@@ -1,7 +1,7 @@
 /* ============================================================
    3.3 HOLAT — barcha sozlamalar (S), loyiha (P), pochkalar (PACKS)
    ============================================================ */
-var APP_VER = 22;  // har yangilanishda +1 (v21 — audit kommiti, raqam oshirilmagan edi)
+var APP_VER = 23;  // har yangilanishda +1 (v21 — audit kommiti, raqam oshirilmagan edi)
 var S = {
   maxKg:35, ovh:20, minBase:190, maxLen:2100, minBaseT:16, tries:4, prefix:"SM", byThick:true,
   minFill:85, lidFill:90, lidN:3, lidTol:100, oneMan:25, maxLayers:12, sepCls:{},

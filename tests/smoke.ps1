@@ -3423,11 +3423,11 @@ $tester = @'
           setStep(sK);
         } catch(e){ chk("qadoqlash posti (v22)", false, e.message); }
 
-        stageB3(function(){ stageSrv(function(){
+        stageB3(function(){ stageSrv(function(){ stageMes(function(){
           chk("test oxirida yangi JS xatosi yo'q", window.__ERRORS.length === 0,
               window.__ERRORS.slice(0,4).join(" ; "));
           done();
-        }); });
+        }); }); });
       });
     });
   }
@@ -3598,6 +3598,154 @@ $tester = @'
   }
   /* shart bajarilguncha kutish — Promise koʻrinishida */
   function until2(cond){ return new Promise(function(res){ until(cond, function(){ res(); }); }); }
+
+  /* ---------- v23: MES REJIMI (U1–U4, soxta MES bilan) va KOʻRUVCHI (U5) ----------
+     docs/mes-kelishuv.md. MES API xotirada: meʼyorlar, buyurtma, reja qabul qilish. */
+  function stageMes(cb){
+    var put = [], putCode = 200;
+    function R(st, js){ return { status:st, json:js }; }
+    var conf = { maxKg:30, ovh:20, ovhOn:true, minBase:190, maxLen:2100, minBaseT:16, minFill:85,
+      lidFill:90, lidN:3, lidTol:100, maxLayers:12, maxH:0, tries:4, byThick:true, oneMan:25, twoMan:50,
+      tare:0.6, baseWMax:1900, baseLMin:0, baseCover:90, lidBal:40, lidSupp:65, lidBed:85, tailGap:300,
+      tailSpan:70, tailKgOver:10, tomQ:"orta", oddKg:40, oddLMax:3200, oddWMax:1900, oddTol:300,
+      maxPartT:60, partKgMax:65, minPartW:0, minPartL:0, sepMat:"OYNA, KOZGU", matCat:[],
+      rackN:7, cellN:6, bigN:1, cellW:250, cellD:400, cellH:1500, bigW:100, bigD:800, cellOff:{ "A2":true } };
+    MES.mock = function(method, path, body){
+      if (path === "upakofka/meyorlar") return R(200, JSON.parse(JSON.stringify(conf)));
+      if (path === "orders/5") return R(200, { id:5, number:"B-2026-005" });
+      if (path === "upakofka/orders/5/reja" && method === "PUT"){
+        if (putCode !== 200) return R(putCode, { detail:"Bu reja B-2026-999 buyurtmasiniki, siz B-2026-005 ga yuklayapsiz." });
+        put.push(JSON.parse(JSON.stringify(body)));
+        var n = 0; body.packs.forEach(function(pk){ n += pk.steps.length; });
+        return R(200, { order_id:5, order_number:"B-2026-005", pochkalar:body.packs.length, qadamlar:n,
+                        bogdandi:n, bogdanmagan:[], rejada_yoq:2 });
+      }
+      return R(404, { detail:"Not Found" });
+    };
+    var keepLbl = S.autoLbl, keepOrder = P.mesOrder;
+    function fin(){
+      MES.mock = null; MES.on = false; MES.orderId = ""; MES.orderNo = ""; MES.pending = false; MES.last = null;
+      mesModeApply();
+      try { localStorage.removeItem("upk_post"); } catch(e){}
+      restoreConf(); readConf(); S.autoLbl = keepLbl; DEVICE_CONF = confCapture();
+      P.mesOrder = keepOrder || null; delete P.mesOrderId;
+      cb();
+    }
+    function bad(e){ chk("MES rejimi bosqichi", false, e && e.message ? e.message : String(e)); fin(); }
+    try {
+      try { localStorage.setItem("upk_post", "sort"); } catch(e){}
+      MES.orderId = "5";
+      mesDetect().then(function(on){
+        chk("MES: rejim aniqlandi (meʼyorlar 200)", on === true && MES.on && document.body.classList.contains("mes-mode"), String(on));
+        // seansdan tiklangan reja oʻz meʼyorlari bilan qoladi; yangi buyurtma — MES niki
+        chk("MES: meʼyorlar MES dan — tsex meʼyori shu", (CONF_FROM_SNAP || S.maxKg === 30) && S.rackN === 7 && !!S.cellOff.A2 &&
+            DEVICE_CONF && DEVICE_CONF.conf.maxKg === 30, "maxKg " + S.maxKg + " (tsex " + DEVICE_CONF.conf.maxKg + ") · rackN " + S.rackN);
+        chk("MES: buyurtma raqami olindi", MES.orderNo === "B-2026-005", MES.orderNo);
+        chk("MES: post tanlovi yoʻq — doim ofis, saralash ekrani yashirin",
+            postMode() === "all" && postHidden("sort") && getComputedStyle(el("mgrPost").closest(".fields")).display === "none",
+            postMode());
+        chk("MES: sozlamalar faqat koʻrish (inert) va izoh bor",
+            !!el("mesConfNote") && [].slice.call(el("v-conf").children).filter(function(c){ return c.id !== "mesConfNote" && !c.hasAttribute("inert"); }).length === 0,
+            "inert");
+        chk("MES: oʻz chekimiz va profil yashirin, tasdiqlash tugmasi bor",
+            getComputedStyle(el("btnPrint1")).display === "none" && getComputedStyle(document.querySelector(".profbar")).display === "none" &&
+            el("mesSendField").style.display !== "none" && S.autoLbl === false, "tugma");
+        // U2: MES dan kelgan loyiha — raqam va id yoziladi
+        MES.pending = true; var d = {}; mesTagProject(d);
+        chk("MES: yuklangan loyihaga buyurtma raqami va id", d.mesOrder === "B-2026-005" && d.mesOrderId === "5" && !MES.pending,
+            JSON.stringify(d));
+        // U3: tasdiqlash — raqamsiz loyiha ham toʻliq ID bilan ketadi
+        P.mesOrder = null;
+        return mesPlanSend();
+      }).then(function(ok){
+        var b = put[0] || {}, idOk = 0, n = 0;
+        (b.packs || []).forEach(function(pk){ pk.steps.forEach(function(st){ n++; if (st.mes_id.indexOf("B-2026-005_") === 0) idOk++; }); });
+        chk("MES: reja PUT bilan yuborildi, raqam qoʻyildi", ok === true && put.length === 1 && b.order === "B-2026-005" &&
+            P.mesOrder === "B-2026-005" && n > 0 && idOk === n, idOk + "/" + n);
+        chk("MES: javob ekranda (bogʻlandi, rejasiz)", /bogʻlandi/.test(el("mesSendNote").textContent) &&
+            /rejasiz/.test(el("mesSendNote").textContent), el("mesSendNote").textContent.slice(0, 90));
+        chk("MES: tugma «Reja MES da ✓»", /MES da ✓/.test(el("btnMesSend").textContent), el("btnMesSend").textContent);
+        putCode = 422;
+        return mesPlanSend();
+      }).then(function(ok){
+        chk("MES: rad javobi (422) matni koʻrinadi", ok === false && /B-2026-999/.test(el("mesSendNote").textContent),
+            el("mesSendNote").textContent.slice(0, 90));
+        putCode = 200;
+
+        // U4: reja v2 — 3D uchun toʻliq joy
+        var plan = mesPlan(), bad2 = [], std = 0;
+        chk("reja v2: versiya va reja raqami", plan.version === 2 && plan.plan_id === planId(), plan.version + " " + plan.plan_id);
+        plan.packs.forEach(function(pk){
+          if (pk.kind !== "standart") return;
+          std++;
+          if (!pk.base_mm || !pk.env_mm || !pk.layers || pk.layers[0].role !== "tag") bad2.push(pk.code + ":bosh");
+          var top = pk.layers[pk.layers.length - 1];
+          if (Math.abs(top.z + top.h - pk.height_mm) > 1) bad2.push(pk.code + ":h");
+          pk.steps.forEach(function(st){
+            var q = st.place, L = pk.layers[st.layer];
+            if (!q || !L) { bad2.push(pk.code + ":" + st.step + " joy yoʻq"); return; }
+            if (Math.abs(q.z - L.z) > 1) bad2.push(pk.code + ":" + st.step + " z");
+            if (L.role !== (st.layer === 0 ? "tag" : st.role)) bad2.push(pk.code + ":" + st.step + " rol " + L.role + "/" + st.role);
+            var off = pk.env_mm.off + 1;
+            if (q.x < -off || q.y < -off || q.x + q.a > pk.base_mm[0] + off || q.y + q.b > pk.base_mm[1] + off)
+              bad2.push(pk.code + ":" + st.step + " konvertdan chiqdi");
+          });
+        });
+        chk("reja v2: har qadamda x/y/z, qavat va konvert mos", std > 0 && bad2.length === 0, std + " pochka; " + bad2.slice(0, 4).join(", "));
+        chk("reja v2: rejasiz roʻyxat bor", Object.prototype.toString.call(plan.rejasiz) === "[object Array]", String(plan.rejasiz && plan.rejasiz.length));
+
+        // U5: koʻruvchi — alohida fayl, sahifaga yuklanadi
+        return new Promise(function(res){
+          var tries = ["src/korish/upk-korish.js", "upk-korish.js"], i = 0;
+          (function next(){
+            if (typeof window.UpkKorish === "object" || i >= tries.length) return res(plan);
+            var sc = document.createElement("script"); sc.src = tries[i++];
+            sc.onload = function(){ res(plan); }; sc.onerror = next;
+            document.head.appendChild(sc);
+          })();
+        });
+      }).then(function(plan){
+        var K = window.UpkKorish;
+        chk("koʻruvchi: fayl yuklandi", !!K && typeof K.create === "function", typeof K);
+        if (!K) return;
+        var pk = null, other = null;
+        plan.packs.forEach(function(p){
+          if (p.kind !== "standart") { return; }
+          var hasUst = p.steps.some(function(s){ return s.role === "ust"; });
+          var mid = p.steps.some(function(s){ return s.role === "qavat" || s.role === "quyruq"; });
+          if (!pk && hasUst && mid) pk = p; else if (!other) other = p;
+        });
+        if (!pk) pk = plan.packs.filter(function(p){ return p.kind === "standart"; })[0];
+        var st = pk.steps, tag = st[0].mes_id;
+        chk("qoida: tag birinchi", st[0].role === "tag" && K.tekshir(pk, [], st[1].mes_id).sabab === "avval_tag" &&
+            K.tekshir(pk, [], tag).ok, K.tekshir(pk, [], st[1].mes_id).sabab);
+        chk("qoida: boshqa pochka detali rad", !!other && K.tekshir(pk, [tag], other.steps[0].mes_id).sabab === "boshqa_pochka",
+            other ? other.code : "yoʻq");
+        chk("qoida: takror skan rad", K.tekshir(pk, [tag], tag).sabab === "takror", "");
+        var ust = st.filter(function(s){ return s.role === "ust"; })[0];
+        if (ust){
+          chk("qoida: qopqoq — oxirida", K.tekshir(pk, [tag], ust.mes_id).sabab === "qopqoq_oxirida", ust.code);
+          var allMid = st.filter(function(s){ return s.role !== "ust"; }).map(function(s){ return s.mes_id; });
+          chk("qoida: qavatlar tugagach qopqoq qabul", K.tekshir(pk, allMid, ust.mes_id).ok === true, "");
+        }
+        chk("qoida: prefikssiz ID ham bir xil", K.tekshir(pk, [], K.key(tag)).ok === true, K.key(tag));
+        chk("qoida: keyingi — tag", K.keyingi(pk, []) === st[0] && K.keyingi(pk, [tag]) !== st[0], "");
+        var box = document.createElement("div");
+        box.style.cssText = "position:fixed;left:0;top:0;width:900px;height:420px";
+        document.body.appendChild(box);
+        var errs = window.__ERRORS.length;
+        var v = K.create(box);
+        v.setPack(pk);
+        v.setState({ done:[tag], next:st[1].mes_id, wrong:other ? other.steps[0].mes_id : "", changed:[st[1].mes_id] });
+        var cv = box.querySelectorAll("canvas");
+        chk("koʻruvchi: 3D (2/3) va 2D (1/3) chizildi, xato yoʻq",
+            cv.length === 2 && Math.abs(cv[0].getBoundingClientRect().width / cv[1].getBoundingClientRect().width - 2) < 0.2 &&
+            window.__ERRORS.length === errs, cv.length + " kanvas");
+        v.setState({ done:st.map(function(s){ return s.mes_id; }) });
+        v.destroy(); box.parentNode.removeChild(box);
+      }).then(fin, bad);
+    } catch(e){ bad(e); }
+  }
 
   /* ---------- v22: SERVER ORQALI POSTLAR (soxta server bilan) ----------
      server/upk-server.py bilan bir xil API — xotirada. Haqiqiy server va brauzer

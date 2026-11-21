@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UPK koʻruvchi — namuna</title>
+<style>
+  html,body{margin:0;height:100%;background:#0f1216;color:#d7dbe2;font:14px system-ui,Segoe UI,Arial,sans-serif}
+  header{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 14px;border-bottom:1px solid #262b33}
+  header b{font-size:15px}
+  select,button,input{font:inherit}
+  #msg{padding:8px 14px;min-height:20px;font-weight:600}
+  #msg.err{background:#4a1316;color:#ffb3b5}
+  #msg.ok{color:#8ee0bb}
+  main{display:flex;height:calc(100% - 140px);gap:10px;padding:0 14px 14px}
+  #view{flex:1 1 auto;min-width:0;border:1px solid #262b33;border-radius:6px;overflow:hidden}
+  #steps{width:300px;overflow:auto;border:1px solid #262b33;border-radius:6px}
+  #steps button{display:block;width:100%;text-align:left;padding:6px 8px;border:0;border-bottom:1px solid #20242b;
+                background:none;color:inherit;cursor:pointer;font-family:monospace;font-size:12px}
+  #steps button.d{color:#5f8f78}
+  #steps button.n{background:#3a3112;color:#ffc629}
+</style>
+</head>
+<body>
+<!-- MES jamoasi uchun namuna: U5 koʻruvchisi va tartib qoidasi (docs/mes-kelishuv.md §3.5–3.6).
+     Upakofkadagi «MES rejasi (JSON)» faylini tanlang; oʻngdagi roʻyxatdagi detalni bosish —
+     shu detal skanerlangandek. Qoida buzilsa qizil miltillash va ovoz. -->
+<header>
+  <b>UPK koʻruvchi</b>
+  <input type="file" id="f" accept=".json,application/json">
+  <select id="pk"></select>
+  <button id="reset">Boshidan</button>
+  <span id="info"></span>
+</header>
+<div id="msg"></div>
+<main><div id="view"></div><div id="steps"></div></main>
+<script src="upk-korish.js"></script>
+<script>
+(function(){
+  var plan = null, pack = null, done = [], wrong = "", wt = null;
+  var v = UpkKorish.create(document.getElementById("view"));
+  var $ = function(id){ return document.getElementById(id); };
+  function beep(){
+    try {
+      var A = window.AudioContext || window.webkitAudioContext, a = new A(), o = a.createOscillator(), g = a.createGain();
+      o.type = "square"; o.frequency.value = 880; g.gain.value = 0.15; o.connect(g); g.connect(a.destination);
+      o.start(); setTimeout(function(){ o.frequency.value = 440; }, 160); setTimeout(function(){ o.stop(); a.close(); }, 420);
+    } catch(e){}
+  }
+  function msg(kind, t){ var m = $("msg"); m.className = kind; m.textContent = t; }
+  function render(){
+    var nx = pack ? UpkKorish.keyingi(pack, done) : null;
+    v.setPack(pack);
+    v.setState({ done:done, next:nx ? (nx.mes_id || nx.mes_key) : "", wrong:wrong });
+    var box = $("steps"); box.innerHTML = "";
+    (pack ? pack.steps : []).forEach(function(st){
+      var b = document.createElement("button"), k = UpkKorish.key(st.mes_id || st.mes_key);
+      var isDone = done.some(function(d){ return UpkKorish.key(d) === k; });
+      b.className = isDone ? "d" : (nx && nx === st ? "n" : "");
+      b.textContent = (isDone ? "✓ " : "") + st.step + ". [" + st.role + "] " + st.code + " " + (st.name || "");
+      b.onclick = function(){ scan(st.mes_id || st.mes_key); };
+      box.appendChild(b);
+    });
+    $("info").textContent = pack ? (pack.code + " · " + pack.kind + " · " + (pack.steps || []).length + " detal") : "";
+  }
+  function scan(id){
+    var r = UpkKorish.tekshir(pack, done, id);
+    if (wt){ clearTimeout(wt); wt = null; }
+    if (r.ok){ done.push(id); wrong = ""; msg("ok", "Qabul qilindi"); }
+    else {
+      wrong = id; msg("err", r.matn); beep();
+      wt = setTimeout(function(){ wrong = ""; render(); }, 2500);
+    }
+    render();
+  }
+  $("f").onchange = function(){
+    var fl = this.files && this.files[0]; if (!fl) return;
+    fl.text().then(function(t){
+      plan = JSON.parse(t);
+      var sel = $("pk"); sel.innerHTML = "";
+      (plan.packs || []).forEach(function(p, i){
+        var o = document.createElement("option"); o.value = i;
+        o.textContent = p.code + " — " + (p.steps || []).length + " detal" + (p.kind === "nostandart" ? " (nostandart)" : "");
+        sel.appendChild(o);
+      });
+      if ((plan.version || 1) < 2) msg("err", "Reja versiyasi " + (plan.version || 1) + " — 3D uchun versiya 2 kerak (upakofka v23)");
+      sel.onchange();
+    }).catch(function(e){ msg("err", "Fayl oʻqilmadi: " + e.message); });
+  };
+  $("pk").onchange = function(){ pack = plan ? plan.packs[+$("pk").value] : null; done = []; wrong = ""; render(); };
+  $("reset").onclick = function(){ done = []; wrong = ""; msg("", ""); render(); };
+  window.__view = v;
+  render();
+})();
+</script>
+</body>
+</html>

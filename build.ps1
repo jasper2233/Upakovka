@@ -362,6 +362,15 @@ if (-not (Test-Path -LiteralPath $dstDir)) {
 Write-Utf8 $Dst $outText
 $outLen = (Get-Item -LiteralPath $Dst).Length
 
+# 5.1 -- v23: MES qadoqlash terminali uchun 3D/2D ko'ruvchi (U5) -- alohida fayl,
+#        bitta HTML ga singdirilmaydi. MES uni o'zgarishsiz nusxalaydi.
+$korSrc = Join-Path $Root "src\korish"
+if (Test-Path -LiteralPath (Join-Path $korSrc "upk-korish.js")) {
+  Copy-Item -LiteralPath (Join-Path $korSrc "upk-korish.js") -Destination (Join-Path $dstDir "upk-korish.js") -Force
+  Copy-Item -LiteralPath (Join-Path $korSrc "namuna.html") -Destination (Join-Path $dstDir "upk-korish-namuna.html") -Force
+  Say ("  ko'ruvchi   : " + (Join-Path $dstDir "upk-korish.js"))
+}
+
 # ----------------------------------------------------------------------------
 #  6. HISOBOT
 # ----------------------------------------------------------------------------

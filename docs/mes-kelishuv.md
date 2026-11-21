@@ -187,7 +187,7 @@ keyin U4–U5 va K6–K8 (qadoqlash), oxirida K9–K11.
 
 ---
 
-## 8. Ochiq savol: quyruq qavat
+## 8. Quyruq qavat — HAL QILINDI (2026-11-21)
 
 **Quyruq nima.** Guruh oxirida 2–4 ta yengil detal qoladi — ular to'liq qavat yasay olmaydi
 (85 % to'ldirish sharti). Alohida pochka ochmaslik uchun upakofka ularni tayyor pochkaga
@@ -200,8 +200,43 @@ qo'shadi:
 ████████████████   TAG
 ```
 
-Odatda quyruq **qopqoq ostiga** suqiladi (qopqoq butun yuza bo'lib qoladi). Pochkaning
-qopqog'i bo'lmasa (ochiq tom) — quyruq eng ustiga tushadi.
+Odatda quyruq **qopqoq ostiga** suqiladi; pochkaning qopqog'i bo'lmasa — eng ustiga.
 
-**Taklif:** quyruq o'rta qavat hisoblanadi — tartib erkin, lekin qopqoqdan OLDIN. Qopqoqsiz
-pochkada quyruq oxirgi. Nostandart pochkada (bog') tartib erkin.
+**Qaror:** quyruq o'rta qavat hisoblanadi — tartib erkin, lekin qopqoqdan (`ust`) OLDIN.
+Qopqoqsiz pochkada quyruq oxirgi. **Nostandart pochkada (bog') tartib erkin.**
+
+Qoida bitta joyda yozilgan: `UpkKorish.tekshir()` (`src/korish/upk-korish.js`) — MES uni
+o'z server tekshiruvida takrorlaydi (K6), sabab kodlari bir xil bo'lsin:
+`boshqa_pochka`, `takror`, `avval_tag`, `qopqoq_oxirida`.
+
+---
+
+## 9. Upakofka tomoni — bajarildi (v23, 2026-11-21)
+
+| Band | Nima qilindi | Qayerda |
+|---|---|---|
+| **U1** | `GET /api/v1/upakofka/meyorlar` 200 → MES rejimi: me'yorlar va stelyaj MES dan (tsex me'yori — `DEVICE_CONF`), Sozlamalar ekrani faqat ko'rish, post tanlovi / saralash ekrani / profillar / o'z chekimiz / upk-server sinxronlash yashirin | `src/js/18-mes.js` |
+| **U2** | `?order=<id>` → `GET /api/v1/orders/{id}` dan raqam; MES dan kelgan loyihaga `mesOrder` va `mesOrderId` yoziladi. MES yuklovchisi loyihani me'yorlar kelishidan OLDIN berib qo'ymasligi uchun yuklash aniqlash tugaguncha kutadi | `18-mes.js` |
+| **U3** | «Rejani tasdiqlash — MES ga yuborish» → `PUT /api/v1/upakofka/orders/{id}/reja`; javob (bog'landi / topilmadi / rejasiz / 422 matni) ekranda | `18-mes.js`, P/M → MES bloki |
+| **U4** | Reja **versiya 2**: `plan_id`; pochkada `base_mm`, `env_mm {l,w,off}`, `height_mm`, `layers [{layer, role, z, h, n, fill, kg}]`; har qadamda `place {x, y, z, a, b, rot90}` (x/y — tagning chap-ORQA burchagidan, z — pol ustidan, a×b — iz), `fragile`; reja ildizida `rejasiz [{code, name, q, why}]`. v1 maydonlari o'zgarmagan | `src/js/10-ui.js` `mesPlan()` |
+| **U5** | `dist/upk-korish.js` — mustaqil 3D (2/3) + 2D (1/3) ko'ruvchi: qo'yilgan / keyingi (sariq) / noto'g'ri (QIZIL miltillaydi) / almashgan (to'q sariq, xira miltillaydi); `tekshir()` va `keyingi()`. `dist/upk-korish-namuna.html` — MES jamoasi uchun namuna (reja faylini tanlab, skan qilib ko'rish) | `src/korish/` |
+
+Tekshiruv: smoke (dev, dist, `-Http`) va server testi o'tdi. Lokal MES (`dev` `9b1c57f`)
+da: MES ga kirish → `/upakofka/?order=1` → MES rejimi, raqam `B-2026-001` o'zi qo'yildi →
+«Rejani tasdiqlash» → `4 pochka, 33/33 detal bog'landi`; MES saqlagan rejada v2 maydonlari
+(`place.z`, `layers`) saqlangan (`extra="allow"`); ko'ruvchi MES originida ishladi.
+
+### MES jamoasiga (shu ishdan chiqqan)
+1. **Yangilash:** `dist/upakofka-tizimi.html` → `frontend/public/upakofka/index.html` (avvalgidek)
+   **va** `dist/upk-korish.js` → `frontend/public/upakofka/upk-korish.js` (yangi, K7 uchun).
+2. **Material katalogi yo'qoladi.** `UpakofkaMatCat` faqat `{nom, kgm2}` saqlaydi; bizda
+   `{key, t, l, w, kgm2, dens}` — qalinlik va zichliksiz 16 mm LDSP massasi 18 mm ga ham
+   qo'llanadi. Sxemaga `t`, `l`, `w`, `dens` qo'shilsin (K10). Hozircha upakofka `nom` ni kalit,
+   qalinlikni «har qanday» deb oladi; ro'yxat bo'sh bo'lsa — o'z standart katalogi.
+3. **Me'yorlarni upakofka yozmaydi** (`PUT /upakofka/meyorlar` dan foydalanmaydi): kelishuv
+   §5 — tahrir MES admin panelida (K10). Admin panel tayyor bo'lguncha qiymatni shu endpoint
+   orqali menejer/texnolog o'zgartiradi.
+4. **`/upakofka/api/*` (upk-server protokoli)** MES ichida upakofka tomonidan endi
+   ishlatilmaydi — saralash MES posti bo'lgach (K4) olib tashlash mumkin.
+5. **`mes-yuklovchi.js` o'zgarmaydi** — fayl nomi `MES-<id>.project` shartnoma bo'lib qoldi
+   (upakofka shu nom bilan kelgan loyihaga buyurtma raqamini qo'yadi).
