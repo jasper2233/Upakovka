@@ -7,6 +7,10 @@ tomonida nima o'zgarishi kerak. MES kodiga upakofka jamoasi **tegmaydi** —
 MES manbasi: <https://github.com/dshukriddinov/MebeliX-Mes-System>
 (o'rganilgan holat: `94a2f9e`, 2026-10-26).
 
+> **2026-11-21:** MES `dev` dagi ulanishdan keyin tsex mantiqi kelishildi —
+> [`mes-kelishuv.md`](mes-kelishuv.md) (reja bitta, pochka kodi bitta, saralash MES ichida).
+> Shu hujjat bilan zid joyi bo'lsa — `mes-kelishuv.md` ustun.
+
 ---
 
 ## 0. Nega ikki tizim
