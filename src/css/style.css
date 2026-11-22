@@ -1002,6 +1002,5 @@ select:focus-visible,
 .fields>.f:last-child .q::after{left:auto; right:0; border-left-width:1px; border-right:3px solid var(--mark)}
 
 /* v23: MES ichida (18-mes.js) — ofis rejimi. Post, server, profil va oʻz chekimiz
-   MES niki; sozlamalar MES admin panelida, bu yerda faqat koʻrish. */
+   MES niki; meʼyorlar MES da saqlanadi («MES ga saqlash»). */
 body.mes-mode .mes-hide{display:none !important}
-body.mes-mode #v-conf .mes-ro{opacity:.62}

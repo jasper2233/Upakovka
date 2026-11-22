@@ -909,6 +909,36 @@ almashinadigan deb hisoblardi; MES ID esa ularni ajratadi.
 > detal, kodsiz mahsulot va `_n` qoidalari, qadoqlashda MES cheki qabul qilinishi
 > va begona detal rad etilishi.
 
+## MES ichida — ofis rejimi (v23)
+
+MES tizimning `/upakofka/` manzilidan ochilsa (buyurtma sahifasidagi «Upakofkada
+ochish»), upakofka buni o'zi aniqlaydi (`GET /api/v1/upakofka/meyorlar` → 200) va
+faqat **ofis** ishini qiladi: buyurtmani pochkalarga teradi, 3D da ko'rsatadi,
+qo'lda tuzatishga beradi va rejani MES ga yuboradi. Saralash, qadoqlash, TV va
+chek — MES niki. Kelishuv: [docs/mes-kelishuv.md](docs/mes-kelishuv.md).
+
+- **Buyurtma** — `?order=<id>` bilan kelgan loyihaga MES dagi raqam (`B-2026-001`)
+  o'zi yoziladi; reja ID lari to'liq chiqadi.
+- **«Rejani tasdiqlash — MES ga yuborish»** (P/M → MES) — reja faylsiz,
+  `PUT /api/v1/upakofka/orders/{id}/reja`. MES javobi ekranda: nechta detal
+  bog'landi, qaysilari topilmadi, nechtasi rejaga kirmagan.
+- **Me'yorlar MES da** — hamma kompyuter va postda bir xil. O'zgartirilsa
+  Sozlamalar tepasida «MES ga saqlash» (menejer yoki texnolog); avtomatik emas.
+- Yashiriladi: post tanlovi, saralash ekrani, profillar, o'z chekimiz, upk-server.
+- Kirish tokeni eskirsa — bir marta yangilanadi.
+
+MES dan tashqarida (fayl, GitHub Pages, o'z server) hech narsa o'zgarmaydi.
+
+**Reja formati v2** (`MES rejasi (JSON)`) — har qadamda 3D joy
+`place {x, y, z, a, b, rot90}`, pochkada `base_mm`, `env_mm`, `height_mm`,
+`layers`, reja ildizida `rejasiz`.
+
+**`dist/upk-korish.js`** — MES qadoqlash terminali uchun mustaqil ko'ruvchi:
+ekranning 2/3 qismida 3D, 1/3 qismida joriy qavat 2D; keyingi detal sariq,
+noto'g'ri skan qizil miltillaydi. Tartib qoidasi ham shu yerda
+(`UpkKorish.tekshir`): tag — birinchi, qopqoq — oxirida, quyruq — qopqoqdan
+oldin, nostandart bog' — erkin. Namuna: `dist/upk-korish-namuna.html`.
+
 ## Chek va QR
 
 QR ichidagi format:

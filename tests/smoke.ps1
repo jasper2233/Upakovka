@@ -3611,7 +3611,15 @@ $tester = @'
       maxPartT:60, partKgMax:65, minPartW:0, minPartL:0, sepMat:"OYNA, KOZGU", matCat:[],
       rackN:7, cellN:6, bigN:1, cellW:250, cellD:400, cellH:1500, bigW:100, bigD:800, cellOff:{ "A2":true } };
     var expired = false, refreshN = 0, refreshOk = true;
+    var meyPut = [], meyCode = 200;
     MES.mock = function(method, path, body){
+      if (path === "upakofka/meyorlar" && method === "PUT"){
+        if (meyCode !== 200) return R(meyCode, { detail:"Sizda yetarli huquq yoʻq." });
+        meyPut.push(JSON.parse(JSON.stringify(body)));
+        conf = JSON.parse(JSON.stringify(body));
+        conf.matCat = body.matCat.map(function(c){ return { nom:c.nom, kgm2:c.kgm2 }; });   // MES sxemasi shunchasini saqlaydi
+        return R(200, JSON.parse(JSON.stringify(conf)));
+      }
       if (path === "login/refresh"){ refreshN++; if (!refreshOk) return R(401, { detail:"Token bekor qilingan." });
                                      expired = false; return R(200, { access_token:"x" }); }
       if (expired) return R(401, { detail:"Not authenticated" });
@@ -3641,19 +3649,43 @@ $tester = @'
       MES.orderId = "5";
       mesDetect().then(function(on){
         chk("MES: rejim aniqlandi (meʼyorlar 200)", on === true && MES.on && document.body.classList.contains("mes-mode"), String(on));
-        // seansdan tiklangan reja oʻz meʼyorlari bilan qoladi; yangi buyurtma — MES niki
-        chk("MES: meʼyorlar MES dan — tsex meʼyori shu", (CONF_FROM_SNAP || S.maxKg === 30) && S.rackN === 7 && !!S.cellOff.A2 &&
+        chk("MES: meʼyorlar MES dan — forma va tsex meʼyori shu", S.maxKg === 30 && +el("cMaxKg").value === 30 && S.rackN === 7 && !!S.cellOff.A2 &&
             DEVICE_CONF && DEVICE_CONF.conf.maxKg === 30, "maxKg " + S.maxKg + " (tsex " + DEVICE_CONF.conf.maxKg + ") · rackN " + S.rackN);
         chk("MES: buyurtma raqami olindi", MES.orderNo === "B-2026-005", MES.orderNo);
         chk("MES: post tanlovi yoʻq — doim ofis, saralash ekrani yashirin",
             postMode() === "all" && postHidden("sort") && getComputedStyle(el("mgrPost").closest(".fields")).display === "none",
             postMode());
-        chk("MES: sozlamalar faqat koʻrish (inert) va izoh bor",
-            !!el("mesConfNote") && [].slice.call(el("v-conf").children).filter(function(c){ return c.id !== "mesConfNote" && !c.hasAttribute("inert"); }).length === 0,
-            "inert");
+        chk("MES: sozlamalar ustida MES bloki, tugma oʻzgarishsiz — oʻchiq, «shu kompyuterda» yozuvi yoʻq",
+            !!el("mesConfNote") && !!el("btnMesConfSave") && el("btnMesConfSave").disabled && !MES.dirty &&
+            getComputedStyle(el("saveNote")).display === "none",
+            el("mesConfNote").textContent.slice(0, 60));
         chk("MES: oʻz chekimiz va profil yashirin, tasdiqlash tugmasi bor",
             getComputedStyle(el("btnPrint1")).display === "none" && getComputedStyle(document.querySelector(".profbar")).display === "none" &&
             el("mesSendField").style.display !== "none" && S.autoLbl === false, "tugma");
+        // 1a: meʼyorni upakofkada oʻzgartirib MES ga saqlash
+        el("cMaxKg").value = "33"; el("cMaxKg").onchange();
+        chk("MES: meʼyor oʻzgardi — «saqlanmagan», tugma yoqildi",
+            MES.dirty === true && !el("btnMesConfSave").disabled && /saqlanmagan/.test(el("mesConfNote").textContent), "");
+        return mesConfSave();
+      }).then(function(ok){
+        var b = meyPut[0] || {};
+        var ldsp = (b.matCat || []).filter(function(c){ return /^LDSP 16$/.test(c.nom); })[0];
+        chk("MES: meʼyor MES ga yozildi (butun toʻplam, katalog qalinlik bilan)",
+            ok === true && b.maxKg === 33 && b.rackN === 7 && !!b.cellOff.A2 && !!ldsp && ldsp.kgm2 > 0 && !MES.dirty &&
+            DEVICE_CONF.conf.maxKg === 33, "maxKg " + b.maxKg + " · " + (ldsp ? ldsp.nom : "LDSP 16 yoʻq"));
+        var back = S.matCat.filter(function(c){ return c.key === "LDSP" && c.t === 16; })[0];
+        chk("MES: katalog qaytib oʻqilganda qalinlik tiklandi («LDSP 16» → LDSP, 16 mm)", !!back && back.kgm2 > 0,
+            JSON.stringify(back));
+        chk("MES: saqlandi xabari", /MES ga saqlandi/.test(el("mesConfNote").textContent), el("mesConfNote").textContent.slice(0, 70));
+        // huquq yoʻq (masalan direktor) — forma MES dagi qiymatga qaytadi
+        meyCode = 403;
+        el("cMaxKg").value = "31"; el("cMaxKg").onchange();
+        return mesConfSave();
+      }).then(function(ok){
+        chk("MES: huquqsiz saqlash — xato aytildi, forma MES qiymatiga qaytdi",
+            ok === false && +el("cMaxKg").value === 33 && !MES.dirty && /huquq/.test(el("mesConfNote").textContent),
+            el("cMaxKg").value + " · " + el("mesConfNote").textContent.slice(0, 60));
+        meyCode = 200;
         // U2: MES dan kelgan loyiha — raqam va id yoziladi
         MES.pending = true; var d = {}; mesTagProject(d);
         chk("MES: yuklangan loyihaga buyurtma raqami va id", d.mesOrder === "B-2026-005" && d.mesOrderId === "5" && !MES.pending,

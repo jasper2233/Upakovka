@@ -129,9 +129,15 @@ terminallari. Ishchilar va bo'limlar admin panelidan istalgancha qo'shiladi.
 ---
 
 ## 5. Sozlamalar
-Me'yorlar va stelyaj sozlamasi **MES admin paneliga** ko'chadi. Upakofka MES ichida ularni
-o'zgartirmaydi — faqat o'qiydi. Qaysilari texnolog bo'limiga o'tishi — keyin ko'riladi.
+Me'yorlar va stelyaj sozlamasi **MES da** saqlanadi va oxir-oqibat **MES admin paneliga**
+ko'chadi (K10). Qaysilari texnolog bo'limiga o'tishi — keyin ko'riladi.
 Upakofkaning nomlangan profillari MES ichida o'chiq.
+
+**Oraliq qaror (2026-11-22):** admin panel tayyor bo'lguncha texnolog (yoki menejer) me'yorni
+upakofkaning Sozlamalar ekranida o'zgartiradi va **«MES ga saqlash»** tugmasi bilan
+`PUT /api/v1/upakofka/meyorlar` ga yozadi. Avtomatik emas — har saqlash MES audit jurnaliga
+tushadi. Huquqi yo'q hisob (403) — forma MES dagi qiymatga qaytadi. Saqlanmagan o'zgarish
+bilan sahifadan chiqilsa brauzer ogohlantiradi. Admin panel chiqqach bu tugma olib tashlanadi.
 
 ---
 
@@ -215,11 +221,14 @@ o'z server tekshiruvida takrorlaydi (K6), sabab kodlari bir xil bo'lsin:
 
 | Band | Nima qilindi | Qayerda |
 |---|---|---|
-| **U1** | `GET /api/v1/upakofka/meyorlar` 200 → MES rejimi: me'yorlar va stelyaj MES dan (tsex me'yori — `DEVICE_CONF`), Sozlamalar ekrani faqat ko'rish, post tanlovi / saralash ekrani / profillar / o'z chekimiz / upk-server sinxronlash yashirin | `src/js/18-mes.js` |
+| **U1** | `GET /api/v1/upakofka/meyorlar` 200 → MES rejimi: me'yorlar va stelyaj MES dan (forma, `S`, `DEVICE_CONF`), «MES ga saqlash» (§5), post tanlovi / saralash ekrani / profillar / o'z chekimiz / upk-server sinxronlash yashirin | `src/js/18-mes.js` |
 | **U2** | `?order=<id>` → `GET /api/v1/orders/{id}` dan raqam; MES dan kelgan loyihaga `mesOrder` va `mesOrderId` yoziladi. MES yuklovchisi loyihani me'yorlar kelishidan OLDIN berib qo'ymasligi uchun yuklash aniqlash tugaguncha kutadi | `18-mes.js` |
 | **U3** | «Rejani tasdiqlash — MES ga yuborish» → `PUT /api/v1/upakofka/orders/{id}/reja`; javob (bog'landi / topilmadi / rejasiz / 422 matni) ekranda | `18-mes.js`, P/M → MES bloki |
 | **U4** | Reja **versiya 2**: `plan_id`; pochkada `base_mm`, `env_mm {l,w,off}`, `height_mm`, `layers [{layer, role, z, h, n, fill, kg}]`; har qadamda `place {x, y, z, a, b, rot90}` (x/y — tagning chap-ORQA burchagidan, z — pol ustidan, a×b — iz), `fragile`; reja ildizida `rejasiz [{code, name, q, why}]`. v1 maydonlari o'zgarmagan | `src/js/10-ui.js` `mesPlan()` |
 | **U5** | `dist/upk-korish.js` — mustaqil 3D (2/3) + 2D (1/3) ko'ruvchi: qo'yilgan / keyingi (sariq) / noto'g'ri (QIZIL miltillaydi) / almashgan (to'q sariq, xira miltillaydi); `tekshir()` va `keyingi()`. `dist/upk-korish-namuna.html` — MES jamoasi uchun namuna (reja faylini tanlab, skan qilib ko'rish) | `src/korish/` |
+
+Kirish tokeni (30 daqiqa) eskirsa upakofka 401 da BIR MARTA `login/refresh` qiladi — bir
+vaqtda bitta (MES da yangilash tokeni bir martalik, takrori butun seansni bekor qiladi).
 
 Tekshiruv: smoke (dev, dist, `-Http`) va server testi o'tdi. Lokal MES (`dev` `9b1c57f`)
 da: MES ga kirish → `/upakofka/?order=1` → MES rejimi, raqam `B-2026-001` o'zi qo'yildi →
@@ -233,9 +242,9 @@ da: MES ga kirish → `/upakofka/?order=1` → MES rejimi, raqam `B-2026-001` o'
    `{key, t, l, w, kgm2, dens}` — qalinlik va zichliksiz 16 mm LDSP massasi 18 mm ga ham
    qo'llanadi. Sxemaga `t`, `l`, `w`, `dens` qo'shilsin (K10). Hozircha upakofka `nom` ni kalit,
    qalinlikni «har qanday» deb oladi; ro'yxat bo'sh bo'lsa — o'z standart katalogi.
-3. **Me'yorlarni upakofka yozmaydi** (`PUT /upakofka/meyorlar` dan foydalanmaydi): kelishuv
-   §5 — tahrir MES admin panelida (K10). Admin panel tayyor bo'lguncha qiymatni shu endpoint
-   orqali menejer/texnolog o'zgartiradi.
+3. **Me'yorlarni upakofka yozadi** — faqat «MES ga saqlash» tugmasi bilan, admin panel (K10)
+   tayyor bo'lguncha (§5). Butun to'plam yuboriladi; katalog `{nom: "LDSP 16", kgm2}` shaklida —
+   qalinlik nomning oxirida (sxemada `t` yo'qligi uchun), upakofka uni qaytib o'qiganda ajratadi.
 4. **`/upakofka/api/*` (upk-server protokoli)** MES ichida upakofka tomonidan endi
    ishlatilmaydi — saralash MES posti bo'lgach (K4) olib tashlash mumkin.
 5. **`mes-yuklovchi.js` o'zgarmaydi** — fayl nomi `MES-<id>.project` shartnoma bo'lib qoldi

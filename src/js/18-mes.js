@@ -7,8 +7,9 @@
    Saralash, qadoqlash, TV va chek — MES niki.
 
      U1. MES rejimi: `GET /api/v1/upakofka/meyorlar` 200 bersa — MES ichidamiz.
-         Meʼyorlar va stelyaj sozlamasi MES dan olinadi va bu yerda TAHRIRLANMAYDI
-         (MES admin panelida). Saralash/qadoqlash/TV postlari, profillar,
+         Meʼyorlar va stelyaj sozlamasi MES dan olinadi. MES admin paneli (K10)
+         tayyor boʻlguncha texnolog ularni shu yerda oʻzgartirib «MES ga saqlash»
+         bilan yozadi (egasining qarori, 2026-11-22). Saralash/qadoqlash/TV postlari, profillar,
          upk-server sinxronlash va oʻz chekimiz yashiriladi.
      U2. `?order=<id>` bilan ochilganda buyurtma raqami (B-2026-…) MES dan
          olinadi va loyihaga yoziladi — reja ID lari toʻliq chiqadi.
@@ -26,6 +27,8 @@ var MES = {
   conf:null,           // MES dan kelgan meʼyorlar (xom)
   pending:false,       // MES-<id>.project yuklanmoqda — boot() raqamni qoʻysin
   last:null,           // oxirgi «Rejani tasdiqlash» javobi
+  dirty:false,         // formadagi meʼyor MES dagidan farq qiladi (hali saqlanmagan)
+  confMsg:null,        // oxirgi «MES ga saqlash» natijasi
   mock:null,           // testlar: function(method, path, body) -> {status, json}
   ready:null           // Promise — aniqlash tugaganda
 };
@@ -104,39 +107,135 @@ function mesUrlOrder(search){
 }
 
 /* ---- U1: meʼyorlarni MES dan qoʻllash ----
-   MES — tsex meʼyorlarining yagona manbasi: ular DEVICE_CONF (yangi buyurtma
-   shular bilan pochkalanadi) boʻladi. Seansdan tiklangan reja oʻz meʼyorlari
-   bilan qoladi (13-app boot() izohi): uning pochkalari shular bilan
-   hisoblangan, keyingi yangi loyiha esa MES niki bilan. */
+   MES — tsex meʼyorlarining YAGONA manbasi: forma, S va DEVICE_CONF — hammasi
+   MES niki. Seansdan tiklangan rejaning pochkalari oʻzgarmaydi (qayta terilmaydi),
+   lekin Sozlamalar ekrani doim MES dagini koʻrsatadi: u yerda «MES ga saqlash»
+   bor, seansning eski meʼyori koʻrinib tursa uni MES ga yozib yuborish oson edi. */
 function mesConfApply(o){
   if (!o || typeof o !== "object") return false;
-  var keep = (typeof P !== "undefined" && P && CONF_FROM_SNAP) ? confCapture() : null;
+  if (typeof CONF_FROM_SNAP === "boolean") CONF_FROM_SNAP = false;
   MES_CONF_KEYS.forEach(function(k){ if (o.hasOwnProperty(k) && o[k] != null) S[k] = o[k]; });
   /* Katalog: MES `{nom, kgm2}` saqlaydi; bizda kalit + qalinlik + list oʻlchami.
+     Qalinlik nomning oxirida keladi («LDSP 16» — mesCatOut() shunday yozadi).
      Boʻsh boʻlsa — bizning standart katalog (MES hujjati shunday deydi). */
   if (o.matCat && o.matCat.length){
-    S.matCat = o.matCat.map(function(c){
-      return { key:String(c.key || c.nom || "").trim(), t:+c.t || 0,
-               l:+c.l || SHEET_DEFAULT.l, w:+c.w || SHEET_DEFAULT.w,
-               kgm2:+c.kgm2 || 0, dens:+c.dens || 0 };
-    }).filter(function(c){ return c.key; });
+    S.matCat = o.matCat.map(mesCatIn).filter(function(c){ return c.key; });
   }
   if (o.cellOff && typeof o.cellOff === "object") S.cellOff = JSON.parse(JSON.stringify(o.cellOff));
   S.autoLbl = false;                       // chek — MES niki (qadoq yopilganda)
   writeConf(); readConf();
   if (typeof renderCat === "function") renderCat();
   DEVICE_CONF = confCapture();
-  if (keep){ confApply(keep); writeConf(); }
   return true;
+}
+/* Katalog yozuvi: MES → bizniki. «LDSP 16» → kalit LDSP, qalinlik 16 mm. */
+function mesCatIn(c){
+  var nom = String(c.key || c.nom || "").trim(), t = +c.t || 0;
+  var m = !c.key && /^(.*\S)\s+(\d+(?:[.,]\d+)?)\s*(?:mm)?$/i.exec(nom);
+  if (m){ nom = m[1]; t = +m[2].replace(",", "."); }
+  return { key:nom, t:t, l:+c.l || SHEET_DEFAULT.l, w:+c.w || SHEET_DEFAULT.w,
+           kgm2:+c.kgm2 || 0, dens:+c.dens || 0 };
+}
+/* … va aksincha. MES sxemasi (`UpakofkaMatCat`) faqat nom va kg/m² ni saqlaydi,
+   shuning uchun qalinlik nomga qoʻshiladi; zichlik boʻlsa — shu qalinlik uchun
+   kg/m² ga aylantiriladi. kg/m² 0 boʻlgan yozuvni MES rad etadi — u tushiriladi. */
+function mesCatOut(c){
+  var t = +c.t || 0, kg = t ? catKgm2(c, t) : (+c.kgm2 || 0);
+  return { nom:(String(c.key || "").trim() + (t ? " " + t : "")).slice(0, 60), kgm2:+(+kg).toFixed(4) };
+}
+
+/* ---- 1a (2026-11-22): MEʼYORLARNI UPAKOFKADAN MES GA YOZISH ----
+   Egasining qarori: MES admin paneli (K10) tayyor boʻlguncha texnolog meʼyorni
+   shu yerda oʻzgartirib MES ga saqlaydi. Avtomatik emas — «MES ga saqlash»
+   tugmasi bilan: har yozuv MES audit jurnaliga tushadi, har harfda emas.
+   Ruxsat MES da (menejer / texnolog); 403 boʻlsa forma MES qiymatiga qaytadi. */
+function mesConfBody(){
+  var o = {};
+  MES_CONF_KEYS.forEach(function(k){ o[k] = S[k]; });
+  o.tries = +S.tries || 4; o.byThick = true; o.baseLMin = 0;
+  o.cellOff = JSON.parse(JSON.stringify(S.cellOff || {}));
+  o.matCat = (S.matCat || []).map(mesCatOut).filter(function(c){ return c.nom && c.kgm2 > 0 && c.kgm2 <= 200; });
+  return o;
+}
+/* Formadagi meʼyorlar — S ga tegmasdan (13-app confCaptureForm() bilan bir xil usul) */
+function mesConfFromForm(){
+  var bak = {}, k;
+  for (k in S) if (S.hasOwnProperty(k)) bak[k] = S[k];
+  var cat = JSON.parse(JSON.stringify(S.matCat || [])), off = JSON.parse(JSON.stringify(S.cellOff || {}));
+  try { readConf(); S.matCat = cat; S.cellOff = off; return mesConfBody(); }
+  finally {
+    for (k in S) if (S.hasOwnProperty(k) && !bak.hasOwnProperty(k)) delete S[k];
+    for (k in bak) S[k] = bak[k];
+  }
+}
+/* MES dagi bilan solishtirish — faqat MES saqlaydigan maydonlar */
+function mesConfSig(o){
+  if (!o) return "";
+  var x = {};
+  MES_CONF_KEYS.forEach(function(k){ x[k] = o[k]; });
+  x.cellOff = Object.keys(o.cellOff || {}).filter(function(c){ return o.cellOff[c]; }).sort();
+  x.matCat = (o.matCat || []).map(function(c){ return c.nom + "=" + (+c.kgm2).toFixed(4); });
+  return JSON.stringify(x);
+}
+function mesConfDirtyCheck(){
+  if (!MES.on || !MES.conf) return false;
+  MES.dirty = mesConfSig(mesConfFromForm()) !== mesConfSig(MES.conf);
+  mesConfUi();
+  return MES.dirty;
+}
+function mesConfSave(){
+  if (!MES.on) return Promise.resolve(false);
+  var body = mesConfFromForm(), b = $("btnMesConfSave");
+  if (b) b.disabled = true;
+  return mesReq("PUT", "upakofka/meyorlar", body).then(function(r){
+    if (b) b.disabled = false;
+    if (r.ok && r.json){
+      MES.conf = r.json; MES.dirty = false;
+      mesConfApply(r.json);
+      var d = new Date(), p2 = function(x){ return (x < 10 ? "0" : "") + x; };
+      MES.confMsg = { kind:"ok", txt:"MES ga saqlandi ✓ " + p2(d.getHours()) + ":" + p2(d.getMinutes()) +
+                      " — hamma kompyuter va post endi shu meʼyorlar bilan ishlaydi." };
+      mesConfUi(); flash("ok", "meʼyorlar MES ga saqlandi");
+      return true;
+    }
+    if (r.status === 403){
+      /* huquq yoʻq — forma MES dagi qiymatga qaytadi, aks holda ekranda
+         saqlanmaydigan raqamlar turib qolardi */
+      mesConfApply(MES.conf); MES.dirty = false;
+      if (typeof P !== "undefined" && P && !CONF_FROM_SNAP && typeof recompute === "function") recompute();
+    }
+    MES.confMsg = { kind:"err", txt:"MES ga saqlanmadi: " + mesErrText(r) };
+    mesConfUi(); flash("err", MES.confMsg.txt);
+    return false;
+  });
+}
+/* Sozlamalar ekranining tepasidagi MES bloki: manba, holat, saqlash tugmasi */
+function mesConfUi(){
+  var v = $("v-conf"); if (!v || !MES.on) return;
+  var n = $("mesConfNote");
+  if (!n){
+    n = document.createElement("div");
+    n.id = "mesConfNote"; n.className = "note";
+    v.insertBefore(n, v.firstChild);
+    n.addEventListener("click", function(e){ if (e.target && e.target.id === "btnMesConfSave") mesConfSave(); });
+  }
+  var m = MES.confMsg, kind = MES.dirty ? "warn" : (m ? m.kind : "info");
+  n.style.cssText = "margin:0 0 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;border-left-color:" +
+    (kind === "ok" ? "var(--ok)" : kind === "err" ? "var(--alert)" : kind === "warn" ? "var(--mark)" : "var(--info)");
+  n.innerHTML = '<span style="flex:1 1 320px"><b>Meʼyorlar MES da saqlanadi</b> — hamma kompyuter va postda bir xil. ' +
+    (MES.dirty ? "<b>Oʻzgarish hali MES ga saqlanmagan.</b>"
+               : esc(m ? m.txt : "Oʻzgartirsangiz «MES ga saqlash» ni bosing (menejer yoki texnolog).")) + '</span>' +
+    '<button type="button" class="btn' + (MES.dirty ? " pri" : "") + '" id="btnMesConfSave"' +
+    (MES.dirty ? "" : " disabled") + '>MES ga saqlash</button>';
 }
 
 /* ---- U1: koʻrinish ---- */
 function mesModeApply(){
   document.body.classList.toggle("mes-mode", !!MES.on);
   if (!MES.on){                                        // (testlar) — oddiy rejimga qaytish
-    var v = $("v-conf"), n = $("mesConfNote");
+    var n = $("mesConfNote");
     if (n && n.parentNode) n.parentNode.removeChild(n);
-    if (v) [].slice.call(v.children).forEach(function(c){ c.removeAttribute("inert"); c.classList.remove("mes-ro"); });
+    MES.dirty = false; MES.confMsg = null;
     mesRenderBox();
     if (typeof postApply === "function") postApply(false);
     return;
@@ -149,24 +248,8 @@ function mesModeApply(){
     if (typeof srvBanner === "function") srvBanner();
   }
   if (typeof postApply === "function") postApply(false);
-  mesConfLock();
+  mesConfUi();
   mesRenderBox();
-}
-/* Sozlamalar ekrani — faqat koʻrish. `inert`: na sichqoncha, na klaviatura. */
-function mesConfLock(){
-  var v = $("v-conf"); if (!v) return;
-  var n = $("mesConfNote");
-  if (!n){
-    n = document.createElement("div");
-    n.id = "mesConfNote"; n.className = "note";
-    n.style.cssText = "margin:0 0 14px;border-left-color:var(--info)";
-    v.insertBefore(n, v.firstChild);
-  }
-  n.innerHTML = "<b>Meʼyorlar MES dan olingan.</b> Ular MES admin panelida oʻzgartiriladi — " +
-                "bu yerda faqat koʻrish uchun. Hamma kompyuter va postda bir xil.";
-  [].slice.call(v.children).forEach(function(c){
-    if (c !== n){ c.setAttribute("inert", ""); c.classList.add("mes-ro"); }
-  });
 }
 
 /* ---- U2: buyurtma raqami loyihaga ---- */
@@ -283,5 +366,14 @@ function mesDetect(){
     window.boot = function(data){ mesTagProject(data); return origBoot(data); };
   }
   var b = $("btnMesSend"); if (b) b.onclick = function(){ mesPlanSend(); };
+  /* meʼyor oʻzgardi — mahalliy saqlov avvalgidek (modul nomlari va boshqalar ham
+     shu yerda), MES rejimida esa «MES ga saqlanmagan» belgisi ham */
+  var origSave = window.saveConf;
+  if (typeof origSave === "function"){
+    window.saveConf = function(){ var r = origSave.apply(this, arguments); if (MES.on) mesConfDirtyCheck(); return r; };
+  }
+  window.addEventListener("beforeunload", function(e){
+    if (MES.on && MES.dirty){ e.preventDefault(); e.returnValue = ""; }
+  });
   MES.ready = mesDetect();
 })();
