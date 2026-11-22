@@ -42,7 +42,28 @@ var MES_CONF_KEYS = ["maxKg","ovh","ovhOn","minBase","maxLen","minBaseT","minFil
 
 /* MES API soʻrovi. XHR — 16-server.js dagi srvReq bilan bir xil sabab
    (eski brauzerlar); kirish cookie'si same-origin da oʻzi ketadi. */
+/* KIRISH TOKENI 30 daqiqa yashaydi (MES `ACCESS_TOKEN_EXPIRE_MINUTES`). MES ilovasi
+   uni oʻzi yangilaydi, bu sahifa esa ofisda uzoq ochiq turadi — «Rejani tasdiqlash»
+   401 olardi. Shuning uchun 401 da BIR MARTA `login/refresh` va soʻrov qayta.
+   EHTIYOT: MES da yangilash tokeni BIR MARTALIK — takror ishlatilsa hisobning hamma
+   seansi bekor qilinadi. Shuning uchun yangilash bir vaqtda faqat bitta (umumiy
+   Promise) va faqat 401 dan keyin; ikkinchi 401 — qayta urinish yoʻq. */
+var MES_REFRESH = null;
+function mesRefresh(){
+  if (!MES_REFRESH){
+    MES_REFRESH = mesReq1("POST", "login/refresh", null).then(function(r){
+      MES_REFRESH = null; return !!r.ok;
+    });
+  }
+  return MES_REFRESH;
+}
 function mesReq(method, path, body){
+  return mesReq1(method, path, body).then(function(r){
+    if (r.status !== 401 || path === "login/refresh") return r;
+    return mesRefresh().then(function(ok){ return ok ? mesReq1(method, path, body) : r; });
+  });
+}
+function mesReq1(method, path, body){
   if (MES.mock){
     return Promise.resolve().then(function(){ return MES.mock(method, path, body); })
       .then(function(r){ r = r || { status:0 }; r.ok = r.status >= 200 && r.status < 300; return r; },
@@ -67,11 +88,12 @@ function mesReq(method, path, body){
 }
 /* MES xato javobidan odam oʻqiydigan matn (FastAPI: {"detail": "..."} yoki roʻyxat) */
 function mesErrText(r){
+  // 401 — avval: MES matni («Not authenticated») ishchiga nima qilishni aytmaydi
+  if (r && r.status === 401) return "MES ga kirilmagan — MES da kirib, sahifani qayta oching";
   var d = r && r.json && r.json.detail;
   if (typeof d === "string") return d;
   if (d && d.length && d[0] && d[0].msg) return d.map(function(x){ return x.msg; }).join("; ");
   if (!r || !r.status) return "MES bilan aloqa yoʻq";
-  if (r.status === 401) return "MES ga kirilmagan — MES da kirib, sahifani qayta oching";
   if (r.status === 403) return "bu amal uchun huquq yoʻq (menejer yoki texnolog kerak)";
   return "MES javobi: HTTP " + r.status;
 }

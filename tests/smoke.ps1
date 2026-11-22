@@ -3610,7 +3610,11 @@ $tester = @'
       tailSpan:70, tailKgOver:10, tomQ:"orta", oddKg:40, oddLMax:3200, oddWMax:1900, oddTol:300,
       maxPartT:60, partKgMax:65, minPartW:0, minPartL:0, sepMat:"OYNA, KOZGU", matCat:[],
       rackN:7, cellN:6, bigN:1, cellW:250, cellD:400, cellH:1500, bigW:100, bigD:800, cellOff:{ "A2":true } };
+    var expired = false, refreshN = 0, refreshOk = true;
     MES.mock = function(method, path, body){
+      if (path === "login/refresh"){ refreshN++; if (!refreshOk) return R(401, { detail:"Token bekor qilingan." });
+                                     expired = false; return R(200, { access_token:"x" }); }
+      if (expired) return R(401, { detail:"Not authenticated" });
       if (path === "upakofka/meyorlar") return R(200, JSON.parse(JSON.stringify(conf)));
       if (path === "orders/5") return R(200, { id:5, number:"B-2026-005" });
       if (path === "upakofka/orders/5/reja" && method === "PUT"){
@@ -3671,6 +3675,20 @@ $tester = @'
         chk("MES: rad javobi (422) matni koʻrinadi", ok === false && /B-2026-999/.test(el("mesSendNote").textContent),
             el("mesSendNote").textContent.slice(0, 90));
         putCode = 200;
+        // token eskirdi: ikki soʻrov bir vaqtda 401 — yangilash BITTA (MES da u bir martalik)
+        expired = true; refreshN = 0;
+        return Promise.all([mesPlanSend(), mesReq("GET", "orders/5")]);
+      }).then(function(rs){
+        chk("MES: token eskirsa bir marta yangilanadi va soʻrov oʻtadi",
+            rs[0] === true && rs[1].ok && refreshN === 1 && put.length === 2, "refresh " + refreshN + " · put " + put.length);
+        // yangilash ham rad etilsa — qayta urinish yoʻq, odamga aytiladi
+        expired = true; refreshOk = false; refreshN = 0;
+        return mesPlanSend();
+      }).then(function(ok){
+        chk("MES: yangilash rad etilsa — «kiring» deyiladi, cheksiz urinish yoʻq",
+            ok === false && refreshN === 1 && /kirilmagan/.test(el("mesSendNote").textContent),
+            "refresh " + refreshN + " · " + el("mesSendNote").textContent.slice(0, 60));
+        expired = false; refreshOk = true;
 
         // U4: reja v2 — 3D uchun toʻliq joy
         var plan = mesPlan(), bad2 = [], std = 0;
